@@ -55,9 +55,9 @@ cedisense/
 │       ├── src/
 │       │   ├── index.ts              ← Hono app entry, mount route groups
 │       │   ├── routes/
-│       │   │   ├── auth.ts           ← /api/auth/*
-│       │   │   ├── users.ts          ← /api/users/*
-│       │   │   └── accounts.ts       ← /api/accounts/*
+│       │   │   ├── auth.ts           ← /api/v1/auth/*
+│       │   │   ├── users.ts          ← /api/v1/users/*
+│       │   │   └── accounts.ts       ← /api/v1/accounts/*
 │       │   ├── middleware/
 │       │   │   ├── auth.ts           ← JWT verification middleware
 │       │   │   ├── cors.ts           ← CORS config
@@ -68,8 +68,7 @@ cedisense/
 │       │   │   └── hash.ts           ← PIN hashing (PBKDF2 via Web Crypto)
 │       │   └── types.ts              ← Hono env bindings type
 │       ├── migrations/
-│       │   ├── 0001_initial_schema.sql
-│       │   └── 0002_seed_categories.sql
+│       │   └── 0001_initial_schema.sql
 │       ├── wrangler.toml
 │       ├── tsconfig.json
 │       └── package.json
@@ -117,12 +116,18 @@ CREATE TABLE users (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   phone TEXT UNIQUE NOT NULL,              -- Normalized: 0XXXXXXXXX
   name TEXT NOT NULL,
-  monthly_income_ghs REAL,                -- Set during onboarding wizard
+  monthly_income_ghs REAL,                -- NULL = not set; set during onboarding step 1
   preferred_language TEXT DEFAULT 'en',
   onboarding_completed INTEGER DEFAULT 0, -- 0 = show wizard
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
+-- Trigger: auto-update updated_at on user changes
+CREATE TRIGGER users_updated_at AFTER UPDATE ON users
+BEGIN
+  UPDATE users SET updated_at = datetime('now') WHERE id = NEW.id;
+END;
 
 -- Auth Methods (extensible: pin now, webauthn/otp/social later)
 CREATE TABLE auth_methods (
@@ -139,7 +144,7 @@ CREATE TABLE accounts (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  type TEXT NOT NULL,                      -- 'momo' | 'bank' | 'cash' | 'susu'
+  type TEXT NOT NULL CHECK(type IN ('momo','bank','cash','susu')),
   provider TEXT,                           -- 'mtn' | 'vodafone' | 'airteltigo' | 'gcb' | etc.
   account_number TEXT,                     -- Masked: ****1234
   balance_ghs REAL DEFAULT 0,
@@ -166,7 +171,7 @@ CREATE INDEX idx_accounts_user ON accounts(user_id);
 
 | Token | Storage | Lifetime | Format | Purpose |
 |-------|---------|----------|--------|---------|
-| Access Token | Memory only (React state) | 15 minutes | JWT (HMAC-SHA256) | API authorization via Bearer header |
+| Access Token | Memory only (React state) | 15 minutes | JWT (HMAC-SHA256), payload: `{ sub: userId, iat, exp }` | API authorization via Bearer header |
 | Refresh Token | httpOnly cookie (Secure, SameSite=Strict) | 30 days | Opaque (random bytes, stored in KV) | Silent token renewal |
 
 ### PIN Hashing
@@ -176,11 +181,21 @@ CREATE INDEX idx_accounts_user ON accounts(user_id);
 - Salt: 16 random bytes per user
 - Stored as JSON in `auth_methods.credential`: `{"hash": "<base64>", "salt": "<base64>"}`
 
+### Refresh Token KV Storage
+
+- **KV key:** `refresh:{SHA256(token)}` — store hash of token, not raw token (KV breach doesn't expose tokens)
+- **KV value:** JSON `{ "userId": "<id>", "createdAt": "<iso8601>" }`
+- **TTL:** 2,592,000 seconds (30 days) — auto-expires
+- **Cookie value:** Raw opaque token (32 random bytes, base64url-encoded)
+- **Lookup flow:** Read token from cookie → SHA-256 hash it → lookup `refresh:{hash}` in KV
+
 ### Rate Limiting
 
 - **Login attempts:** 5 failed PINs per phone number → 15 minute lockout
 - **Implementation:** KV key `rate:login:{phone}` with value = attempt count, TTL = 900 seconds
 - **On success:** Delete the KV key
+- **On lockout:** Return `429 Too Many Requests` with `Retry-After: <seconds>` header and body `{ "error": { "code": "RATE_LIMITED", "message": "Too many failed attempts. Try again in X minutes.", "retryAfter": <seconds> } }`
+- **Remaining attempts:** Include `X-RateLimit-Remaining` header on failed login responses
 - **General API:** 100 requests/minute per authenticated user (KV sliding window)
 
 ### Refresh Token Rotation
@@ -197,41 +212,64 @@ If a deleted token is reused, it indicates potential compromise — future enhan
 
 ## 6. API Endpoints
 
+All endpoints are versioned under `/api/v1/`.
+
+### Standard Response Envelope
+
+All API responses use a consistent envelope:
+
+```typescript
+// Success
+{ "data": <payload>, "meta"?: { "total"?: number, "page"?: number } }
+
+// Error
+{ "error": { "code": string, "message": string, "details"?: object } }
+
+// Validation error (Zod)
+{ "error": { "code": "VALIDATION_ERROR", "message": "Invalid request", "details": { "fieldErrors": { "phone": ["Invalid Ghana phone number"] } } } }
+```
+
+HTTP status codes: 200 (success), 201 (created), 204 (no content), 400 (validation), 401 (unauthorized), 404 (not found), 429 (rate limited), 500 (server error).
+
 ### Auth Routes (public)
 
 ```
-POST   /api/auth/register
+POST   /api/v1/auth/register
   Body: { phone, name, pin }
-  Response: { accessToken, user: { id, name, phone } }
+  Response: { data: { accessToken, user: { id, name, phone } } }
   Cookie: refreshToken (httpOnly, Secure, SameSite=Strict)
 
-POST   /api/auth/login
+POST   /api/v1/auth/login
   Body: { phone, pin }
-  Response: { accessToken, user }
+  Response: { data: { accessToken, user } }
   Cookie: refreshToken
 
-POST   /api/auth/refresh
+POST   /api/v1/auth/refresh
   Body: (none — reads cookie)
-  Response: { accessToken }
+  Response: { data: { accessToken } }
   Cookie: new refreshToken
+```
 
-POST   /api/auth/logout
+### Auth Routes (protected — requires Bearer token)
+
+```
+POST   /api/v1/auth/logout
   Body: (none)
+  Action: Delete refresh token from KV + clear httpOnly cookie
   Response: 204
-  Cookie: cleared
 ```
 
 ### User Routes (protected)
 
 ```
-GET    /api/users/me
-  Response: { id, name, phone, monthly_income_ghs, preferred_language, onboarding_completed }
+GET    /api/v1/users/me
+  Response: { data: { id, name, phone, monthly_income_ghs, preferred_language, onboarding_completed } }
 
-PUT    /api/users/me
+PUT    /api/v1/users/me
   Body: { name?, monthly_income_ghs?, preferred_language? }
-  Response: updated user
+  Response: { data: updated user }
 
-PUT    /api/users/me/onboarding
+PUT    /api/v1/users/me/onboarding
   Body: { completed: true }
   Response: 204
 ```
@@ -239,28 +277,28 @@ PUT    /api/users/me/onboarding
 ### Account Routes (protected)
 
 ```
-POST   /api/accounts
+POST   /api/v1/accounts
   Body: { name, type, provider?, account_number?, balance_ghs?, is_primary? }
-  Response: account
+  Response: { data: account } (201)
   Note: If is_primary=true, unsets other primary accounts for this user
 
-GET    /api/accounts
-  Response: account[]
+GET    /api/v1/accounts
+  Response: { data: account[] }
 
-PUT    /api/accounts/:id
+PUT    /api/v1/accounts/:id
   Body: { name?, balance_ghs?, is_primary? }
-  Response: updated account
+  Response: { data: updated account }
 
-DELETE /api/accounts/:id
+DELETE /api/v1/accounts/:id
   Response: 204
   Note: Prevents deleting last account
 ```
 
 ### Middleware Stack
 
-Applied to all `/api/*` except `/api/auth/*`:
+Applied to all `/api/v1/*` except `/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/refresh`:
 
-1. **CORS** — Allowlist: `cedisense.com`, `localhost:5173`
+1. **CORS** — Allowlist: `cedisense.com`, `*.cedisense.pages.dev` (preview deploys), `localhost:5173` (dev). Parameterized by `ENVIRONMENT` var.
 2. **JWT verification** — Extracts Bearer token, verifies signature, injects `userId` into Hono context
 3. **Rate limiting** — 100 requests/minute per user via KV sliding window
 
@@ -270,17 +308,28 @@ Applied to all `/api/*` except `/api/auth/*`:
 // packages/shared/src/schemas.ts
 import { z } from 'zod';
 
-const ghanaPhoneRegex = /^0[235]\d{8}$/;
+// Ghana phone: 02X, 03X, 04X, 05X (covers MTN, Vodafone, AirtelTigo, all networks)
+const ghanaPhoneRegex = /^0[2-5]\d{8}$/;
+
+// Weak PINs blocklist (sequential, repeated, common patterns)
+const WEAK_PINS = new Set([
+  '0000','1111','2222','3333','4444','5555','6666','7777','8888','9999',
+  '1234','4321','0123','3210','1212','2580',
+]);
+
+export const pinSchema = z.string()
+  .regex(/^\d{4}$/, 'PIN must be 4 digits')
+  .refine(pin => !WEAK_PINS.has(pin), 'PIN is too common. Choose a stronger PIN.');
 
 export const registerSchema = z.object({
   phone: z.string().regex(ghanaPhoneRegex, 'Invalid Ghana phone number'),
   name: z.string().min(2).max(100),
-  pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
+  pin: pinSchema,
 });
 
 export const loginSchema = z.object({
-  phone: z.string().regex(ghanaPhoneRegex),
-  pin: z.string().regex(/^\d{4}$/),
+  phone: z.string().regex(ghanaPhoneRegex, 'Invalid Ghana phone number'),
+  pin: z.string().regex(/^\d{4}$/),  // No weak PIN check on login
 });
 
 export const updateUserSchema = z.object({
@@ -341,7 +390,7 @@ export const createAccountSchema = z.object({
 2. **Your Main Account** — Select account type (MTN MoMo, Vodafone Cash, AirtelTigo, GCB, Ecobank, Fidelity, Stanbic, Cash). Calls `POST /api/accounts` with `is_primary: true`.
 3. **First Transaction** — Choose "Paste MoMo SMS" or "Enter Manually." Both options set `onboarding_completed = 1` via `PUT /api/users/me/onboarding`. SMS paste → SMS import flow (future subsystem). Manual → transaction form (future subsystem). At MVP, both lead to the dashboard with a "Coming in next update" note or a simplified manual entry form.
 
-**Resume behaviour:** Each step persists via its own API call. If user drops off at step 2, on next login the wizard checks: has income? → skip step 1. Has account? → skip step 2. `onboarding_completed = 0` → show remaining steps.
+**Resume behaviour:** Each step persists via its own API call. If user drops off at step 2, on next login the wizard checks: `monthly_income_ghs IS NOT NULL`? → skip step 1. Has at least one account row? → skip step 2. `onboarding_completed = 0` → show remaining steps. Skipping step 1 leaves `monthly_income_ghs` as `NULL` (not 0), so the check is unambiguous.
 
 ## 9. Ghana Theme
 
@@ -377,6 +426,9 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ENVIRONMENT = "production"
 
+# Secrets (set via `wrangler secret put`, NEVER in this file):
+# - JWT_SECRET: HMAC-SHA256 signing key for access tokens
+
 [ai]
 binding = "AI"
 
@@ -406,7 +458,11 @@ bucket_name = "cedisense-uploads"
 - [x] Input validation: Zod schemas on both client and server
 - [x] SQL: prepared statements only, never string concatenation
 - [x] CORS: explicit allowlist, not wildcard
-- [x] No secrets in JWT payload: only userId, phone, name
+- [x] JWT payload: only `userId` — no PII (phone/name fetched from API as needed)
+- [x] JWT_SECRET: stored as Workers secret (`wrangler secret put`), never in wrangler.toml
+- [x] Refresh tokens: stored as SHA-256 hash in KV (KV breach doesn't expose raw tokens)
+- [x] Logout: protected endpoint (requires Bearer token) — prevents CSRF logout attacks
+- [x] Weak PIN rejection: blocklist of sequential/repeated/common 4-digit PINs
 
 ## 12. Out of Scope (Deferred to Later Subsystems)
 
