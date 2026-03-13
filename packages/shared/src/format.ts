@@ -9,6 +9,30 @@ export function formatGHS(amount: number): string {
 }
 
 /**
+ * Convert Ghana Cedis (GHS) to pesewas (integer).
+ * e.g. 12.50 → 1250
+ */
+export function toPesewas(ghs: number): number {
+  return Math.round(ghs * 100);
+}
+
+/**
+ * Convert pesewas (integer) to Ghana Cedis (GHS).
+ * e.g. 1250 → 12.5
+ */
+export function toGHS(pesewas: number): number {
+  return pesewas / 100;
+}
+
+/**
+ * Format pesewas as Ghana Cedis string: ₵1,234.56
+ * e.g. 123456 → '₵1,234.56'
+ */
+export function formatPesewas(pesewas: number): string {
+  return formatGHS(pesewas / 100);
+}
+
+/**
  * Normalize a Ghana phone number to 0XXXXXXXXX format.
  * Accepts: "024 123 4567", "024-123-4567", "+233241234567", "233241234567", "0241234567"
  * Returns null if invalid.
