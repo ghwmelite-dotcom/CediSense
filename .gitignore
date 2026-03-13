@@ -1,1 +1,7 @@
+node_modules/
+dist/
+.wrangler/
 .superpowers/
+.dev.vars
+*.local
+.turbo/
