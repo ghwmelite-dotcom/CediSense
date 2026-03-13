@@ -24,7 +24,7 @@ function fromBase64Url(str: string): ArrayBuffer {
 }
 
 function encodeJson(obj: object): string {
-  return toBase64Url(new TextEncoder().encode(JSON.stringify(obj)));
+  return toBase64Url(new TextEncoder().encode(JSON.stringify(obj)).buffer as ArrayBuffer);
 }
 
 async function getSigningKey(secret: string): Promise<CryptoKey> {
