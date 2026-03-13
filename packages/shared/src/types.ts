@@ -125,9 +125,10 @@ export interface RawTransaction {
   raw_text: string;
   counterparty: string | null;
   reference: string | null;
+  balance_after_pesewas: number | null;
   source: TransactionSource;
   transaction_date: string;
-  account_id: string;
+  account_id?: string;
   provider?: string;
 }
 
