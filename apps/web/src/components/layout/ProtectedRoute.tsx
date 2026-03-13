@@ -21,5 +21,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/onboarding" replace />;
   }
 
+  // Redirect away from onboarding if already completed
+  if (user && user.onboarding_completed && window.location.pathname === '/onboarding') {
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 }

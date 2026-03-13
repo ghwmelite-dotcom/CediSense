@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import type { Env, Variables } from '../types.js';
+import type { Env, Variables, AppContext } from '../types.js';
 import { registerSchema, loginSchema, normalizePhone } from '@cedisense/shared';
 import { hashPin, verifyPin } from '../lib/hash.js';
 import {
@@ -20,7 +20,7 @@ const REFRESH_TOKEN_TTL = 30 * 24 * 60 * 60; // 30 days in seconds
 
 const auth = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-function setRefreshCookie(c: any, token: string) {
+function setRefreshCookie(c: AppContext, token: string) {
   const isProduction = c.env.ENVIRONMENT === 'production';
   const cookie = [
     `refreshToken=${token}`,
@@ -33,7 +33,7 @@ function setRefreshCookie(c: any, token: string) {
   c.header('Set-Cookie', cookie);
 }
 
-function clearRefreshCookie(c: any) {
+function clearRefreshCookie(c: AppContext) {
   const isProduction = c.env.ENVIRONMENT === 'production';
   const cookie = [
     'refreshToken=',
