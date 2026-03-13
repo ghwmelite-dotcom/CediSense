@@ -9,7 +9,6 @@
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
     "outDir": "./dist",
-    "rootDir": "./src",
     "paths": {
       "@/*": ["./src/*"],
       "@cedisense/shared": ["../../packages/shared/src"]
