@@ -365,7 +365,7 @@ export const createAccountSchema = z.object({
 ### AuthContext
 
 - On mount: check for access token in memory
-- If expired: attempt silent refresh via `POST /api/auth/refresh` (cookie auto-attached)
+- If expired: attempt silent refresh via `POST /api/v1/auth/refresh` (cookie auto-attached)
 - If refresh fails: clear state, redirect to `/login`
 - Provides: `user`, `isAuthenticated`, `isLoading`, `login()`, `register()`, `logout()`
 
@@ -386,9 +386,9 @@ export const createAccountSchema = z.object({
 
 **3 steps, each skippable:**
 
-1. **Your Income** — Amount input with quick-select chips (₵1,000 / ₵2,500 / ₵5,000 / ₵10,000). Calls `PUT /api/users/me` with `monthly_income_ghs`.
-2. **Your Main Account** — Select account type (MTN MoMo, Vodafone Cash, AirtelTigo, GCB, Ecobank, Fidelity, Stanbic, Cash). Calls `POST /api/accounts` with `is_primary: true`.
-3. **First Transaction** — Choose "Paste MoMo SMS" or "Enter Manually." Both options set `onboarding_completed = 1` via `PUT /api/users/me/onboarding`. SMS paste → SMS import flow (future subsystem). Manual → transaction form (future subsystem). At MVP, both lead to the dashboard with a "Coming in next update" note or a simplified manual entry form.
+1. **Your Income** — Amount input with quick-select chips (₵1,000 / ₵2,500 / ₵5,000 / ₵10,000). Calls `PUT /api/v1/users/me` with `monthly_income_ghs`.
+2. **Your Main Account** — Select account type (MTN MoMo, Vodafone Cash, AirtelTigo, GCB, Ecobank, Fidelity, Stanbic, Cash). Calls `POST /api/v1/accounts` with `is_primary: true`.
+3. **First Transaction** — Choose "Paste MoMo SMS" or "Enter Manually." Both options set `onboarding_completed = 1` via `PUT /api/v1/users/me/onboarding`. SMS paste → SMS import flow (future subsystem). Manual → transaction form (future subsystem). At MVP, both lead to the dashboard with a "Coming in next update" note or a simplified manual entry form.
 
 **Resume behaviour:** Each step persists via its own API call. If user drops off at step 2, on next login the wizard checks: `monthly_income_ghs IS NOT NULL`? → skip step 1. Has at least one account row? → skip step 2. `onboarding_completed = 0` → show remaining steps. Skipping step 1 leaves `monthly_income_ghs` as `NULL` (not 0), so the check is unambiguous.
 
