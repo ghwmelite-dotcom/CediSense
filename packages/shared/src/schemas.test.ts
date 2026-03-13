@@ -61,6 +61,14 @@ describe('loginSchema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it('rejects invalid phone', () => {
+    const result = loginSchema.safeParse({
+      phone: '0611234567',
+      pin: '1234',
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('createAccountSchema', () => {
