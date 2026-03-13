@@ -2,7 +2,7 @@
  * Format a number as Ghana Cedis: ₵1,234.56
  */
 export function formatGHS(amount: number): string {
-  return `₵${amount.toLocaleString('en-GH', {
+  return `₵${amount.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
