@@ -96,7 +96,7 @@ describe('createAccountSchema', () => {
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.balance_ghs).toBe(0);
+      expect(result.data.balance_pesewas).toBe(0);
     }
   });
 });
@@ -113,7 +113,7 @@ describe('updateAccountSchema', () => {
   });
 
   it('rejects negative balance', () => {
-    const result = updateAccountSchema.safeParse({ balance_ghs: -100 });
+    const result = updateAccountSchema.safeParse({ balance_pesewas: -100 });
     expect(result.success).toBe(false);
   });
 });

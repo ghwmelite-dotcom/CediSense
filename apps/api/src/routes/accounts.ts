@@ -37,12 +37,12 @@ accounts.post('/', async (c) => {
   }
 
   await c.env.DB.prepare(
-    `INSERT INTO accounts (id, user_id, name, type, provider, account_number, balance_ghs, is_primary)
+    `INSERT INTO accounts (id, user_id, name, type, provider, account_number, balance_pesewas, is_primary)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, userId, data.name, data.type,
     data.provider ?? null, data.account_number ?? null,
-    data.balance_ghs, data.is_primary ? 1 : 0
+    data.balance_pesewas, data.is_primary ? 1 : 0
   ).run();
 
   const account = await c.env.DB.prepare(
@@ -103,9 +103,9 @@ accounts.put('/:id', async (c) => {
     setClauses.push('name = ?');
     values.push(updates.name);
   }
-  if (updates.balance_ghs !== undefined) {
-    setClauses.push('balance_ghs = ?');
-    values.push(updates.balance_ghs);
+  if (updates.balance_pesewas !== undefined) {
+    setClauses.push('balance_pesewas = ?');
+    values.push(updates.balance_pesewas);
   }
   if (updates.is_primary !== undefined) {
     if (updates.is_primary) {
