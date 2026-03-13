@@ -143,7 +143,22 @@ export interface CategoryRule {
   created_at: string;
 }
 
-export type CSVFormat = 'mtn_momo' | 'gcb' | 'ecobank' | 'stanbic' | 'absa' | 'generic';
+export interface CSVFormat {
+  provider: string;
+  label: string;
+  delimiter: string;
+  hasHeader: boolean;
+  columnMap: {
+    date: string;
+    description: string;
+    amount?: string;
+    debit?: string;
+    credit?: string;
+    reference?: string;
+    balance?: string;
+  };
+  dateFormat: string;
+}
 
 export interface SMSPattern {
   id: string;
