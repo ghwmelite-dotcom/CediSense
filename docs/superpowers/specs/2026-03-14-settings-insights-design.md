@@ -33,6 +33,8 @@ Enhance the Settings page into a full management hub (profile, accounts, categor
 ### Middleware Registration
 
 ```typescript
+// IMPORTANT: Both bare path AND wildcard required — GET / needs the first, POST /report needs the second.
+// This differs from the dashboard pattern (single handler, no wildcard). Do NOT collapse to one line.
 app.use('/api/v1/insights', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/insights/*', authMiddleware, rateLimitMiddleware);
 app.route('/api/v1/insights', insights);
@@ -83,15 +85,15 @@ interface InsightsData {
 **Server-side flow:**
 1. Parse `month` param (default: current month), compute previous month
 2. Fetch summaries for both months using `fetchSummary` + `assembleSummary` from `dashboard-queries.ts`
-3. Fetch category breakdowns for both months using `fetchCategoryBreakdown`
-4. Merge categories: union of both months' category IDs, compute `change_pesewas` and `change_percentage`
-5. Compute `top_changes`: sorted by absolute `change_percentage` DESC, top 5. Categories in current but not previous are `direction: 'new'`
+3. Fetch category breakdowns for both months using `fetchCategoryBreakdown` — note: this is **expenses only** (`type = 'debit'`), so category trends show expense category changes only
+4. Merge categories: union of both months' category IDs, compute `change_pesewas` and `change_percentage`. Cap server-side to top 15 by combined spend to avoid large payloads.
+5. Compute `top_changes`: sorted by absolute `change_percentage` DESC, top 5. Categories in current but not previous are `direction: 'new'`. Categories in previous but not current get `direction: 'down'` with `current_pesewas: 0` and `change_percentage: -100`.
 
-**Previous month computation:**
+**Previous month computation** (add to `apps/api/src/lib/dashboard-queries.ts` alongside existing date utilities):
 ```typescript
-function previousMonth(month: string): string {
+export function previousMonth(month: string): string {
   const [year, mon] = month.split('-').map(Number);
-  const d = new Date(year, mon - 2, 1); // mon is 1-based, Date months are 0-based
+  const d = new Date(year, mon - 2, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 ```
@@ -133,6 +135,10 @@ Use ₵ formatting. Be warm and encouraging. Reference specific numbers from the
 Do not use headers or bullet points — write in flowing paragraphs.
 ```
 
+**AI rate limiting:** Reuse the existing `ai-usage:{userId}:{date}` KV counter from the chat route. Increment on each report generation. This shares the 40/day soft limit across both chat and reports, preventing AI cost abuse.
+
+**Future month guard:** Reject `month > currentMonth()` with 400 `VALIDATION_ERROR`, same as the dashboard endpoint.
+
 **Error response:** `{ error: { code: 'AI_ERROR', message: 'Failed to generate report' } }` with 500.
 
 ---
@@ -165,7 +171,7 @@ All sections are collapsible ghana-surface cards. Uses existing API endpoints on
 - Header: "Accounts" + "Add" button
 - List: each account shows name, type badge (MoMo/Bank/Cash/Susu), provider if set, balance
   - Type badge colors: MoMo = gold, Bank = ghana-green, Cash = muted, Susu = income
-- Inline edit: tap card to expand → name input, balance AmountInput, save/delete buttons
+- Inline edit: tap card to expand → name input, balance AmountInput, save/delete buttons. Note: `type` and `provider` are immutable after creation (not in `updateAccountSchema`) — display them as read-only badges in edit mode.
 - Add: expands inline form at top — name, type dropdown, provider (optional), balance AmountInput
 - Delete: two-tap confirmation, blocked if last account
 - API: `GET/POST/PUT/DELETE /api/v1/accounts`
@@ -231,7 +237,7 @@ InsightsPage (/insights)
 - Below columns: change indicators
   - Income change: "↑ 12.5%" (income green if up, expense red if down)
   - Expense change: "↑ 15.0%" (expense red if up — spending increase is bad, income green if down)
-- Net change with color coding
+- Net change: green if net improved (higher than previous), red if worsened
 
 ### CategoryTrendsChart
 
@@ -358,16 +364,12 @@ export interface InsightsReport {
 ## Validation (additions to packages/shared/src/schemas.ts)
 
 ```typescript
+// Shared by both GET /insights and POST /insights/report (same shape)
 export const insightsQuerySchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
 });
 
-export const insightsReportSchema = z.object({
-  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
-});
-
 export type InsightsQueryInput = z.infer<typeof insightsQuerySchema>;
-export type InsightsReportInput = z.infer<typeof insightsReportSchema>;
 ```
 
 ---
@@ -388,8 +390,9 @@ export type InsightsReportInput = z.infer<typeof insightsReportSchema>;
 
 ### Modified Files
 - `packages/shared/src/types.ts` — Add InsightsData, MonthSummary, CategoryTrend, SpendingChange types
-- `packages/shared/src/schemas.ts` — Add insightsQuerySchema, insightsReportSchema
+- `packages/shared/src/schemas.ts` — Add insightsQuerySchema
+- `apps/api/src/lib/dashboard-queries.ts` — Add `previousMonth` utility
 - `apps/api/src/index.ts` — Mount insights route
 - `apps/web/src/pages/SettingsPage.tsx` — Full rewrite with management sections
 - `apps/web/src/pages/DashboardPage.tsx` — Add "View Insights →" link
-- `apps/web/src/App.tsx` — Add `/insights` route
+- `apps/web/src/App.tsx` — Add `/insights` route with `<Route path="/insights" element={<InsightsPage />} />`
