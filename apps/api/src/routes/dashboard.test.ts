@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lastDayOfMonth, allDaysInMonth } from './dashboard.js';
+import { lastDayOfMonth, allDaysInMonth } from '../lib/dashboard-queries.js';
 
 describe('Dashboard helpers', () => {
   describe('lastDayOfMonth', () => {
