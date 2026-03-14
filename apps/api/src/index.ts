@@ -14,6 +14,7 @@ import { dashboard } from './routes/dashboard.js';
 import { ai } from './routes/ai.js';
 import { budgets } from './routes/budgets.js';
 import { goals } from './routes/goals.js';
+import { insights } from './routes/insights.js';
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -37,6 +38,9 @@ app.use('/api/v1/budgets', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/budgets/*', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/goals', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/goals/*', authMiddleware, rateLimitMiddleware);
+// IMPORTANT: Both bare path AND wildcard required — GET / needs the first, POST /report needs the second.
+app.use('/api/v1/insights', authMiddleware, rateLimitMiddleware);
+app.use('/api/v1/insights/*', authMiddleware, rateLimitMiddleware);
 
 app.route('/api/v1/users', users);
 app.route('/api/v1/accounts', accounts);
@@ -49,6 +53,7 @@ app.route('/api/v1/dashboard', dashboard);
 app.route('/api/v1/ai', ai);
 app.route('/api/v1/budgets', budgets);
 app.route('/api/v1/goals', goals);
+app.route('/api/v1/insights', insights);
 
 // Health check
 app.get('/api/v1/health', (c) => {
