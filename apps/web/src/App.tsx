@@ -17,6 +17,7 @@ import { GoalsPage } from '@/pages/GoalsPage';
 import { InsightsPage } from '@/pages/InsightsPage';
 import { RecurringPage } from '@/pages/RecurringPage';
 import { SplitsPage } from '@/pages/SplitsPage';
+import { InvestmentsPage } from '@/pages/InvestmentsPage';
 import { MonthlyReportPrint } from '@/pages/print/MonthlyReportPrint';
 import { TransactionsPrint } from '@/pages/print/TransactionsPrint';
 
@@ -86,6 +87,7 @@ export function App() {
           <Route path="/insights" element={<InsightsPage />} />
           <Route path="/recurring" element={<RecurringPage />} />
           <Route path="/splits" element={<SplitsPage />} />
+          <Route path="/investments" element={<InvestmentsPage />} />
         </Route>
 
         {/* Catch-all */}
