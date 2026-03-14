@@ -161,3 +161,17 @@ export const dashboardQuerySchema = z.object({
 });
 
 export type DashboardQueryInput = z.infer<typeof dashboardQuerySchema>;
+
+// ─── Chat schemas ─────────────────────────────────────────────────────────────
+
+export const chatMessageSchema = z.object({
+  message: z.string().min(1, 'Message cannot be empty').max(500, 'Message too long (max 500 characters)'),
+});
+
+export const chatHistoryQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  before: z.string().optional(),
+});
+
+export type ChatMessageInput = z.infer<typeof chatMessageSchema>;
+export type ChatHistoryQueryInput = z.infer<typeof chatHistoryQuerySchema>;

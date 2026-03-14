@@ -230,3 +230,14 @@ export interface DashboardData {
   }>;
   recent_transactions: DashboardRecentTransaction[];
 }
+
+// ─── Chat types ───────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: string;
+}
+
+export type ChatRole = 'user' | 'assistant';
