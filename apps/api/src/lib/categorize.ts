@@ -112,10 +112,10 @@ export async function categorizeWithAI(
     const prompt = buildPrompt(batch, categoryNames);
 
     try {
-      const response = (await ai.run('@cf/ibm/granite-3-8b-instruct', {
-        prompt,
-        max_tokens: 512,
-      })) as AiCategorizeResponse | { response?: string } | string;
+      const response = (await (ai.run as (model: string, input: Record<string, unknown>) => Promise<unknown>)(
+        '@cf/ibm/granite-3-8b-instruct',
+        { prompt, max_tokens: 512 },
+      )) as AiCategorizeResponse | { response?: string } | string;
 
       const raw = typeof response === 'string'
         ? response
