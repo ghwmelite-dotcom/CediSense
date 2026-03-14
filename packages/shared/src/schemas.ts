@@ -221,3 +221,23 @@ export const insightsQuerySchema = z.object({
 });
 
 export type InsightsQueryInput = z.infer<typeof insightsQuerySchema>;
+
+// ─── Recurring schemas ────────────────────────────────────────────────────────
+
+export const confirmCandidateSchema = z.object({
+  reminder_days_before: z.number().int().min(0).max(14).default(3),
+});
+
+export const updateRecurringSchema = z.object({
+  expected_amount_pesewas: z.number().int().positive().optional(),
+  frequency: z.enum(['weekly', 'biweekly', 'monthly']).optional(),
+  reminder_days_before: z.number().int().min(0).max(14).optional(),
+  next_due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(
+    (d) => new Date(d + 'T00:00:00') >= new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00'),
+    'Due date must be today or later'
+  ).optional(),
+  is_active: z.boolean().optional(),
+});
+
+export type ConfirmCandidateInput = z.infer<typeof confirmCandidateSchema>;
+export type UpdateRecurringInput = z.infer<typeof updateRecurringSchema>;

@@ -328,3 +328,41 @@ export interface InsightsReport {
   report: string;
   month: string;
 }
+
+// ─── Recurring types ──────────────────────────────────────────────────────────
+
+export type RecurringFrequency = 'weekly' | 'biweekly' | 'monthly';
+export type RecurringStatus = 'upcoming' | 'due_soon' | 'overdue';
+
+export interface RecurringTransaction {
+  id: string;
+  user_id: string;
+  counterparty: string;
+  category_id: string | null;
+  expected_amount_pesewas: number;
+  amount_tolerance_percent: number;
+  frequency: RecurringFrequency;
+  next_due_date: string;
+  reminder_days_before: number;
+  is_active: boolean;
+  last_detected_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecurringWithStatus extends RecurringTransaction {
+  category_name: string | null;
+  category_icon: string | null;
+  days_until_due: number;
+  status: RecurringStatus;
+}
+
+export interface RecurringCandidate {
+  id: string;
+  counterparty: string;
+  category_id: string | null;
+  avg_amount_pesewas: number;
+  frequency: RecurringFrequency;
+  occurrence_count: number;
+  last_occurrence_date: string;
+}
