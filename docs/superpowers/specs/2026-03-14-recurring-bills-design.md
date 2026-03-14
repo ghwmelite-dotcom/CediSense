@@ -63,7 +63,9 @@ CREATE TABLE IF NOT EXISTS recurring_candidates (
   occurrence_count INTEGER NOT NULL,
   last_occurrence_date TEXT NOT NULL,
   dismissed INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(user_id, counterparty)
 );
 CREATE INDEX idx_candidates_user ON recurring_candidates(user_id, dismissed);
 ```
@@ -112,14 +114,18 @@ interface DetectedCandidate {
 }
 ```
 
-**Next due date computation** (used when confirming a candidate):
+**Next due date computation** (used when confirming a candidate). Must forward-roll past today to avoid creating an already-overdue entry:
 ```typescript
 function computeNextDueDate(lastDate: string, frequency: string): string {
   const d = new Date(lastDate + 'T00:00:00');
-  switch (frequency) {
-    case 'weekly': d.setDate(d.getDate() + 7); break;
-    case 'biweekly': d.setDate(d.getDate() + 14); break;
-    case 'monthly': d.setMonth(d.getMonth() + 1); break;
+  const today = new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00');
+  // Advance until the due date is today or in the future
+  while (d <= today) {
+    switch (frequency) {
+      case 'weekly': d.setDate(d.getDate() + 7); break;
+      case 'biweekly': d.setDate(d.getDate() + 14); break;
+      case 'monthly': d.setMonth(d.getMonth() + 1); break;
+    }
   }
   return d.toISOString().slice(0, 10);
 }
@@ -151,7 +157,7 @@ Server flow:
 2. Fetch confirmed counterparties: `SELECT LOWER(counterparty) FROM recurring_transactions WHERE user_id = ?`
 3. Fetch dismissed counterparties: `SELECT LOWER(counterparty) FROM recurring_candidates WHERE user_id = ? AND dismissed = 1`
 4. Run `detectRecurringPatterns(transactions, confirmed, dismissed)`
-5. Upsert candidates: for each detected, INSERT OR REPLACE into `recurring_candidates` (match on `user_id + LOWER(counterparty)`)
+5. Upsert candidates: for each detected, use `INSERT INTO recurring_candidates (...) VALUES (...) ON CONFLICT(user_id, counterparty) DO UPDATE SET avg_amount_pesewas=excluded.avg_amount_pesewas, frequency=excluded.frequency, occurrence_count=excluded.occurrence_count, last_occurrence_date=excluded.last_occurrence_date, updated_at=datetime('now') WHERE dismissed = 0`. This updates non-dismissed candidates with fresh data but leaves dismissed ones untouched.
 6. Return all non-dismissed candidates
 
 ### `GET /api/v1/recurring/candidates`
@@ -224,9 +230,10 @@ ORDER BY r.is_active DESC, r.next_due_date ASC
 
 Server computes `days_until_due` and `status`:
 - `days_until_due = Math.ceil((due_date - now) / 86400000)`
-- `overdue`: `days_until_due < 0`
-- `due_soon`: `days_until_due <= reminder_days_before`
-- `upcoming`: otherwise
+- `overdue`: `days_until_due < 0` (past due)
+- `due_soon`: `days_until_due >= 0 && days_until_due <= reminder_days_before` (includes due today at day 0)
+- `upcoming`: `days_until_due > reminder_days_before`
+- Evaluate in order: overdue first, then due_soon, then upcoming
 
 ### `PUT /api/v1/recurring/:id`
 
@@ -377,7 +384,10 @@ export const updateRecurringSchema = z.object({
   expected_amount_pesewas: z.number().int().positive().optional(),
   frequency: z.enum(['weekly', 'biweekly', 'monthly']).optional(),
   reminder_days_before: z.number().int().min(0).max(14).optional(),
-  next_due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  next_due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(
+    (d) => new Date(d + 'T00:00:00') >= new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00'),
+    'Due date must be today or later'
+  ).optional(),
   is_active: z.boolean().optional(),
 });
 
