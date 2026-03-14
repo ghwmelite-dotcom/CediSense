@@ -8,6 +8,15 @@ const SOURCE_LABELS: Record<string, string> = {
   manual: 'Manual',
 };
 
+const SOURCE_STYLES: Record<string, string> = {
+  sms_import:
+    'bg-ghana-green/15 text-ghana-green border border-ghana-green/25',
+  csv_import:
+    'bg-gold/10 text-gold border border-gold/20',
+  manual:
+    'bg-white/8 text-muted border border-white/10',
+};
+
 interface TransactionRowProps {
   transaction: Transaction;
   categories?: Category[];
@@ -44,23 +53,32 @@ export function TransactionRow({
     category?.name ||
     'Transaction';
 
+  const sourceBadgeClass =
+    SOURCE_STYLES[transaction.source] ?? 'bg-white/8 text-muted border border-white/10';
+
   function handleRowClick() {
     if (!compact) setExpanded((prev) => !prev);
   }
 
   return (
-    <div className="rounded-xl overflow-hidden">
+    <div className="rounded-xl overflow-hidden group">
       {/* Main row */}
       <button
         onClick={handleRowClick}
-        className={`w-full flex items-center gap-3 px-4 py-3 bg-ghana-surface hover:bg-white/5 active:bg-white/10 transition-colors text-left ${
-          compact ? 'cursor-default' : 'cursor-pointer'
-        }`}
+        className={`w-full flex items-center gap-3 px-4 py-3 bg-ghana-surface
+          transition-all duration-200 text-left
+          ${compact
+            ? 'cursor-default'
+            : 'cursor-pointer hover:bg-white/[0.06] hover:scale-[1.005] active:scale-100 active:bg-white/10'
+          }`}
         aria-expanded={expanded}
         type="button"
       >
         {/* Category icon */}
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-lg">
+        <div
+          className="flex-shrink-0 w-10 h-10 rounded-full bg-white/10 flex items-center
+            justify-center text-lg transition-transform duration-200 group-hover:scale-105"
+        >
           {category?.icon ?? (isCredit ? '↓' : isTransfer ? '↔' : '↑')}
         </div>
 
@@ -73,7 +91,9 @@ export function TransactionRow({
                 {transaction.counterparty}
               </span>
             )}
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-muted font-medium shrink-0">
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold tracking-wide shrink-0 ${sourceBadgeClass}`}
+            >
               {SOURCE_LABELS[transaction.source] ?? transaction.source}
             </span>
           </div>
@@ -81,21 +101,21 @@ export function TransactionRow({
 
         {/* Amount */}
         <div className="text-right shrink-0">
-          <p className={`text-sm font-semibold ${amountColor}`}>
+          <p className={`text-sm font-semibold tabular-nums ${amountColor}`}>
             {amountSign}
             {formatPesewas(transaction.amount_pesewas)}
           </p>
           {transaction.fee_pesewas > 0 && (
-            <p className="text-muted text-[10px]">
+            <p className="text-muted text-[10px] tabular-nums">
               Fee {formatPesewas(transaction.fee_pesewas)}
             </p>
           )}
         </div>
       </button>
 
-      {/* Expanded details */}
+      {/* Expanded details — animate in */}
       {expanded && !compact && (
-        <div className="px-4 pb-4 bg-ghana-surface border-t border-white/5">
+        <div className="px-4 pb-4 bg-ghana-surface border-t border-white/5 animate-slide-down">
           <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             {transaction.counterparty && (
               <>
@@ -112,7 +132,7 @@ export function TransactionRow({
               </>
             )}
             <dt className="text-muted">Date</dt>
-            <dd className="text-white">{transaction.transaction_date}</dd>
+            <dd className="text-white tabular-nums">{transaction.transaction_date}</dd>
             <dt className="text-muted">Type</dt>
             <dd className={`font-medium capitalize ${amountColor}`}>
               {transaction.type}
@@ -133,7 +153,8 @@ export function TransactionRow({
                 <button
                   type="button"
                   onClick={() => onEdit(transaction)}
-                  className="flex-1 py-2 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors"
+                  className="flex-1 py-2 rounded-lg bg-white/10 text-white text-sm font-medium
+                    hover:bg-white/20 active:scale-95 transition-all duration-200"
                 >
                   Edit
                 </button>
@@ -142,7 +163,8 @@ export function TransactionRow({
                 <button
                   type="button"
                   onClick={() => onDelete(transaction.id)}
-                  className="flex-1 py-2 rounded-lg bg-expense/10 text-expense text-sm font-medium hover:bg-expense/20 transition-colors"
+                  className="flex-1 py-2 rounded-lg bg-expense/10 text-expense text-sm font-medium
+                    hover:bg-expense/20 active:scale-95 transition-all duration-200"
                 >
                   Delete
                 </button>

@@ -40,6 +40,15 @@ export default {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.6' },
         },
+        cursorBlink: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0' },
+        },
+        sparkleSpin: {
+          '0%': { transform: 'rotate(0deg) scale(1)' },
+          '50%': { transform: 'rotate(15deg) scale(1.1)' },
+          '100%': { transform: 'rotate(0deg) scale(1)' },
+        },
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
@@ -47,6 +56,8 @@ export default {
         'slide-down': 'slideDown 0.3s ease-out',
         shimmer: 'shimmer 2s linear infinite',
         'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+        'cursor-blink': 'cursorBlink 1s ease-in-out infinite',
+        'sparkle-spin': 'sparkleSpin 3s ease-in-out infinite',
       },
       boxShadow: {
         card: '0 2px 8px rgba(0, 0, 0, 0.3)',

@@ -23,13 +23,13 @@ export function ChatBubble({ role, content, timestamp, isStreaming }: ChatBubble
   const isUser = role === 'user';
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in`}>
       <div className={`${isUser ? 'max-w-[80%]' : 'max-w-[85%]'}`}>
         <div
-          className={`px-4 py-2.5 text-sm leading-relaxed text-white ${
+          className={`px-4 py-2.5 text-sm leading-relaxed text-white transition-shadow duration-200 ${
             isUser
-              ? 'bg-gold/20 rounded-2xl rounded-br-md'
-              : 'bg-ghana-surface rounded-2xl rounded-bl-md border border-white/10'
+              ? 'bg-gold/20 rounded-2xl rounded-br-md shadow-[0_2px_12px_rgba(212,168,67,0.12)] border border-gold/15'
+              : 'bg-ghana-surface rounded-2xl rounded-bl-md border border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.35)]'
           }`}
         >
           {isUser ? (
@@ -41,11 +41,19 @@ export function ChatBubble({ role, content, timestamp, isStreaming }: ChatBubble
             />
           )}
           {isStreaming && (
-            <span className="inline-block w-1.5 h-4 bg-gold/60 animate-pulse ml-0.5 align-text-bottom" />
+            <span
+              className="inline-block w-[3px] h-[1em] bg-gold rounded-sm ml-0.5 align-text-bottom
+                animate-cursor-blink"
+              aria-hidden="true"
+            />
           )}
         </div>
         {timestamp && (
-          <p className={`text-xs text-muted mt-1 ${isUser ? 'text-right' : 'text-left'}`}>
+          <p
+            className={`text-xs text-muted mt-1 transition-opacity ${
+              isUser ? 'text-right' : 'text-left'
+            }`}
+          >
             {formatRelativeTime(timestamp)}
           </p>
         )}
