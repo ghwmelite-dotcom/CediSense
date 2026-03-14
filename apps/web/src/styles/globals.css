@@ -4,8 +4,82 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Smooth scrolling ─────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ─── Text rendering ────────────────────────────────────────── */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 @layer base {
   body {
     @apply bg-ghana-black text-white font-sans antialiased;
   }
+}
+
+/* ─── Custom scrollbar (dark theme) ───────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Selection color ───────────────────────────────────────── */
+::selection {
+  background: rgba(212, 168, 67, 0.3);
+  color: white;
+}
+
+/* ─── Motion preferences ────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Interactive card micro-interaction ────────────────────── */
+.card-interactive {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.card-interactive:active {
+  transform: translateY(0);
+}
+
+/* ─── Shimmer skeleton loader ───────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ─── Focus ring (accessible, gold-tinted) ──────────────────── */
+:focus-visible {
+  outline: 2px solid rgba(212, 168, 67, 0.6);
+  outline-offset: 2px;
 }
