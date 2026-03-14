@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/lib/api';
-import { streamChat, type SSEEvent } from '@/lib/streaming';
+import { streamChat } from '@/lib/streaming';
 import type { ChatMessage } from '@cedisense/shared';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { ChatBubble } from '@/components/chat/ChatBubble';
@@ -19,9 +19,10 @@ export function AIChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   }, []);
 
   // Load history on mount
@@ -30,7 +31,8 @@ export function AIChatPage() {
       .then((data) => {
         setMessages(data);
         setIsLoadingHistory(false);
-        setTimeout(scrollToBottom, 100);
+        // Instant jump on initial load, then smooth for new messages
+        setTimeout(() => scrollToBottom('instant'), 50);
       })
       .catch(() => {
         setIsLoadingHistory(false);
@@ -44,7 +46,7 @@ export function AIChatPage() {
     };
   }, []);
 
-  // Scroll on new messages or streaming
+  // Scroll on new messages or streaming — smooth
   useEffect(() => {
     scrollToBottom();
   }, [messages, streamingContent, scrollToBottom]);
@@ -52,7 +54,6 @@ export function AIChatPage() {
   async function handleSend(text: string) {
     setError(null);
 
-    // Add user message to UI immediately
     const userMsg: ChatMessage = {
       id: `temp-${Date.now()}`,
       role: 'user',
@@ -128,11 +129,25 @@ export function AIChatPage() {
         <UsageWarning onDismiss={() => setShowUsageWarning(false)} />
       )}
 
-      <div className="flex-1 overflow-y-auto px-4 pt-4">
+      {/* Message area — subtle radial gradient background */}
+      <div
+        ref={scrollAreaRef}
+        className="flex-1 overflow-y-auto px-4 pt-4"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,168,67,0.04) 0%, transparent 70%), ' +
+            'radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,107,63,0.04) 0%, transparent 70%)',
+        }}
+      >
         {isLoadingHistory && (
-          <div className="space-y-3">
+          <div className="space-y-3 motion-safe:animate-fade-in">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className={`h-12 rounded-xl bg-ghana-surface animate-pulse ${i % 2 === 0 ? 'w-3/4' : 'w-2/3 ml-auto'}`} />
+              <div
+                key={i}
+                className={`h-12 rounded-xl bg-ghana-surface animate-pulse ${
+                  i % 2 === 0 ? 'w-3/4' : 'w-2/3 ml-auto'
+                }`}
+              />
             ))}
           </div>
         )}
@@ -172,7 +187,7 @@ export function AIChatPage() {
             )}
 
             {error && !isStreaming && (
-              <div className="mt-4 flex justify-start">
+              <div className="mt-4 flex justify-start motion-safe:animate-slide-up">
                 <div className="bg-expense/10 border border-expense/20 rounded-2xl rounded-bl-md px-4 py-2.5 max-w-[85%]">
                   <p className="text-expense text-sm">{error}</p>
                   <button
@@ -184,7 +199,7 @@ export function AIChatPage() {
                         handleSend(lastUserMsg.content);
                       }
                     }}
-                    className="text-gold text-xs mt-1 underline"
+                    className="text-gold text-xs mt-1 underline hover:no-underline transition-all"
                   >
                     Tap to retry
                   </button>
@@ -192,7 +207,7 @@ export function AIChatPage() {
               </div>
             )}
 
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-4" />
           </div>
         )}
       </div>

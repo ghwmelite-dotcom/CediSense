@@ -17,13 +17,36 @@ interface SettingsData {
 
 function SkeletonCard() {
   return (
-    <div className="bg-ghana-surface rounded-2xl border border-white/5 p-5 space-y-4 animate-pulse">
-      <div className="h-5 bg-white/10 rounded-lg w-1/3" />
-      <div className="space-y-3">
-        <div className="h-4 bg-white/10 rounded-lg w-full" />
-        <div className="h-4 bg-white/10 rounded-lg w-4/5" />
-        <div className="h-4 bg-white/10 rounded-lg w-3/5" />
+    <div className="bg-ghana-surface rounded-2xl border border-white/8 p-5 space-y-4 animate-pulse shadow-card">
+      <div className="flex items-center gap-2 mb-1">
+        <div className="w-1 h-4 rounded-full bg-white/15" />
+        <div className="h-4 bg-white/10 rounded-lg w-1/3" />
       </div>
+      <div className="space-y-3">
+        <div className="h-4 bg-white/8 rounded-lg w-full" />
+        <div className="h-4 bg-white/8 rounded-lg w-4/5" />
+        <div className="h-4 bg-white/8 rounded-lg w-3/5" />
+      </div>
+    </div>
+  );
+}
+
+/** Wrapper that gives each settings section a premium card look with consistent headers */
+function SettingsCard({
+  children,
+  accentColor = 'bg-gold',
+}: {
+  children: React.ReactNode;
+  accentColor?: string;
+}) {
+  return (
+    <div
+      className="bg-ghana-surface rounded-2xl border border-white/8 shadow-card
+        overflow-hidden transition-shadow hover:shadow-card-hover"
+    >
+      {/* Subtle top accent line */}
+      <div className={`h-px w-full ${accentColor} opacity-20`} />
+      <div className="p-5">{children}</div>
     </div>
   );
 }
@@ -99,15 +122,20 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 pb-24 max-w-2xl mx-auto">
-      <h1 className="text-white text-xl font-bold mb-6">Settings</h1>
+    <div className="p-4 md:p-6 pb-24 max-w-2xl mx-auto motion-safe:animate-fade-in">
+      {/* Page header */}
+      <div className="flex items-center gap-2 mb-6">
+        <div className="w-1 h-6 rounded-full bg-gold" />
+        <h1 className="text-white text-xl font-bold tracking-tight">Settings</h1>
+      </div>
 
       {error && (
-        <div className="mb-4 bg-expense/10 border border-expense/30 rounded-xl px-4 py-3">
+        <div className="mb-4 bg-expense/10 border border-expense/25 rounded-2xl px-4 py-3
+          motion-safe:animate-slide-down">
           <p className="text-expense text-sm">{error}</p>
           <button
             onClick={() => { setLoading(true); void fetchAll(); }}
-            className="text-expense text-sm font-medium underline mt-1"
+            className="text-expense text-sm font-medium underline mt-1 hover:no-underline transition-all"
           >
             Retry
           </button>
@@ -123,35 +151,77 @@ export function SettingsPage() {
         </div>
       ) : data ? (
         <div className="space-y-4">
-          <ProfileSection
-            user={data.user}
-            onUpdate={fetchUser}
-          />
-
-          <AccountsSection
-            accounts={data.accounts}
-            onRefresh={fetchAccounts}
-          />
-
-          <CategoriesSection
-            categories={data.categories}
-            onRefresh={fetchCategories}
-          />
-
-          <RulesSection
-            rules={data.rules}
-            categories={data.categories}
-            onRefresh={fetchRules}
-          />
-
-          <button
-            onClick={handleLogout}
-            className="bg-expense/10 text-expense rounded-xl py-3 w-full font-medium
-              hover:bg-expense/20 transition-colors focus:outline-none
-              focus-visible:ring-2 focus-visible:ring-expense/50"
+          {/* Profile */}
+          <div
+            className="motion-safe:animate-slide-up"
+            style={{ animationDelay: '0ms', animationFillMode: 'both' }}
           >
-            Sign Out
-          </button>
+            <SettingsCard accentColor="bg-gold">
+              <ProfileSection
+                user={data.user}
+                onUpdate={fetchUser}
+              />
+            </SettingsCard>
+          </div>
+
+          {/* Accounts */}
+          <div
+            className="motion-safe:animate-slide-up"
+            style={{ animationDelay: '60ms', animationFillMode: 'both' }}
+          >
+            <SettingsCard accentColor="bg-ghana-green">
+              <AccountsSection
+                accounts={data.accounts}
+                onRefresh={fetchAccounts}
+              />
+            </SettingsCard>
+          </div>
+
+          {/* Categories */}
+          <div
+            className="motion-safe:animate-slide-up"
+            style={{ animationDelay: '120ms', animationFillMode: 'both' }}
+          >
+            <SettingsCard accentColor="bg-gold">
+              <CategoriesSection
+                categories={data.categories}
+                onRefresh={fetchCategories}
+              />
+            </SettingsCard>
+          </div>
+
+          {/* Rules */}
+          <div
+            className="motion-safe:animate-slide-up"
+            style={{ animationDelay: '180ms', animationFillMode: 'both' }}
+          >
+            <SettingsCard accentColor="bg-ghana-green">
+              <RulesSection
+                rules={data.rules}
+                categories={data.categories}
+                onRefresh={fetchRules}
+              />
+            </SettingsCard>
+          </div>
+
+          {/* Sign out — separated with subtle divider */}
+          <div
+            className="pt-2 motion-safe:animate-slide-up"
+            style={{ animationDelay: '240ms', animationFillMode: 'both' }}
+          >
+            {/* Divider */}
+            <div className="h-px bg-white/8 mb-4" />
+            <button
+              onClick={handleLogout}
+              className="w-full py-3.5 rounded-2xl font-semibold text-sm
+                bg-expense/10 border border-expense/20 text-expense
+                hover:bg-expense/20 hover:border-expense/30
+                active:scale-[0.98] transition-all
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-expense/50"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
       ) : null}
     </div>

@@ -41,7 +41,7 @@ export function TransactionFeedPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
 
-  // Pagination — hasMore is true if last fetch returned a full page
+  // Pagination
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -73,7 +73,7 @@ export function TransactionFeedPage() {
         setCategories(cats);
         setAccounts(accs);
       })
-      .catch(() => {/* non-fatal — UI degrades gracefully */});
+      .catch(() => {/* non-fatal */});
   }, []);
 
   // Build query string
@@ -100,10 +100,6 @@ export function TransactionFeedPage() {
     setInitialLoading(true);
     setError(null);
 
-    // The transactions endpoint returns { data: results, meta: {...} }.
-    // Our api client unwraps ApiSuccess<T>.data, so we receive the `results` array
-    // when T = Transaction[]. Meta is unavailable via this path; we infer hasMore
-    // from whether the page was full.
     api
       .get<Transaction[]>(buildQuery(1))
       .then((items) => {
@@ -176,11 +172,11 @@ export function TransactionFeedPage() {
 
   return (
     <div className="pb-24">
-      {/* Sticky header with search + filters */}
-      <div className="sticky top-0 z-10 bg-ghana-dark/95 backdrop-blur border-b border-white/5 px-4 pt-4 pb-3 space-y-3">
+      {/* Sticky header — glassmorphism */}
+      <div className="sticky top-0 z-10 backdrop-blur-xl bg-ghana-dark/90 border-b border-white/8 px-4 pt-4 pb-3 space-y-3">
         <div className="flex items-center justify-between">
-          <h1 className="text-white text-xl font-bold">Transactions</h1>
-          <div className="flex items-center gap-4">
+          <h1 className="text-white text-xl font-bold tracking-tight">Transactions</h1>
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => {
@@ -191,46 +187,58 @@ export function TransactionFeedPage() {
                 if (toFilter) params.set('to', toFilter);
                 window.open(`/print/transactions?${params.toString()}`, '_blank');
               }}
-              className="text-gold text-sm font-medium hover:text-gold/80 transition-colors"
+              className="px-3 py-1.5 rounded-lg text-gold text-sm font-medium hover:bg-gold/10 transition-colors"
             >
               Export
             </button>
             <button
               type="button"
               onClick={() => navigate('/transactions/import')}
-              className="text-gold text-sm font-medium hover:text-gold/80 transition-colors"
+              className="px-3 py-1.5 rounded-lg text-gold text-sm font-medium hover:bg-gold/10 transition-colors"
             >
               Import
             </button>
           </div>
         </div>
 
-        {/* Search */}
+        {/* Search input — icon inside, rounded-2xl */}
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none">
-            🔍
-          </span>
+          <svg
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 111 11a6 6 0 0116 0z" />
+          </svg>
           <input
             type="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search transactions…"
-            className="w-full bg-white/10 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white text-sm
-              placeholder-muted focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold"
+            className="w-full bg-white/8 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-white text-sm
+              placeholder-muted focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold/60
+              transition-all"
           />
         </div>
 
-        {/* Filter chips */}
+        {/* Filter chips — pill style */}
         <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
           <select
             value={accountFilter}
             onChange={(e) => setAccountFilter(e.target.value)}
-            className="shrink-0 bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-white text-xs
-              focus:outline-none focus:ring-1 focus:ring-gold/50"
+            className={`shrink-0 border rounded-full px-3.5 py-1.5 text-xs font-medium transition-all
+              focus:outline-none focus:ring-1 focus:ring-gold/50
+              ${accountFilter
+                ? 'bg-gold/15 border-gold/40 text-gold'
+                : 'bg-white/8 border-white/10 text-muted hover:text-white hover:border-white/20'
+              }`}
           >
-            <option value="" className="bg-ghana-surface">All accounts</option>
+            <option value="" className="bg-ghana-surface text-white">All accounts</option>
             {accounts.map((a) => (
-              <option key={a.id} value={a.id} className="bg-ghana-surface">
+              <option key={a.id} value={a.id} className="bg-ghana-surface text-white">
                 {a.name}
               </option>
             ))}
@@ -239,12 +247,16 @@ export function TransactionFeedPage() {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="shrink-0 bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-white text-xs
-              focus:outline-none focus:ring-1 focus:ring-gold/50"
+            className={`shrink-0 border rounded-full px-3.5 py-1.5 text-xs font-medium transition-all
+              focus:outline-none focus:ring-1 focus:ring-gold/50
+              ${categoryFilter
+                ? 'bg-gold/15 border-gold/40 text-gold'
+                : 'bg-white/8 border-white/10 text-muted hover:text-white hover:border-white/20'
+              }`}
           >
-            <option value="" className="bg-ghana-surface">All categories</option>
+            <option value="" className="bg-ghana-surface text-white">All categories</option>
             {categories.map((c) => (
-              <option key={c.id} value={c.id} className="bg-ghana-surface">
+              <option key={c.id} value={c.id} className="bg-ghana-surface text-white">
                 {c.icon ? `${c.icon} ` : ''}{c.name}
               </option>
             ))}
@@ -256,7 +268,7 @@ export function TransactionFeedPage() {
       <div className="px-4 pt-4">
         {/* Loading skeleton */}
         {initialLoading && (
-          <div className="space-y-3">
+          <div className="space-y-3 motion-safe:animate-fade-in">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="h-16 rounded-xl bg-ghana-surface animate-pulse" />
             ))}
@@ -265,7 +277,8 @@ export function TransactionFeedPage() {
 
         {/* Error state */}
         {error && !initialLoading && (
-          <div className="text-center py-12">
+          <div className="text-center py-12 motion-safe:animate-fade-in">
+            <div className="text-4xl mb-3">⚠️</div>
             <p className="text-expense text-sm mb-4">{error}</p>
             <button
               type="button"
@@ -275,7 +288,7 @@ export function TransactionFeedPage() {
                 setPage(1);
                 setTransactions([]);
               }}
-              className="text-gold text-sm underline"
+              className="text-gold text-sm font-medium px-4 py-2 rounded-xl bg-gold/10 hover:bg-gold/20 transition-colors"
             >
               Retry
             </button>
@@ -284,24 +297,31 @@ export function TransactionFeedPage() {
 
         {/* Empty state */}
         {!initialLoading && !error && transactions.length === 0 && (
-          <div className="text-center py-16 px-6">
-            <div className="text-5xl mb-4">📋</div>
+          <div className="text-center py-16 px-6 motion-safe:animate-slide-up">
+            <div className="relative inline-flex items-center justify-center mb-6">
+              <div className="w-20 h-20 rounded-full bg-gold/10 flex items-center justify-center">
+                <span className="text-4xl" role="img" aria-label="No transactions">📋</span>
+              </div>
+              <div className="absolute inset-0 rounded-full bg-gold/5 animate-ping" style={{ animationDuration: '3s' }} />
+            </div>
             <h2 className="text-white text-lg font-semibold mb-2">No transactions yet</h2>
-            <p className="text-muted text-sm mb-8">
+            <p className="text-muted text-sm mb-8 max-w-xs mx-auto">
               Add your first transaction manually or import from SMS or CSV.
             </p>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 max-w-xs mx-auto">
               <button
                 type="button"
                 onClick={() => navigate('/add')}
-                className="w-full py-3 rounded-xl bg-gold text-ghana-black font-semibold hover:bg-gold/90 transition-colors"
+                className="w-full py-3 rounded-xl bg-gold text-ghana-black font-semibold
+                  hover:brightness-110 active:scale-[0.98] transition-all shadow-gold-glow"
               >
                 Add Manually
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/transactions/import')}
-                className="w-full py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors"
+                className="w-full py-3 rounded-xl bg-white/8 border border-white/10 text-white
+                  font-medium hover:bg-white/15 transition-colors"
               >
                 Import SMS / CSV
               </button>
@@ -309,26 +329,38 @@ export function TransactionFeedPage() {
           </div>
         )}
 
-        {/* Date-grouped transaction list */}
+        {/* Date-grouped transaction list — staggered animations */}
         {!initialLoading && !error && grouped.length > 0 && (
           <div className="space-y-6">
-            {grouped.map(([dateLabel, items]) => (
-              <section key={dateLabel}>
-                <h2 className="text-muted text-xs font-medium uppercase tracking-wider mb-2 px-1">
-                  {dateLabel}
-                </h2>
-                <div className="space-y-1">
-                  {items.map((txn) => (
-                    <div key={txn.id}>
+            {grouped.map(([dateLabel, items], groupIndex) => (
+              <section
+                key={dateLabel}
+                className="motion-safe:animate-slide-up"
+                style={{ animationDelay: `${groupIndex * 60}ms`, animationFillMode: 'both' }}
+              >
+                {/* Date group header with gold accent bar */}
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <div className="w-1 h-3.5 rounded-full bg-gold/60" />
+                  <h2 className="text-muted text-xs font-semibold uppercase tracking-wider">
+                    {dateLabel}
+                  </h2>
+                </div>
+
+                <div className="bg-ghana-surface rounded-2xl border border-white/8 shadow-card overflow-hidden">
+                  {items.map((txn, txnIndex) => (
+                    <div
+                      key={txn.id}
+                      className={txnIndex < items.length - 1 ? 'border-b border-white/5' : ''}
+                    >
                       {/* Two-tap delete confirmation banner */}
                       {deleteConfirm === txn.id && (
-                        <div className="flex items-center justify-between px-4 py-2 bg-expense/10 border border-expense/20 rounded-xl mb-1">
-                          <span className="text-expense text-sm">Delete this transaction?</span>
+                        <div className="flex items-center justify-between px-4 py-2.5 bg-expense/10 border-b border-expense/20">
+                          <span className="text-expense text-sm font-medium">Delete this transaction?</span>
                           <div className="flex gap-2">
                             <button
                               type="button"
                               onClick={() => setDeleteConfirm(null)}
-                              className="text-muted text-xs px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20"
+                              className="text-muted text-xs px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
                             >
                               Cancel
                             </button>
@@ -336,7 +368,8 @@ export function TransactionFeedPage() {
                               type="button"
                               onClick={() => handleDelete(txn.id)}
                               disabled={actionLoading}
-                              className="text-expense text-xs px-3 py-1 rounded-lg bg-expense/20 hover:bg-expense/30 disabled:opacity-50"
+                              className="text-expense text-xs px-3 py-1.5 rounded-lg bg-expense/20
+                                hover:bg-expense/30 disabled:opacity-50 transition-colors"
                             >
                               {actionLoading ? '…' : 'Delete'}
                             </button>

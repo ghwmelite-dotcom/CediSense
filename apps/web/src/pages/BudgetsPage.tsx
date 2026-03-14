@@ -55,14 +55,17 @@ export function BudgetsPage() {
   return (
     <div className="pb-24">
       {/* Sticky page header */}
-      <div className="sticky top-0 z-30 bg-ghana-dark/95 backdrop-blur-md border-b border-white/10 px-4 py-4">
+      <div className="sticky top-0 z-30 backdrop-blur-xl bg-ghana-dark/90 border-b border-white/8 px-4 py-4">
         <div className="flex items-center justify-between max-w-screen-lg mx-auto">
-          <h1 className="text-white text-xl font-bold">Budgets</h1>
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-5 rounded-full bg-gold" />
+            <h1 className="text-white text-xl font-bold tracking-tight">Budgets</h1>
+          </div>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
             className="px-4 py-2 rounded-xl bg-gold text-ghana-dark font-semibold text-sm
-              hover:brightness-110 active:scale-95 transition-all min-h-[44px]"
+              hover:brightness-110 active:scale-95 transition-all min-h-[44px] shadow-gold-glow"
           >
             + Add Budget
           </button>
@@ -72,46 +75,60 @@ export function BudgetsPage() {
       <div className="px-4 pt-4 space-y-4 max-w-screen-lg mx-auto">
         {/* Loading skeleton */}
         {loading && (
-          <div className="space-y-4">
-            <div className="h-20 rounded-xl bg-ghana-surface animate-pulse" />
-            <div className="h-28 rounded-xl bg-ghana-surface animate-pulse" />
-            <div className="h-28 rounded-xl bg-ghana-surface animate-pulse" />
-            <div className="h-28 rounded-xl bg-ghana-surface animate-pulse" />
+          <div className="space-y-4 motion-safe:animate-fade-in">
+            <div className="h-20 rounded-2xl bg-ghana-surface animate-pulse" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-28 rounded-2xl bg-ghana-surface animate-pulse" />
+            ))}
           </div>
         )}
 
         {/* Loaded state */}
         {!loading && (
           <>
-            {/* Summary bar (only if budgets exist) */}
+            {/* Summary bar */}
             {budgets.length > 0 && <BudgetSummaryBar budgets={budgets} />}
 
-            {/* Budget list */}
+            {/* Budget list — staggered animations */}
             {budgets.length > 0 ? (
               <div className="space-y-4">
-                {budgets.map((budget) => (
-                  <BudgetCard
+                {budgets.map((budget, index) => (
+                  <div
                     key={budget.id}
-                    budget={budget}
-                    onUpdate={handleUpdate}
-                    onDelete={handleDelete}
-                  />
+                    className="motion-safe:animate-slide-up"
+                    style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'both' }}
+                  >
+                    <BudgetCard
+                      budget={budget}
+                      onUpdate={handleUpdate}
+                      onDelete={handleDelete}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
               /* Empty state */
-              <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-                <span className="text-5xl" role="img" aria-label="Chart">
-                  📊
-                </span>
-                <p className="text-muted text-sm max-w-xs">
-                  Set spending limits for your categories to track where your money goes each month.
-                </p>
+              <div className="flex flex-col items-center justify-center py-20 gap-4 text-center motion-safe:animate-slide-up">
+                {/* Animated illustration feel */}
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full bg-ghana-surface border border-white/8 flex items-center justify-center shadow-card">
+                    <span className="text-4xl" role="img" aria-label="Budgets">📊</span>
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center">
+                    <span className="text-gold text-xs font-bold">0</span>
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-white font-semibold mb-1">No budgets yet</h2>
+                  <p className="text-muted text-sm max-w-xs">
+                    Set spending limits for your categories to track where your money goes each month.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => setModalOpen(true)}
                   className="mt-2 px-6 py-3 rounded-xl bg-gold text-ghana-dark font-semibold text-sm
-                    hover:brightness-110 active:scale-95 transition-all min-h-[44px]"
+                    hover:brightness-110 active:scale-95 transition-all min-h-[44px] shadow-gold-glow"
                 >
                   Create your first budget
                 </button>

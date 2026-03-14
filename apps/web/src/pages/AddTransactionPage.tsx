@@ -5,10 +5,10 @@ import { api, ApiRequestError } from '@/lib/api';
 import { AmountInput } from '@/components/transactions/AmountInput';
 import { CategoryPicker } from '@/components/transactions/CategoryPicker';
 
-const TYPE_OPTIONS: { value: TransactionType; label: string; color: string }[] = [
-  { value: 'credit', label: 'Income', color: 'text-income' },
-  { value: 'debit', label: 'Expense', color: 'text-expense' },
-  { value: 'transfer', label: 'Transfer', color: 'text-gold' },
+const TYPE_OPTIONS: { value: TransactionType; label: string; emoji: string; activeClass: string }[] = [
+  { value: 'credit', label: 'Income', emoji: '↑', activeClass: 'bg-income/20 text-income border-income/40' },
+  { value: 'debit', label: 'Expense', emoji: '↓', activeClass: 'bg-expense/20 text-expense border-expense/40' },
+  { value: 'transfer', label: 'Transfer', emoji: '⇄', activeClass: 'bg-gold/20 text-gold border-gold/40' },
 ];
 
 function todayISODate(): string {
@@ -47,7 +47,6 @@ export function AddTransactionPage() {
       .then(([accs, cats]) => {
         setAccounts(accs);
         setCategories(cats);
-        // Pre-select primary account
         const primary = accs.find((a) => a.is_primary === 1);
         if (primary && !accountId) setAccountId(primary.id);
       })
@@ -97,19 +96,25 @@ export function AddTransactionPage() {
   const categoryTypeFilter =
     type === 'credit' ? 'income' : type === 'debit' ? 'expense' : 'transfer';
 
+  const inputClass =
+    'w-full bg-white/8 border border-white/10 rounded-xl px-4 py-3 text-white text-sm ' +
+    'placeholder-muted focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-gold/60 ' +
+    'transition-all';
+
   return (
-    <div className="p-4 md:p-6 pb-32">
+    <div className="p-4 md:p-6 pb-32 motion-safe:animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+          className="w-10 h-10 rounded-full bg-white/8 border border-white/10 flex items-center justify-center
+            text-white hover:bg-white/15 transition-colors"
           aria-label="Go back"
         >
           ←
         </button>
-        <h1 className="text-white text-xl font-bold">
+        <h1 className="text-white text-xl font-bold tracking-tight">
           {editId ? 'Edit Transaction' : 'Add Transaction'}
         </h1>
       </div>
@@ -121,147 +126,158 @@ export function AddTransactionPage() {
           ))}
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-          {/* Type segmented control */}
-          <div>
-            <label className="block text-muted text-xs font-medium uppercase tracking-wider mb-2">
-              Type
-            </label>
-            <div className="flex gap-1 bg-white/5 rounded-xl p-1">
-              {TYPE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => {
-                    setType(opt.value);
-                    setCategoryId(null);
-                  }}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                    type === opt.value
-                      ? `bg-ghana-surface ${opt.color} shadow-sm`
-                      : 'text-muted hover:text-white'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+        /* Premium card container */
+        <div className="bg-ghana-surface rounded-2xl border border-white/8 shadow-card p-5">
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            {/* Transaction type — pill-style toggle */}
+            <div>
+              <label className="block text-muted text-xs font-semibold uppercase tracking-wider mb-3">
+                Type
+              </label>
+              <div className="flex gap-2 bg-black/30 rounded-2xl p-1.5">
+                {TYPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      setType(opt.value);
+                      setCategoryId(null);
+                    }}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 ${
+                      type === opt.value
+                        ? `${opt.activeClass} shadow-sm`
+                        : 'border-transparent text-muted hover:text-white'
+                    }`}
+                  >
+                    <span className="mr-1 opacity-70">{opt.emoji}</span>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Amount */}
-          <div>
-            <label className="block text-muted text-xs font-medium uppercase tracking-wider mb-2">
-              Amount
-            </label>
-            <AmountInput
-              valuePesewas={amountPesewas}
-              onChange={setAmountPesewas}
-              required
-            />
-          </div>
+            {/* Amount */}
+            <div>
+              <label className="block text-muted text-xs font-semibold uppercase tracking-wider mb-3">
+                Amount
+              </label>
+              <AmountInput
+                valuePesewas={amountPesewas}
+                onChange={setAmountPesewas}
+                required
+              />
+            </div>
 
-          {/* Account */}
-          <div>
-            <label className="block text-muted text-xs font-medium uppercase tracking-wider mb-2">
-              Account
-            </label>
-            <select
-              value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              required
-              className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm
-                focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold appearance-none"
+            {/* Account */}
+            <div>
+              <label className="block text-muted text-xs font-semibold uppercase tracking-wider mb-3">
+                Account
+              </label>
+              <select
+                value={accountId}
+                onChange={(e) => setAccountId(e.target.value)}
+                required
+                className={`${inputClass} appearance-none`}
+              >
+                <option value="" className="bg-ghana-surface text-muted">Select account…</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id} className="bg-ghana-surface text-white">
+                    {a.name}
+                    {a.is_primary === 1 ? ' (Primary)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-muted text-xs font-semibold uppercase tracking-wider mb-3">
+                Category
+              </label>
+              <CategoryPicker
+                categories={categories}
+                value={categoryId}
+                onChange={setCategoryId}
+                filterType={categoryTypeFilter}
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-muted text-xs font-semibold uppercase tracking-wider mb-3">
+                Description
+              </label>
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                maxLength={500}
+                placeholder="What was this for?"
+                className={inputClass}
+              />
+            </div>
+
+            {/* Counterparty */}
+            <div>
+              <label className="block text-muted text-xs font-semibold uppercase tracking-wider mb-3">
+                Counterparty{' '}
+                <span className="normal-case font-normal text-muted/60">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={counterparty}
+                onChange={(e) => setCounterparty(e.target.value)}
+                maxLength={200}
+                placeholder="Person or business name"
+                className={inputClass}
+              />
+            </div>
+
+            {/* Date */}
+            <div>
+              <label className="block text-muted text-xs font-semibold uppercase tracking-wider mb-3">
+                Date
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+                className={`${inputClass} [color-scheme:dark]`}
+              />
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="px-4 py-3 rounded-xl bg-expense/10 border border-expense/25 text-expense text-sm
+                motion-safe:animate-slide-down">
+                {error}
+              </div>
+            )}
+
+            {/* Submit — gold glow */}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-4 rounded-xl font-semibold text-base text-ghana-black
+                bg-gold hover:brightness-110 active:scale-[0.98] transition-all
+                shadow-gold-glow disabled:opacity-40 disabled:cursor-not-allowed
+                disabled:shadow-none"
             >
-              <option value="" className="bg-ghana-surface text-muted">Select account…</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id} className="bg-ghana-surface text-white">
-                  {a.name}
-                  {a.is_primary === 1 ? ' (Primary)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-muted text-xs font-medium uppercase tracking-wider mb-2">
-              Category
-            </label>
-            <CategoryPicker
-              categories={categories}
-              value={categoryId}
-              onChange={setCategoryId}
-              filterType={categoryTypeFilter}
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-muted text-xs font-medium uppercase tracking-wider mb-2">
-              Description
-            </label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              maxLength={500}
-              placeholder="What was this for?"
-              className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm
-                placeholder-muted focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold"
-            />
-          </div>
-
-          {/* Counterparty */}
-          <div>
-            <label className="block text-muted text-xs font-medium uppercase tracking-wider mb-2">
-              Counterparty{' '}
-              <span className="normal-case font-normal">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={counterparty}
-              onChange={(e) => setCounterparty(e.target.value)}
-              maxLength={200}
-              placeholder="Person or business name"
-              className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm
-                placeholder-muted focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold"
-            />
-          </div>
-
-          {/* Date */}
-          <div>
-            <label className="block text-muted text-xs font-medium uppercase tracking-wider mb-2">
-              Date
-            </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-              className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm
-                focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold
-                [color-scheme:dark]"
-            />
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="px-4 py-3 rounded-xl bg-expense/10 border border-expense/20 text-expense text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-4 rounded-xl bg-gold text-ghana-black font-semibold text-base
-              hover:bg-gold/90 active:scale-[0.98] transition-all
-              disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {submitting ? 'Saving…' : 'Save Transaction'}
-          </button>
-        </form>
+              {submitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Saving…
+                </span>
+              ) : (
+                'Save Transaction'
+              )}
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );
