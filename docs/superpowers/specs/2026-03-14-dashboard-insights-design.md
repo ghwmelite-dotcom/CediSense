@@ -38,60 +38,19 @@ Replace the placeholder DashboardPage with a data-driven analytics dashboard sho
 - Requires authentication (same auth middleware as other routes)
 - `month` parameter: `YYYY-MM` format, defaults to current month if omitted
 - Validate month format, reject future months beyond current
+- Returns `{ data: DashboardData }` wrapped in the standard `ApiSuccess<T>` envelope (same as all other endpoints)
+- Error responses: `{ error: { code: 'VALIDATION_ERROR', message: '...' } }` with HTTP 400 for invalid month format or future months
 
 ### Response Shape
 
-```typescript
-interface DashboardResponse {
-  month: string; // "2026-03"
-  accounts: {
-    total_balance_pesewas: number;
-    items: Array<{
-      id: string;
-      name: string;
-      type: AccountType;
-      provider: string | null;
-      balance_pesewas: number;
-    }>;
-  };
-  summary: {
-    total_income_pesewas: number;
-    total_expenses_pesewas: number;
-    total_fees_pesewas: number;
-    transaction_count: number;
-  };
-  category_breakdown: Array<{
-    category_id: string;
-    name: string;
-    icon: string;
-    color: string;
-    total_pesewas: number;
-    transaction_count: number;
-    percentage: number; // server-computed, e.g. 34.2
-  }>; // sorted by total_pesewas DESC, expenses only
-  daily_trend: Array<{
-    date: string;          // "2026-03-01"
-    total_pesewas: number; // daily spending total, 0 for no-spend days
-  }>; // all days in the month, including zero-spend days
-  recent_transactions: Array<{
-    id: string;
-    account_id: string;
-    category_id: string | null;
-    type: TransactionType;
-    amount_pesewas: number;
-    fee_pesewas: number;
-    description: string | null;
-    counterparty: string | null;
-    reference: string | null;
-    source: TransactionSource;
-    transaction_date: string;
-    created_at: string;
-    category_name: string | null;
-    category_icon: string | null;
-    account_name: string;
-  }>; // last 5, most recent first
-}
-```
+The response is wrapped in the standard `ApiSuccess<DashboardData>` envelope: `c.json({ data: dashboardData })`.
+
+See the `DashboardData` type definition in the [Types section](#types-additions-to-packagessabornedsrctypests) below for the full shape. Key notes:
+
+- `category_breakdown[].icon` and `category_breakdown[].color` are non-nullable strings — SQL uses `COALESCE(c.icon, '📦')` and `COALESCE(c.color, '#888888')` to provide defaults
+- `category_breakdown` includes an "Uncategorized" entry for debit transactions with no category (computed as remainder)
+- `summary` counts only `credit` as income and `debit` as expenses; `transfer` amounts are excluded from totals but included in `transaction_count`
+- `recent_transactions` are NOT month-filtered — they show the user's 5 most recent transactions globally, because users want to see latest activity regardless of which historical month they are viewing
 
 ### SQL Queries
 
@@ -112,11 +71,13 @@ All queries scoped to `user_id` from auth context. Month range computed as `YYYY
    WHERE user_id = ? AND transaction_date >= ? AND transaction_date <= ?
    GROUP BY type
    ```
-   Map `credit` → income, `debit` → expenses. Sum fees across all types.
+   Map `credit` → income, `debit` → expenses. `transfer` type is excluded from income/expense totals but included in `transaction_count`. Sum fees across all types.
 
 3. **Category breakdown:**
    ```sql
-   SELECT c.id, c.name, c.icon, c.color,
+   SELECT c.id, c.name,
+          COALESCE(c.icon, '📦') as icon,
+          COALESCE(c.color, '#888888') as color,
           SUM(t.amount_pesewas) as total_pesewas,
           COUNT(*) as transaction_count
    FROM transactions t
@@ -127,6 +88,8 @@ All queries scoped to `user_id` from auth context. Month range computed as `YYYY
    ORDER BY total_pesewas DESC
    ```
    Compute `percentage` server-side: `(category_total / grand_total) * 100`, rounded to 1 decimal.
+
+   **Uncategorized transactions:** After querying categorized totals, compute the uncategorized amount as `total_expenses - SUM(categorized_totals)`. If > 0, append an "Uncategorized" entry with `category_id: 'uncategorized'`, `icon: '❓'`, `color: '#888888'`. This ensures the donut always sums to 100%.
 
 4. **Daily trend:**
    ```sql
@@ -140,7 +103,10 @@ All queries scoped to `user_id` from auth context. Month range computed as `YYYY
 
 5. **Recent transactions:**
    ```sql
-   SELECT t.*, c.name as category_name, c.icon as category_icon, a.name as account_name
+   SELECT t.id, t.account_id, t.category_id, t.type, t.amount_pesewas,
+          t.fee_pesewas, t.description, t.counterparty, t.reference,
+          t.source, t.transaction_date, t.created_at,
+          c.name as category_name, c.icon as category_icon, a.name as account_name
    FROM transactions t
    LEFT JOIN categories c ON t.category_id = c.id
    LEFT JOIN accounts a ON t.account_id = a.id
@@ -148,13 +114,24 @@ All queries scoped to `user_id` from auth context. Month range computed as `YYYY
    ORDER BY t.transaction_date DESC, t.created_at DESC
    LIMIT 5
    ```
+   Note: Explicit column list instead of `SELECT t.*` to avoid sending `raw_text` (SMS body) to the frontend.
+   Note: This query is NOT month-filtered — it returns the 5 most recent transactions globally.
+
+### Middleware Registration
+
+Register middleware WITHOUT wildcard for the root-level GET:
+```typescript
+app.use('/api/v1/dashboard', authMiddleware, rateLimitMiddleware);
+app.route('/api/v1/dashboard', dashboard);
+```
+No wildcard `/*` — the dashboard route is a single GET on `/` (the sub-router root).
 
 ### Drill-Down
 
 No new endpoints. Tapping a category navigates to:
 `/transactions?category_id=X&from=YYYY-MM-01&to=YYYY-MM-DD`
 
-This reuses the existing transaction feed page with its filter support.
+This reuses the existing transaction feed page. **Requires modification:** `TransactionFeedPage` must be updated to read initial filter state from URL search params (`useSearchParams`). Currently filters are initialized as empty strings — they need to be seeded from query params on mount.
 
 ---
 
@@ -230,7 +207,8 @@ DashboardPage
 ### RecentTransactions
 
 - Reuses existing `TransactionRow` component
-- Shows last 5 transactions (from API response, not month-filtered)
+- Pass a `categories` array alongside transactions (fetch categories from the dashboard response's category_breakdown, mapping to the shape TransactionRow expects). Alternatively, make a separate `/categories` call on mount — simpler since TransactionRow already expects `Category[]`.
+- Shows last 5 transactions (from API response, not month-filtered — see API Design section for rationale)
 - "See all →" link at bottom navigates to `/transactions`
 - Same expand-on-tap behavior as transaction feed
 
@@ -238,7 +216,7 @@ DashboardPage
 
 **Mobile (<768px):**
 - Single column, full-width cards
-- Cards stacked vertically with 12px gap
+- Cards stacked vertically with 16px gap
 - Chart heights: 200px
 - Donut: 180px diameter
 - Padding: 16px horizontal
@@ -310,7 +288,7 @@ DashboardPage
 
 - Base-8 grid: 8px, 16px, 24px, 32px increments
 - Card padding: 16px (p-4)
-- Card gap: 12px (gap-3) mobile, 16px (gap-4) desktop
+- Card gap: 16px (gap-4)
 - Card border-radius: 12px (rounded-xl)
 
 ---
@@ -328,6 +306,34 @@ DashboardPage
 ## Types (additions to packages/shared/src/types.ts)
 
 ```typescript
+export interface CategoryBreakdownItem {
+  category_id: string;  // real ID or 'uncategorized' for the remainder
+  name: string;
+  icon: string;         // non-null, COALESCE'd to '📦' or '❓' for uncategorized
+  color: string;        // non-null, COALESCE'd to '#888888'
+  total_pesewas: number;
+  transaction_count: number;
+  percentage: number;   // e.g. 34.2
+}
+
+export interface DashboardRecentTransaction {
+  id: string;
+  account_id: string;
+  category_id: string | null;
+  type: TransactionType;
+  amount_pesewas: number;
+  fee_pesewas: number;
+  description: string | null;
+  counterparty: string | null;
+  reference: string | null;
+  source: TransactionSource;
+  transaction_date: string;
+  created_at: string;
+  category_name: string | null;
+  category_icon: string | null;
+  account_name: string;
+}
+
 export interface DashboardData {
   month: string;
   accounts: {
@@ -338,26 +344,14 @@ export interface DashboardData {
     total_income_pesewas: number;
     total_expenses_pesewas: number;
     total_fees_pesewas: number;
-    transaction_count: number;
+    transaction_count: number; // includes all types (credit, debit, transfer)
   };
-  category_breakdown: Array<{
-    category_id: string;
-    name: string;
-    icon: string;
-    color: string;
-    total_pesewas: number;
-    transaction_count: number;
-    percentage: number;
-  }>;
+  category_breakdown: CategoryBreakdownItem[]; // sorted by total_pesewas DESC, includes 'uncategorized' if applicable
   daily_trend: Array<{
     date: string;
     total_pesewas: number;
   }>;
-  recent_transactions: Array<Transaction & {
-    category_name: string | null;
-    category_icon: string | null;
-    account_name: string;
-  }>;
+  recent_transactions: DashboardRecentTransaction[]; // last 5 globally, NOT month-filtered
 }
 ```
 
@@ -387,8 +381,9 @@ export const dashboardQuerySchema = z.object({
 ### Modified Files
 - `packages/shared/src/types.ts` — Add `DashboardData` type
 - `packages/shared/src/schemas.ts` — Add `dashboardQuerySchema`
-- `apps/api/src/index.ts` — Mount dashboard route
+- `apps/api/src/index.ts` — Mount dashboard route (without wildcard middleware)
 - `apps/web/src/pages/DashboardPage.tsx` — Replace placeholder with real dashboard
+- `apps/web/src/pages/TransactionFeedPage.tsx` — Read initial filters from URL search params for drill-down support
 - `apps/web/package.json` — Add `recharts` dependency
 
 ### Test Files
