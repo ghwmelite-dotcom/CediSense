@@ -241,3 +241,45 @@ export interface ChatMessage {
 }
 
 export type ChatRole = 'user' | 'assistant';
+
+// ─── Budget types ─────────────────────────────────────────────────────────────
+
+export interface Budget {
+  id: string;
+  user_id: string;
+  category_id: string;
+  amount_pesewas: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type BudgetStatus = 'on_track' | 'warning' | 'exceeded';
+
+export interface BudgetWithSpending extends Budget {
+  category_name: string;
+  category_icon: string;
+  category_color: string;
+  spent_pesewas: number;
+  percentage: number;
+  status: BudgetStatus;
+  remaining_pesewas: number;
+}
+
+// ─── Savings Goal types ───────────────────────────────────────────────────────
+
+export interface SavingsGoal {
+  id: string;
+  user_id: string;
+  name: string;
+  target_pesewas: number;
+  current_pesewas: number;
+  deadline: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SavingsGoalWithProgress extends SavingsGoal {
+  percentage: number;
+  days_remaining: number | null;
+  is_complete: boolean;
+}

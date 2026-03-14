@@ -175,3 +175,41 @@ export const chatHistoryQuerySchema = z.object({
 
 export type ChatMessageInput = z.infer<typeof chatMessageSchema>;
 export type ChatHistoryQueryInput = z.infer<typeof chatHistoryQuerySchema>;
+
+// ─── Budget schemas ───────────────────────────────────────────────────────────
+
+export const createBudgetSchema = z.object({
+  category_id: z.string().min(1),
+  amount_pesewas: z.number().int().positive(),
+});
+
+export const updateBudgetSchema = z.object({
+  amount_pesewas: z.number().int().positive(),
+});
+
+// ─── Goal schemas ─────────────────────────────────────────────────────────────
+
+export const createGoalSchema = z.object({
+  name: z.string().min(1).max(100),
+  target_pesewas: z.number().int().positive(),
+  deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(
+    (d) => new Date(d + 'T00:00:00') >= new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00'),
+    'Deadline must be today or later'
+  ).optional(),
+});
+
+export const updateGoalSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  target_pesewas: z.number().int().positive().optional(),
+  deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+});
+
+export const contributeSchema = z.object({
+  amount_pesewas: z.number().int().positive(),
+});
+
+export type CreateBudgetInput = z.infer<typeof createBudgetSchema>;
+export type UpdateBudgetInput = z.infer<typeof updateBudgetSchema>;
+export type CreateGoalInput = z.infer<typeof createGoalSchema>;
+export type UpdateGoalInput = z.infer<typeof updateGoalSchema>;
+export type ContributeInput = z.infer<typeof contributeSchema>;
