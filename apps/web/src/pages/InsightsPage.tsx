@@ -51,20 +51,17 @@ export function InsightsPage() {
     <div className="pb-24">
       <MonthPicker month={month} onMonthChange={setMonth} />
 
-      <div className="px-4 pt-4 space-y-4 max-w-screen-lg mx-auto">
+      <div className="px-4 pt-5 space-y-5 max-w-screen-lg mx-auto">
         {/* Page header */}
         <div className="flex items-center justify-between motion-safe:animate-fade-in">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-5 rounded-full bg-gold" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-0.5 h-5 rounded-full bg-gold/50" />
             <h1 className="text-white text-xl font-bold tracking-tight">Insights</h1>
           </div>
-          {/* Gold gradient Export button */}
           <button
             type="button"
             onClick={() => window.open(`/print/report?month=${month}`, '_blank')}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-ghana-black
-              bg-gradient-to-r from-gold to-yellow-400 hover:brightness-110
-              active:scale-95 transition-all shadow-gold-glow no-print min-h-[40px]"
+            className="btn-gold flex items-center gap-1.5 px-4 py-2.5 text-sm no-print min-h-[44px]"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
@@ -76,22 +73,26 @@ export function InsightsPage() {
         {/* Loading skeleton */}
         {loading && (
           <div className="space-y-4 motion-safe:animate-fade-in">
-            <div className="h-48 rounded-2xl bg-ghana-surface animate-pulse" />
-            <div className="h-[300px] rounded-2xl bg-ghana-surface animate-pulse" />
-            <div className="h-48 rounded-2xl bg-ghana-surface animate-pulse" />
-            <div className="h-48 rounded-2xl bg-ghana-surface animate-pulse" />
+            <div className="h-48 rounded-2xl skeleton" />
+            <div className="h-[300px] rounded-2xl skeleton" />
+            <div className="h-48 rounded-2xl skeleton" />
+            <div className="h-48 rounded-2xl skeleton" />
           </div>
         )}
 
         {/* Error state */}
         {error && !loading && (
-          <div className="text-center py-12 motion-safe:animate-fade-in">
-            <div className="text-4xl mb-3">📡</div>
-            <p className="text-expense text-sm mb-4">{error}</p>
+          <div className="text-center py-16 motion-safe:animate-fade-in">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-expense/[0.06] flex items-center justify-center">
+              <svg className="w-7 h-7 text-expense/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+            </div>
+            <p className="text-muted text-sm mb-4">{error}</p>
             <button
               type="button"
               onClick={() => void fetchInsights(month)}
-              className="text-gold text-sm font-medium px-4 py-2 rounded-xl bg-gold/10 hover:bg-gold/20 transition-colors"
+              className="text-gold text-sm font-medium px-5 py-2.5 rounded-xl bg-gold/[0.06] hover:bg-gold/[0.1] transition-colors min-h-[44px]"
             >
               Retry
             </button>
@@ -101,17 +102,19 @@ export function InsightsPage() {
         {/* Empty state */}
         {!loading && !error && isEmpty && (
           <div className="text-center py-20 motion-safe:animate-slide-up">
-            <div className="w-20 h-20 rounded-full bg-ghana-surface border border-white/8 flex items-center justify-center mx-auto mb-4 shadow-card">
-              <span className="text-3xl" role="img" aria-label="No data">📈</span>
+            <div className="w-20 h-20 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-5">
+              <svg className="w-8 h-8 text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+              </svg>
             </div>
             <h2 className="text-white font-semibold mb-2">Not enough data yet</h2>
-            <p className="text-muted text-sm max-w-xs mx-auto">
+            <p className="text-muted text-sm max-w-xs mx-auto leading-relaxed">
               Add a few transactions to start seeing insights for this month.
             </p>
           </div>
         )}
 
-        {/* Insights content — staggered cards */}
+        {/* Insights content */}
         {data && !loading && !error && !isEmpty && (
           <>
             <div
@@ -133,7 +136,6 @@ export function InsightsPage() {
               <CategoryTrendsChart trends={data.category_trends} />
             </div>
 
-            {/* Desktop 2-col, mobile stacked */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div
                 className="motion-safe:animate-slide-up"

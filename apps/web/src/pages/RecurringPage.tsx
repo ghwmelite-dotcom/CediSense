@@ -72,19 +72,18 @@ export function RecurringPage() {
   return (
     <div className="pb-24">
       {/* Sticky page header */}
-      <div className="sticky top-0 z-30 backdrop-blur-xl bg-ghana-dark/90 border-b border-white/8 px-4 py-4">
+      <div className="sticky top-0 z-30 backdrop-blur-xl bg-ghana-dark/95 border-b border-white/[0.04] px-4 py-4">
         <div className="flex items-center justify-between max-w-screen-lg mx-auto">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-5 rounded-full bg-gold" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-0.5 h-5 rounded-full bg-gold/50" />
             <h1 className="text-white text-xl font-bold tracking-tight">Recurring &amp; Bills</h1>
           </div>
           <button
             type="button"
             onClick={handleScan}
             disabled={scanning}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold text-ghana-dark font-semibold
-              text-sm hover:brightness-110 active:scale-95 transition-all min-h-[44px]
-              shadow-gold-glow disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none"
+            className="btn-gold flex items-center gap-2 px-4 py-2.5 text-sm min-h-[44px]
+              disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {scanning ? (
               <>
@@ -92,7 +91,7 @@ export function RecurringPage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Scanning…
+                Scanning...
               </>
             ) : (
               <>
@@ -106,13 +105,13 @@ export function RecurringPage() {
         </div>
       </div>
 
-      <div className="px-4 pt-4 space-y-6 max-w-screen-lg mx-auto">
+      <div className="px-4 pt-5 space-y-6 max-w-screen-lg mx-auto">
         {/* Loading skeleton */}
         {loading && (
           <div className="space-y-4 motion-safe:animate-fade-in">
-            <div className="h-20 rounded-2xl bg-ghana-surface animate-pulse" />
+            <div className="h-20 rounded-2xl skeleton" />
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-28 rounded-2xl bg-ghana-surface animate-pulse" />
+              <div key={i} className="h-28 rounded-2xl skeleton" />
             ))}
           </div>
         )}
@@ -122,10 +121,10 @@ export function RecurringPage() {
           <>
             {/* Empty state */}
             {isEmpty && (
-              <div className="flex flex-col items-center justify-center py-20 gap-4 text-center motion-safe:animate-slide-up">
-                <div className="w-24 h-24 rounded-full bg-ghana-surface border border-white/8 flex items-center justify-center shadow-card">
+              <div className="flex flex-col items-center justify-center py-20 gap-5 text-center motion-safe:animate-slide-up">
+                <div className="w-24 h-24 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
                   <svg
-                    className="w-10 h-10 text-muted"
+                    className="w-10 h-10 text-muted/40"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -144,8 +143,8 @@ export function RecurringPage() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-white font-semibold mb-1">No bills detected yet</h2>
-                  <p className="text-muted text-sm max-w-xs">
+                  <h2 className="text-white font-semibold mb-1.5">No bills detected yet</h2>
+                  <p className="text-muted text-sm max-w-xs leading-relaxed">
                     Scan your transactions to find recurring bills and subscriptions automatically.
                   </p>
                 </div>
@@ -153,32 +152,32 @@ export function RecurringPage() {
                   type="button"
                   onClick={handleScan}
                   disabled={scanning}
-                  className="mt-2 px-6 py-3 rounded-xl bg-gold text-ghana-dark font-semibold text-sm
-                    hover:brightness-110 active:scale-95 transition-all min-h-[44px]
-                    shadow-gold-glow disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="btn-gold mt-1 px-6 py-3 text-sm min-h-[44px]
+                    disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {scanning ? 'Scanning…' : 'Scan Now'}
+                  {scanning ? 'Scanning...' : 'Scan Now'}
                 </button>
               </div>
             )}
 
-            {/* Candidates section — gold gradient border banner */}
+            {/* Candidates section */}
             {candidates.length > 0 && (
               <section className="space-y-3 motion-safe:animate-slide-up">
-                {/* Premium gold gradient border banner */}
                 <div
                   className="rounded-2xl p-px"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(212,168,67,0.5) 0%, rgba(212,168,67,0.15) 50%, rgba(0,107,63,0.3) 100%)',
+                    background: 'linear-gradient(135deg, rgba(212,168,67,0.3) 0%, rgba(212,168,67,0.08) 50%, rgba(0,107,63,0.15) 100%)',
                   }}
                 >
-                  <div className="bg-ghana-surface rounded-2xl px-4 py-4">
+                  <div className="bg-ghana-surface rounded-2xl px-5 py-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-gold/20 border border-gold/30 flex items-center justify-center shrink-0 mt-0.5">
-                        <span className="text-gold text-sm" role="img" aria-hidden="true">✦</span>
+                      <div className="w-8 h-8 rounded-lg bg-gold/10 border border-gold/15 flex items-center justify-center shrink-0 mt-0.5">
+                        <svg className="w-4 h-4 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                        </svg>
                       </div>
                       <div>
-                        <p className="text-gold font-semibold text-sm">
+                        <p className="text-gold/90 font-semibold text-sm">
                           {candidates.length} possible recurring {candidates.length === 1 ? 'payment' : 'payments'} found
                         </p>
                         <p className="text-muted text-xs mt-0.5">
@@ -189,7 +188,6 @@ export function RecurringPage() {
                   </div>
                 </div>
 
-                {/* Candidate cards — staggered */}
                 <div className="space-y-3">
                   {candidates.map((c, index) => (
                     <div
@@ -211,9 +209,9 @@ export function RecurringPage() {
             {/* Active recurring section */}
             {activeItems.length > 0 && (
               <section className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-1 h-4 rounded-full bg-income/60" />
-                  <h2 className="text-white font-semibold text-sm uppercase tracking-wider">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-0.5 h-3.5 rounded-full bg-income/40" />
+                  <h2 className="text-muted text-xs font-semibold uppercase tracking-wider">
                     Active ({activeItems.length})
                   </h2>
                 </div>
@@ -238,16 +236,15 @@ export function RecurringPage() {
             {/* Inactive / paused section */}
             {inactiveItems.length > 0 && (
               <section className="space-y-3">
-                {/* Collapsible header */}
                 <button
                   type="button"
                   onClick={() => setInactiveExpanded((prev) => !prev)}
-                  className="flex items-center gap-2.5 text-muted text-sm font-semibold uppercase
-                    tracking-wider w-full text-left hover:text-white transition-colors group"
+                  className="flex items-center gap-2.5 text-muted/70 text-xs font-semibold uppercase
+                    tracking-wider w-full text-left hover:text-muted transition-colors group min-h-[44px]"
                   aria-expanded={inactiveExpanded}
                 >
-                  <div className="w-5 h-5 rounded-md bg-white/8 border border-white/10 flex items-center justify-center
-                    group-hover:bg-white/12 transition-colors">
+                  <div className="w-5 h-5 rounded-md bg-white/[0.04] border border-white/[0.06] flex items-center justify-center
+                    group-hover:bg-white/[0.06] transition-colors">
                     <svg
                       className={`w-3 h-3 transition-transform duration-200 ${inactiveExpanded ? 'rotate-180' : ''}`}
                       fill="none"
@@ -263,7 +260,7 @@ export function RecurringPage() {
                 </button>
 
                 {inactiveExpanded && (
-                  <div className="space-y-3 opacity-70 motion-safe:animate-slide-down">
+                  <div className="space-y-3 opacity-60 motion-safe:animate-slide-down">
                     {inactiveItems.map((item) => (
                       <RecurringCard
                         key={item.id}

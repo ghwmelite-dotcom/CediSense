@@ -10,11 +10,11 @@ const SOURCE_LABELS: Record<string, string> = {
 
 const SOURCE_STYLES: Record<string, string> = {
   sms_import:
-    'bg-ghana-green/15 text-ghana-green border border-ghana-green/25',
+    'bg-ghana-green/10 text-ghana-green/80 border border-ghana-green/15',
   csv_import:
-    'bg-gold/10 text-gold border border-gold/20',
+    'bg-gold/8 text-gold/80 border border-gold/12',
   manual:
-    'bg-white/8 text-muted border border-white/10',
+    'bg-white/[0.04] text-muted border border-white/[0.06]',
 };
 
 interface TransactionRowProps {
@@ -54,30 +54,30 @@ export function TransactionRow({
     'Transaction';
 
   const sourceBadgeClass =
-    SOURCE_STYLES[transaction.source] ?? 'bg-white/8 text-muted border border-white/10';
+    SOURCE_STYLES[transaction.source] ?? 'bg-white/[0.04] text-muted border border-white/[0.06]';
 
   function handleRowClick() {
     if (!compact) setExpanded((prev) => !prev);
   }
 
   return (
-    <div className="rounded-xl overflow-hidden group">
+    <div className="overflow-hidden group">
       {/* Main row */}
       <button
         onClick={handleRowClick}
-        className={`w-full flex items-center gap-3 px-4 py-3 bg-ghana-surface
+        className={`w-full flex items-center gap-3 px-4 py-3.5
           transition-all duration-200 text-left
           ${compact
             ? 'cursor-default'
-            : 'cursor-pointer hover:bg-white/[0.06] hover:scale-[1.005] active:scale-100 active:bg-white/10'
+            : 'cursor-pointer hover:bg-white/[0.03] active:bg-white/[0.05]'
           }`}
         aria-expanded={expanded}
         type="button"
       >
         {/* Category icon */}
         <div
-          className="flex-shrink-0 w-10 h-10 rounded-full bg-white/10 flex items-center
-            justify-center text-lg transition-transform duration-200 group-hover:scale-105"
+          className="flex-shrink-0 w-10 h-10 rounded-full bg-white/[0.05] border border-white/[0.06] flex items-center
+            justify-center text-base transition-all duration-200 group-hover:bg-white/[0.07]"
         >
           {category?.icon ?? (isCredit ? '↓' : isTransfer ? '↔' : '↑')}
         </div>
@@ -87,12 +87,12 @@ export function TransactionRow({
           <p className="text-white text-sm font-medium truncate">{label}</p>
           <div className="flex items-center gap-2 mt-0.5">
             {transaction.counterparty && transaction.description && (
-              <span className="text-muted text-xs truncate">
+              <span className="text-muted/70 text-xs truncate">
                 {transaction.counterparty}
               </span>
             )}
             <span
-              className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold tracking-wide shrink-0 ${sourceBadgeClass}`}
+              className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium tracking-wide shrink-0 ${sourceBadgeClass}`}
             >
               {SOURCE_LABELS[transaction.source] ?? transaction.source}
             </span>
@@ -106,40 +106,40 @@ export function TransactionRow({
             {formatPesewas(transaction.amount_pesewas)}
           </p>
           {transaction.fee_pesewas > 0 && (
-            <p className="text-muted text-[10px] tabular-nums">
+            <p className="text-muted/60 text-[10px] tabular-nums">
               Fee {formatPesewas(transaction.fee_pesewas)}
             </p>
           )}
         </div>
       </button>
 
-      {/* Expanded details — animate in */}
+      {/* Expanded details */}
       {expanded && !compact && (
-        <div className="px-4 pb-4 bg-ghana-surface border-t border-white/5 animate-slide-down">
-          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+        <div className="px-4 pb-4 border-t border-white/[0.04] animate-slide-down">
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
             {transaction.counterparty && (
               <>
-                <dt className="text-muted">Counterparty</dt>
+                <dt className="text-muted/70">Counterparty</dt>
                 <dd className="text-white truncate">{transaction.counterparty}</dd>
               </>
             )}
             {transaction.reference && (
               <>
-                <dt className="text-muted">Reference</dt>
+                <dt className="text-muted/70">Reference</dt>
                 <dd className="text-white truncate font-mono text-xs">
                   {transaction.reference}
                 </dd>
               </>
             )}
-            <dt className="text-muted">Date</dt>
+            <dt className="text-muted/70">Date</dt>
             <dd className="text-white tabular-nums">{transaction.transaction_date}</dd>
-            <dt className="text-muted">Type</dt>
+            <dt className="text-muted/70">Type</dt>
             <dd className={`font-medium capitalize ${amountColor}`}>
               {transaction.type}
             </dd>
             {category && (
               <>
-                <dt className="text-muted">Category</dt>
+                <dt className="text-muted/70">Category</dt>
                 <dd className="text-white">
                   {category.icon} {category.name}
                 </dd>
@@ -153,8 +153,8 @@ export function TransactionRow({
                 <button
                   type="button"
                   onClick={() => onEdit(transaction)}
-                  className="flex-1 py-2 rounded-lg bg-white/10 text-white text-sm font-medium
-                    hover:bg-white/20 active:scale-95 transition-all duration-200"
+                  className="flex-1 py-2.5 rounded-xl bg-white/[0.05] border border-white/[0.06] text-white text-sm font-medium
+                    hover:bg-white/[0.08] active:scale-[0.98] transition-all duration-200 min-h-[44px]"
                 >
                   Edit
                 </button>
@@ -163,8 +163,8 @@ export function TransactionRow({
                 <button
                   type="button"
                   onClick={() => onDelete(transaction.id)}
-                  className="flex-1 py-2 rounded-lg bg-expense/10 text-expense text-sm font-medium
-                    hover:bg-expense/20 active:scale-95 transition-all duration-200"
+                  className="flex-1 py-2.5 rounded-xl bg-expense/[0.06] border border-expense/[0.08] text-expense text-sm font-medium
+                    hover:bg-expense/[0.1] active:scale-[0.98] transition-all duration-200 min-h-[44px]"
                 >
                   Delete
                 </button>

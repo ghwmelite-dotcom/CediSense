@@ -17,15 +17,15 @@ interface SettingsData {
 
 function SkeletonCard() {
   return (
-    <div className="bg-ghana-surface rounded-2xl border border-white/8 p-5 space-y-4 animate-pulse shadow-card">
+    <div className="glass-card rounded-2xl p-6 space-y-4">
       <div className="flex items-center gap-2 mb-1">
-        <div className="w-1 h-4 rounded-full bg-white/15" />
-        <div className="h-4 bg-white/10 rounded-lg w-1/3" />
+        <div className="w-0.5 h-4 rounded-full bg-white/[0.08]" />
+        <div className="h-4 bg-white/[0.06] rounded-lg w-1/3 animate-pulse" />
       </div>
       <div className="space-y-3">
-        <div className="h-4 bg-white/8 rounded-lg w-full" />
-        <div className="h-4 bg-white/8 rounded-lg w-4/5" />
-        <div className="h-4 bg-white/8 rounded-lg w-3/5" />
+        <div className="h-4 bg-white/[0.04] rounded-lg w-full animate-pulse" />
+        <div className="h-4 bg-white/[0.04] rounded-lg w-4/5 animate-pulse" />
+        <div className="h-4 bg-white/[0.04] rounded-lg w-3/5 animate-pulse" />
       </div>
     </div>
   );
@@ -40,13 +40,10 @@ function SettingsCard({
   accentColor?: string;
 }) {
   return (
-    <div
-      className="bg-ghana-surface rounded-2xl border border-white/8 shadow-card
-        overflow-hidden transition-shadow hover:shadow-card-hover"
-    >
+    <div className="glass-card rounded-2xl overflow-hidden card-interactive">
       {/* Subtle top accent line */}
-      <div className={`h-px w-full ${accentColor} opacity-20`} />
-      <div className="p-5">{children}</div>
+      <div className={`h-px w-full ${accentColor} opacity-15`} />
+      <div className="p-6">{children}</div>
     </div>
   );
 }
@@ -124,18 +121,18 @@ export function SettingsPage() {
   return (
     <div className="p-4 md:p-6 pb-24 max-w-2xl mx-auto motion-safe:animate-fade-in">
       {/* Page header */}
-      <div className="flex items-center gap-2 mb-6">
-        <div className="w-1 h-6 rounded-full bg-gold" />
+      <div className="flex items-center gap-2.5 mb-8">
+        <div className="w-0.5 h-5 rounded-full bg-gold/50" />
         <h1 className="text-white text-xl font-bold tracking-tight">Settings</h1>
       </div>
 
       {error && (
-        <div className="mb-4 bg-expense/10 border border-expense/25 rounded-2xl px-4 py-3
+        <div className="mb-5 bg-expense/[0.06] border border-expense/[0.1] rounded-2xl px-5 py-3.5
           motion-safe:animate-slide-down">
-          <p className="text-expense text-sm">{error}</p>
+          <p className="text-expense/90 text-sm">{error}</p>
           <button
             onClick={() => { setLoading(true); void fetchAll(); }}
-            className="text-expense text-sm font-medium underline mt-1 hover:no-underline transition-all"
+            className="text-expense/70 text-sm font-medium mt-1 hover:text-expense transition-colors"
           >
             Retry
           </button>
@@ -204,20 +201,19 @@ export function SettingsPage() {
             </SettingsCard>
           </div>
 
-          {/* Sign out — separated with subtle divider */}
+          {/* Sign out */}
           <div
-            className="pt-2 motion-safe:animate-slide-up"
+            className="pt-4 motion-safe:animate-slide-up"
             style={{ animationDelay: '240ms', animationFillMode: 'both' }}
           >
-            {/* Divider */}
-            <div className="h-px bg-white/8 mb-4" />
+            <div className="h-px bg-white/[0.04] mb-5" />
             <button
               onClick={handleLogout}
               className="w-full py-3.5 rounded-2xl font-semibold text-sm
-                bg-expense/10 border border-expense/20 text-expense
-                hover:bg-expense/20 hover:border-expense/30
-                active:scale-[0.98] transition-all
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-expense/50"
+                bg-expense/[0.06] border border-expense/[0.08] text-expense/90
+                hover:bg-expense/[0.1] hover:border-expense/[0.12]
+                active:scale-[0.98] transition-all min-h-[44px]
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-expense/30"
             >
               Sign Out
             </button>

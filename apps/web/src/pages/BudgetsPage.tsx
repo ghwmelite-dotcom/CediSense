@@ -55,30 +55,29 @@ export function BudgetsPage() {
   return (
     <div className="pb-24">
       {/* Sticky page header */}
-      <div className="sticky top-0 z-30 backdrop-blur-xl bg-ghana-dark/90 border-b border-white/8 px-4 py-4">
+      <div className="sticky top-0 z-30 backdrop-blur-xl bg-ghana-dark/95 border-b border-white/[0.04] px-4 py-4">
         <div className="flex items-center justify-between max-w-screen-lg mx-auto">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-5 rounded-full bg-gold" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-0.5 h-5 rounded-full bg-gold/50" />
             <h1 className="text-white text-xl font-bold tracking-tight">Budgets</h1>
           </div>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-gold text-ghana-dark font-semibold text-sm
-              hover:brightness-110 active:scale-95 transition-all min-h-[44px] shadow-gold-glow"
+            className="btn-gold px-4 py-2.5 text-sm min-h-[44px]"
           >
             + Add Budget
           </button>
         </div>
       </div>
 
-      <div className="px-4 pt-4 space-y-4 max-w-screen-lg mx-auto">
+      <div className="px-4 pt-5 space-y-4 max-w-screen-lg mx-auto">
         {/* Loading skeleton */}
         {loading && (
           <div className="space-y-4 motion-safe:animate-fade-in">
-            <div className="h-20 rounded-2xl bg-ghana-surface animate-pulse" />
+            <div className="h-20 rounded-2xl skeleton" />
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-28 rounded-2xl bg-ghana-surface animate-pulse" />
+              <div key={i} className="h-28 rounded-2xl skeleton" />
             ))}
           </div>
         )}
@@ -89,7 +88,7 @@ export function BudgetsPage() {
             {/* Summary bar */}
             {budgets.length > 0 && <BudgetSummaryBar budgets={budgets} />}
 
-            {/* Budget list — staggered animations */}
+            {/* Budget list */}
             {budgets.length > 0 ? (
               <div className="space-y-4">
                 {budgets.map((budget, index) => (
@@ -108,27 +107,28 @@ export function BudgetsPage() {
               </div>
             ) : (
               /* Empty state */
-              <div className="flex flex-col items-center justify-center py-20 gap-4 text-center motion-safe:animate-slide-up">
-                {/* Animated illustration feel */}
+              <div className="flex flex-col items-center justify-center py-20 gap-5 text-center motion-safe:animate-slide-up">
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-full bg-ghana-surface border border-white/8 flex items-center justify-center shadow-card">
-                    <span className="text-4xl" role="img" aria-label="Budgets">📊</span>
+                  <div className="w-24 h-24 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
+                    <svg className="w-10 h-10 text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
+                    </svg>
                   </div>
-                  <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center">
+                  <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center">
                     <span className="text-gold text-xs font-bold">0</span>
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-white font-semibold mb-1">No budgets yet</h2>
-                  <p className="text-muted text-sm max-w-xs">
+                  <h2 className="text-white font-semibold mb-1.5">No budgets yet</h2>
+                  <p className="text-muted text-sm max-w-xs leading-relaxed">
                     Set spending limits for your categories to track where your money goes each month.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setModalOpen(true)}
-                  className="mt-2 px-6 py-3 rounded-xl bg-gold text-ghana-dark font-semibold text-sm
-                    hover:brightness-110 active:scale-95 transition-all min-h-[44px] shadow-gold-glow"
+                  className="btn-gold mt-1 px-6 py-3 text-sm min-h-[44px]"
                 >
                   Create your first budget
                 </button>

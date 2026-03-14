@@ -71,11 +71,11 @@ export function OnboardingPage() {
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212,168,67,0.10) 0%, transparent 70%)',
+              'radial-gradient(ellipse 70% 50% at 50% -20%, rgba(212,168,67,0.06) 0%, transparent 70%)',
           }}
         />
         <div className="flex flex-col items-center gap-3 z-10">
-          <div className="w-10 h-10 border-2 border-gold/30 border-t-gold rounded-full motion-safe:animate-spin" />
+          <div className="w-10 h-10 border-2 border-gold/20 border-t-gold rounded-full motion-safe:animate-spin" />
           <p className="text-muted text-sm">Loading your progress...</p>
         </div>
       </div>
@@ -84,46 +84,48 @@ export function OnboardingPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-ghana-dark relative overflow-hidden">
-      {/* Radial gold glow */}
+      {/* Ambient gradients */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212,168,67,0.11) 0%, transparent 70%)',
+            'radial-gradient(ellipse 70% 50% at 50% -20%, rgba(212,168,67,0.07) 0%, transparent 70%)',
         }}
       />
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 60% 40% at 50% 110%, rgba(0,107,63,0.07) 0%, transparent 70%)',
+            'radial-gradient(ellipse 50% 40% at 50% 110%, rgba(0,107,63,0.04) 0%, transparent 70%)',
         }}
       />
 
       <div className="w-full max-w-sm relative z-10">
         {/* Branding */}
         <div className="text-center mb-8 motion-safe:animate-fade-in">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gold/10 border border-gold/20 shadow-gold-glow mb-3">
-            <span className="text-gold font-extrabold text-2xl leading-none">₵</span>
+          <div className="relative inline-flex items-center justify-center w-12 h-12 rounded-xl mb-3">
+            <div className="absolute inset-0 rounded-xl bg-gold/10 blur-xl scale-150 motion-safe:animate-glow-pulse" />
+            <div className="relative w-full h-full rounded-xl bg-gradient-to-br from-gold/15 to-gold/5 border border-gold/15 flex items-center justify-center shadow-gold-glow">
+              <span className="text-gold font-extrabold text-2xl leading-none">₵</span>
+            </div>
           </div>
           <p className="text-muted text-xs uppercase tracking-widest font-medium">
-            Let's get you set up
+            Let&apos;s get you set up
           </p>
         </div>
 
-        {/* Step indicator with connecting lines */}
+        {/* Step indicator */}
         <div className="flex items-center justify-center mb-8 motion-safe:animate-fade-in">
           {[1, 2, 3].map((s, i) => (
             <div key={s} className="flex items-center">
-              {/* Dot */}
               <div className="flex flex-col items-center gap-1.5">
                 <div
                   className={`relative flex items-center justify-center rounded-full font-semibold text-xs transition-all duration-500 ${
                     s < step
                       ? 'w-8 h-8 bg-gold text-ghana-dark shadow-gold-glow'
                       : s === step
-                        ? 'w-9 h-9 bg-gold text-ghana-dark shadow-gold-glow-lg ring-4 ring-gold/20'
-                        : 'w-8 h-8 bg-ghana-surface border border-white/10 text-muted'
+                        ? 'w-9 h-9 bg-gold text-ghana-dark shadow-gold-glow-lg ring-4 ring-gold/15'
+                        : 'w-8 h-8 bg-white/[0.04] border border-white/[0.08] text-muted'
                   }`}
                 >
                   {s < step ? (
@@ -133,14 +135,10 @@ export function OnboardingPage() {
                   ) : (
                     s
                   )}
-                  {/* Pulse ring on active step */}
-                  {s === step && (
-                    <span className="absolute inset-0 rounded-full bg-gold/20 motion-safe:animate-ping" />
-                  )}
                 </div>
                 <span
                   className={`text-[10px] font-medium tracking-wide uppercase transition-colors duration-300 ${
-                    s <= step ? 'text-gold' : 'text-white/20'
+                    s <= step ? 'text-gold/80' : 'text-white/15'
                   }`}
                 >
                   {STEP_LABELS[i]}
@@ -149,7 +147,7 @@ export function OnboardingPage() {
 
               {/* Connector line */}
               {i < 2 && (
-                <div className="w-12 h-px mx-2 mb-5 relative overflow-hidden rounded-full bg-ghana-surface">
+                <div className="w-12 h-px mx-2 mb-5 relative overflow-hidden rounded-full bg-white/[0.04]">
                   <div
                     className="absolute inset-y-0 left-0 bg-gold transition-all duration-500 ease-out"
                     style={{ width: s < step ? '100%' : '0%' }}
@@ -160,7 +158,7 @@ export function OnboardingPage() {
           ))}
         </div>
 
-        {/* Step content — re-mounts with new key to trigger slide-up animation */}
+        {/* Step content */}
         <div key={animKey} className="motion-safe:animate-slide-up">
           {step === 1 && (
             <IncomeStep onComplete={handleIncomeComplete} onSkip={() => goToStep(2)} />
@@ -175,7 +173,7 @@ export function OnboardingPage() {
       </div>
 
       {/* Footer */}
-      <p className="absolute bottom-6 text-white/20 text-xs tracking-wide">
+      <p className="mt-auto pt-8 pb-6 text-white/15 text-xs tracking-wider">
         Built by Hodges &amp; Co.
       </p>
     </div>

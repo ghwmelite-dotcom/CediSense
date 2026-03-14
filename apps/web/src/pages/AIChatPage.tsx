@@ -31,7 +31,6 @@ export function AIChatPage() {
       .then((data) => {
         setMessages(data);
         setIsLoadingHistory(false);
-        // Instant jump on initial load, then smooth for new messages
         setTimeout(() => scrollToBottom('instant'), 50);
       })
       .catch(() => {
@@ -46,7 +45,7 @@ export function AIChatPage() {
     };
   }, []);
 
-  // Scroll on new messages or streaming — smooth
+  // Scroll on new messages or streaming
   useEffect(() => {
     scrollToBottom();
   }, [messages, streamingContent, scrollToBottom]);
@@ -129,14 +128,14 @@ export function AIChatPage() {
         <UsageWarning onDismiss={() => setShowUsageWarning(false)} />
       )}
 
-      {/* Message area — subtle radial gradient background */}
+      {/* Message area */}
       <div
         ref={scrollAreaRef}
         className="flex-1 overflow-y-auto px-4 pt-4"
         style={{
           background:
-            'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,168,67,0.04) 0%, transparent 70%), ' +
-            'radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,107,63,0.04) 0%, transparent 70%)',
+            'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,168,67,0.02) 0%, transparent 70%), ' +
+            'radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,107,63,0.02) 0%, transparent 70%)',
         }}
       >
         {isLoadingHistory && (
@@ -144,7 +143,7 @@ export function AIChatPage() {
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className={`h-12 rounded-xl bg-ghana-surface animate-pulse ${
+                className={`h-12 rounded-2xl skeleton ${
                   i % 2 === 0 ? 'w-3/4' : 'w-2/3 ml-auto'
                 }`}
               />
@@ -158,7 +157,7 @@ export function AIChatPage() {
           <div className="max-w-2xl mx-auto">
             {messages.map((msg, i) => {
               const prevRole = i > 0 ? messages[i - 1].role : null;
-              const gap = prevRole === msg.role ? 'mt-2' : 'mt-4';
+              const gap = prevRole === msg.role ? 'mt-2' : 'mt-5';
               return (
                 <div key={msg.id} className={i === 0 ? '' : gap}>
                   <ChatBubble
@@ -171,7 +170,7 @@ export function AIChatPage() {
             })}
 
             {isStreaming && streamingContent && (
-              <div className="mt-4">
+              <div className="mt-5">
                 <ChatBubble
                   role="assistant"
                   content={streamingContent}
@@ -181,15 +180,15 @@ export function AIChatPage() {
             )}
 
             {isStreaming && !streamingContent && (
-              <div className="mt-4">
+              <div className="mt-5">
                 <TypingIndicator />
               </div>
             )}
 
             {error && !isStreaming && (
-              <div className="mt-4 flex justify-start motion-safe:animate-slide-up">
-                <div className="bg-expense/10 border border-expense/20 rounded-2xl rounded-bl-md px-4 py-2.5 max-w-[85%]">
-                  <p className="text-expense text-sm">{error}</p>
+              <div className="mt-5 flex justify-start motion-safe:animate-slide-up">
+                <div className="bg-expense/[0.06] border border-expense/[0.1] rounded-2xl rounded-bl-md px-4 py-3 max-w-[85%]">
+                  <p className="text-expense/90 text-sm">{error}</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -199,7 +198,7 @@ export function AIChatPage() {
                         handleSend(lastUserMsg.content);
                       }
                     }}
-                    className="text-gold text-xs mt-1 underline hover:no-underline transition-all"
+                    className="text-gold/70 text-xs mt-1.5 hover:text-gold transition-colors"
                   >
                     Tap to retry
                   </button>

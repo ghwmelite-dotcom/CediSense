@@ -36,11 +36,15 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-income/90 text-ghana-black font-medium shadow-lg animate-slide-up">
-      <span className="text-lg">✓</span>
+    <div className="fixed bottom-24 left-4 right-4 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-income/90 text-ghana-dark font-medium shadow-lg motion-safe:animate-slide-up">
+      <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
       <span className="flex-1 text-sm">{message}</span>
-      <button type="button" onClick={onClose} className="text-ghana-black/60 hover:text-ghana-black">
-        ×
+      <button type="button" onClick={onClose} className="text-ghana-dark/50 hover:text-ghana-dark transition-colors">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
       </button>
     </div>
   );
@@ -127,7 +131,6 @@ export function ImportPage() {
     setBatchId(null);
     setRows([]);
 
-    // Split by blank lines — each block = one SMS
     const messages = smsText
       .split(/\n\s*\n/)
       .map((block) => block.trim())
@@ -210,7 +213,6 @@ export function ImportPage() {
     setConfirming(true);
     setParseError(null);
 
-    // Build overrides for skipped rows and category changes
     const overrides = rows
       .map((row, idx) => {
         if (row.skip) return null;
@@ -221,14 +223,6 @@ export function ImportPage() {
         return null;
       })
       .filter(Boolean);
-
-    // Skipped indexes: we simply don't include them — the API inserts all parsed.
-    // To skip individual rows we must build a filtered list via overrides is insufficient.
-    // Instead we send only the non-skipped rows — but the confirm endpoint uses the stored
-    // batch. We handle this by sending skip_indexes if the server supported it; since it
-    // doesn't, we work around it: after confirming we note that all rows in the batch are
-    // inserted. The best UX approach is to warn the user that skipped rows won't be re-imported.
-    // For now we surface skipped count as info.
 
     try {
       const result = await api.post<{ inserted: number; total: number }>('/import/confirm', {
@@ -258,28 +252,30 @@ export function ImportPage() {
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
 
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-8">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+          className="w-10 h-10 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white hover:bg-white/[0.07] transition-all min-h-[44px]"
           aria-label="Go back"
         >
-          ←
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
         </button>
-        <h1 className="text-white text-xl font-bold">Import Transactions</h1>
+        <h1 className="text-white text-xl font-bold tracking-tight">Import Transactions</h1>
       </div>
 
       {/* Tab switcher */}
-      <div className="flex gap-1 bg-white/5 rounded-xl p-1 mb-6">
+      <div className="flex gap-1 bg-white/[0.03] rounded-xl p-1.5 mb-6">
         {(['sms', 'csv'] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => switchTab(t)}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all min-h-[44px] ${
               tab === t
-                ? 'bg-ghana-surface text-white shadow-sm'
+                ? 'bg-ghana-surface text-white shadow-sm border border-white/[0.04]'
                 : 'text-muted hover:text-white'
             }`}
           >
@@ -288,18 +284,17 @@ export function ImportPage() {
         ))}
       </div>
 
-      {/* Account selector (shared) */}
-      <div className="mb-5">
-        <label className="block text-muted text-xs font-medium uppercase tracking-wider mb-2">
+      {/* Account selector */}
+      <div className="mb-6">
+        <label className="block text-muted/70 text-xs font-medium uppercase tracking-wider mb-2.5">
           Account
         </label>
         <select
           value={accountId}
           onChange={(e) => setAccountId(e.target.value)}
-          className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm
-            focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold appearance-none"
+          className="input-premium appearance-none"
         >
-          <option value="" className="bg-ghana-surface text-muted">Select account…</option>
+          <option value="" className="bg-ghana-surface text-muted">Select account...</option>
           {accounts.map((a) => (
             <option key={a.id} value={a.id} className="bg-ghana-surface text-white">
               {a.name}
@@ -313,10 +308,10 @@ export function ImportPage() {
       {tab === 'sms' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-muted text-xs font-medium uppercase tracking-wider mb-2">
+            <label className="block text-muted/70 text-xs font-medium uppercase tracking-wider mb-2.5">
               Paste SMS Messages
             </label>
-            <p className="text-muted text-xs mb-2">
+            <p className="text-muted/50 text-xs mb-2.5">
               Paste one or more SMS messages. Separate multiple messages with a blank line.
             </p>
             <textarea
@@ -324,9 +319,7 @@ export function ImportPage() {
               onChange={(e) => setSmsText(e.target.value)}
               rows={8}
               placeholder={`You have received GHS 50.00 from 0241234567 on 14-03-2026. Your new MoMo balance is GHS 150.00\n\nYour MTN MoMo payment of GHS 25.00 to Shoprite has been completed.`}
-              className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm
-                placeholder-muted focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold
-                resize-none font-mono"
+              className="input-premium resize-none font-mono !py-3"
             />
           </div>
 
@@ -334,13 +327,13 @@ export function ImportPage() {
             type="button"
             onClick={handleSmsParse}
             disabled={parsing || !smsText.trim()}
-            className="w-full py-3.5 rounded-xl bg-ghana-surface border border-gold/30 text-gold font-semibold text-sm
-              hover:bg-gold/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full py-3.5 rounded-xl bg-white/[0.03] border border-gold/20 text-gold font-semibold text-sm
+              hover:bg-gold/[0.06] transition-all disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
           >
             {parsing ? (
               <span className="flex items-center justify-center gap-2">
-                <span className="w-4 h-4 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-                Parsing…
+                <span className="w-4 h-4 border-2 border-gold/40 border-t-gold rounded-full animate-spin" />
+                Parsing...
               </span>
             ) : (
               'Parse SMS Messages'
@@ -352,16 +345,14 @@ export function ImportPage() {
       {/* ── CSV tab ─────────────────────────────────────────────────────────── */}
       {tab === 'csv' && (
         <div className="space-y-4">
-          {/* Format selector */}
           <div>
-            <label className="block text-muted text-xs font-medium uppercase tracking-wider mb-2">
+            <label className="block text-muted/70 text-xs font-medium uppercase tracking-wider mb-2.5">
               Statement Format
             </label>
             <select
               value={csvFormat}
               onChange={(e) => setCsvFormat(e.target.value)}
-              className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm
-                focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold appearance-none"
+              className="input-premium appearance-none"
             >
               {csvFormats.map((f) => (
                 <option key={f.provider} value={f.provider} className="bg-ghana-surface text-white">
@@ -371,26 +362,32 @@ export function ImportPage() {
             </select>
           </div>
 
-          {/* File upload */}
           <div>
-            <label className="block text-muted text-xs font-medium uppercase tracking-wider mb-2">
+            <label className="block text-muted/70 text-xs font-medium uppercase tracking-wider mb-2.5">
               CSV File
             </label>
             <button
               type="button"
               onClick={() => csvFileRef.current?.click()}
-              className="w-full py-8 rounded-xl border-2 border-dashed border-white/20 flex flex-col items-center gap-2
-                hover:border-gold/50 hover:bg-gold/5 transition-colors text-center"
+              className="w-full py-8 rounded-2xl border-2 border-dashed border-white/[0.08] flex flex-col items-center gap-2.5
+                hover:border-gold/25 hover:bg-gold/[0.02] transition-all text-center min-h-[120px]"
             >
-              <span className="text-3xl">📂</span>
-              <span className="text-white text-sm font-medium">
+              <svg className="w-8 h-8 text-muted/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              <span className="text-white/80 text-sm font-medium">
                 {csvFileName || 'Tap to upload CSV file'}
               </span>
               {!csvFileName && (
-                <span className="text-muted text-xs">Supported: .csv files</span>
+                <span className="text-muted/50 text-xs">Supported: .csv files</span>
               )}
               {csvFileName && (
-                <span className="text-income text-xs">File loaded ✓</span>
+                <span className="text-income/80 text-xs flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  File loaded
+                </span>
               )}
             </button>
             <input
@@ -407,13 +404,13 @@ export function ImportPage() {
             type="button"
             onClick={handleCsvParse}
             disabled={parsing || !csvData.trim()}
-            className="w-full py-3.5 rounded-xl bg-ghana-surface border border-gold/30 text-gold font-semibold text-sm
-              hover:bg-gold/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full py-3.5 rounded-xl bg-white/[0.03] border border-gold/20 text-gold font-semibold text-sm
+              hover:bg-gold/[0.06] transition-all disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
           >
             {parsing ? (
               <span className="flex items-center justify-center gap-2">
-                <span className="w-4 h-4 border-2 border-gold border-t-transparent rounded-full animate-spin" />
-                Parsing…
+                <span className="w-4 h-4 border-2 border-gold/40 border-t-gold rounded-full animate-spin" />
+                Parsing...
               </span>
             ) : (
               'Parse CSV File'
@@ -424,14 +421,14 @@ export function ImportPage() {
 
       {/* Error */}
       {parseError && (
-        <div className="mt-4 px-4 py-3 rounded-xl bg-expense/10 border border-expense/20 text-expense text-sm">
+        <div className="mt-4 px-4 py-3 rounded-xl bg-expense/[0.06] border border-expense/[0.08] text-expense/90 text-sm">
           {parseError}
         </div>
       )}
 
       {/* Preview */}
       {rows.length > 0 && batchId && (
-        <div className="mt-6">
+        <div className="mt-8">
           <h2 className="text-white text-base font-semibold mb-4">
             Preview
           </h2>
