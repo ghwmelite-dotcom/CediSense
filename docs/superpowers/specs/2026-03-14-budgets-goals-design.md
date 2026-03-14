@@ -74,8 +74,11 @@ Key decisions:
 ### Middleware Registration
 
 ```typescript
+// Use both bare path and wildcard to ensure middleware fires on root GET/POST and sub-paths
+app.use('/api/v1/budgets', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/budgets/*', authMiddleware, rateLimitMiddleware);
 app.route('/api/v1/budgets', budgets);
+app.use('/api/v1/goals', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/goals/*', authMiddleware, rateLimitMiddleware);
 app.route('/api/v1/goals', goals);
 ```
@@ -118,6 +121,8 @@ WHERE b.user_id = ?
 ORDER BY COALESCE(s.spent, 0) * 1.0 / b.amount_pesewas DESC
 ```
 
+**Bind parameter order:** `[userId, startDate, endDate, userId]` — the subquery `user_id` and outer `b.user_id` are the same value but bound separately.
+
 Server computes `percentage`, `status`, and `remaining_pesewas` from the query results:
 - `percentage = (spent / amount) * 100`, rounded to 1 decimal
 - `status = percentage >= 100 ? 'exceeded' : percentage >= 80 ? 'warning' : 'on_track'`
@@ -133,9 +138,10 @@ Create a budget.
 ```
 
 **Validation:**
-- `category_id` must reference an existing category (system or user-owned)
+- `category_id` must reference an existing category: `WHERE id = ? AND (user_id IS NULL OR user_id = ?)`
+- Category must be expense-type: `AND type = 'expense'` — budgets are only for spending categories
 - `amount_pesewas` must be a positive integer
-- No existing budget for the same `(user_id, category_id)` — return 409 CONFLICT
+- No existing budget for the same `(user_id, category_id)` — return 409 `CONFLICT`
 
 **Response:** `{ data: Budget }` with status 201.
 
@@ -148,7 +154,7 @@ Update budget amount.
 { amount_pesewas: number }
 ```
 
-**Validation:** ownership check, positive integer.
+**Validation:** ownership check, positive integer. UPDATE must also set `updated_at = datetime('now')`.
 
 **Response:** `{ data: Budget }`
 
@@ -192,7 +198,7 @@ Sorted: incomplete goals first (by highest percentage), completed at bottom.
 
 Server computes:
 - `percentage = Math.min((current / target) * 100, 100)`, rounded to 1 decimal
-- `days_remaining`: if deadline, compute `Math.ceil((deadline_date - now) / 86400000)`, null if no deadline
+- `days_remaining`: if deadline, compute `Math.ceil((deadline_date - now) / 86400000)` — negative values mean overdue. Null if no deadline. Frontend maps negative to "Overdue" display.
 - `is_complete = current_pesewas >= target_pesewas`
 
 ### `POST /api/v1/goals`
@@ -244,7 +250,7 @@ SET current_pesewas = MIN(current_pesewas + ?, target_pesewas),
 WHERE id = ? AND user_id = ?
 ```
 
-**Validation:** ownership check, goal must not already be complete, amount must be positive.
+**Validation:** ownership check, amount must be positive. No pre-check for goal completeness — the SQL `MIN()` naturally caps at target, making contributions to already-complete goals idempotent (no-op).
 
 **Response:** `{ data: SavingsGoal }` with updated `current_pesewas`.
 
@@ -480,6 +486,12 @@ export const updateGoalSchema = z.object({
 export const contributeSchema = z.object({
   amount_pesewas: z.number().int().positive(),
 });
+
+export type CreateBudgetInput = z.infer<typeof createBudgetSchema>;
+export type UpdateBudgetInput = z.infer<typeof updateBudgetSchema>;
+export type CreateGoalInput = z.infer<typeof createGoalSchema>;
+export type UpdateGoalInput = z.infer<typeof updateGoalSchema>;
+export type ContributeInput = z.infer<typeof contributeSchema>;
 ```
 
 ---
