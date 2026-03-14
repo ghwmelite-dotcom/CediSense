@@ -4,7 +4,7 @@ compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
 
 # Secrets (set via `wrangler secret put`, NEVER in this file):
 # - JWT_SECRET: HMAC-SHA256 signing key for access tokens
@@ -15,11 +15,11 @@ binding = "AI"
 [[d1_databases]]
 binding = "DB"
 database_name = "cedisense-db"
-database_id = "local"
+database_id = "6a0bfc97-22c1-4e29-ba28-f942f65b5fb2"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "local"
+id = "70fe9b86b5f4407dbfa022d6aec53a3f"
 
 [[r2_buckets]]
 binding = "R2"
