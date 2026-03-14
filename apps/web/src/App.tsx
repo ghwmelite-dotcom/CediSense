@@ -11,6 +11,8 @@ import { TransactionFeedPage } from '@/pages/TransactionFeedPage';
 import { AddTransactionPage } from '@/pages/AddTransactionPage';
 import { ImportPage } from '@/pages/ImportPage';
 import { AIChatPage } from '@/pages/AIChatPage';
+import { BudgetsPage } from '@/pages/BudgetsPage';
+import { GoalsPage } from '@/pages/GoalsPage';
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -51,8 +53,8 @@ export function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/transactions" element={<TransactionFeedPage />} />
           <Route path="/transactions/import" element={<ImportPage />} />
-          <Route path="/budgets" element={<Placeholder name="Budgets" />} />
-          <Route path="/goals" element={<Placeholder name="Goals" />} />
+          <Route path="/budgets" element={<BudgetsPage />} />
+          <Route path="/goals" element={<GoalsPage />} />
           <Route path="/ai-chat" element={<AIChatPage />} />
           <Route path="/add" element={<AddTransactionPage />} />
           <Route path="/settings" element={<SettingsPage />} />
