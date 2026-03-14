@@ -3,6 +3,7 @@ import type { User } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 import { api } from '@/lib/api';
 import { AmountInput } from '@/components/transactions/AmountInput';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface ProfileSectionProps {
   user: User;
@@ -10,6 +11,7 @@ interface ProfileSectionProps {
 }
 
 export function ProfileSection({ user, onUpdate }: ProfileSectionProps) {
+  const { language, setLanguage } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user.name);
@@ -96,6 +98,30 @@ export function ProfileSection({ user, onUpdate }: ProfileSectionProps) {
                       ? formatPesewas(Math.round(user.monthly_income_ghs * 100))
                       : <span className="text-muted italic">Not set</span>}
                   </span>
+                </div>
+
+                {/* Language */}
+                <div className="flex justify-between items-center">
+                  <span className="text-muted text-sm">Language</span>
+                  <select
+                    value={language}
+                    onChange={async (e) => {
+                      const lang = e.target.value as 'en' | 'tw' | 'ee' | 'dag';
+                      setLanguage(lang);
+                      try {
+                        await api.put('/users/me', { preferred_language: lang });
+                      } catch {
+                        // Non-critical — preference is already saved to localStorage
+                      }
+                    }}
+                    className="bg-white/10 border border-white/10 rounded-lg px-3 py-1.5
+                      text-white text-sm focus:outline-none focus:ring-2 focus:ring-gold/50
+                      focus:border-gold cursor-pointer min-w-[140px]"
+                    aria-label="Select language"
+                  >
+                    <option value="en" className="bg-ghana-surface text-white">English</option>
+                    <option value="tw" className="bg-ghana-surface text-white">Twi (Akan)</option>
+                  </select>
                 </div>
               </div>
 
