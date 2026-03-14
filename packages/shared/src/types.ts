@@ -283,3 +283,48 @@ export interface SavingsGoalWithProgress extends SavingsGoal {
   days_remaining: number | null;
   is_complete: boolean;
 }
+
+// ─── Insights types ───────────────────────────────────────────────────────────
+
+export interface MonthSummary {
+  total_income_pesewas: number;
+  total_expenses_pesewas: number;
+  total_fees_pesewas: number;
+  transaction_count: number;
+}
+
+export interface CategoryTrend {
+  category_id: string;
+  name: string;
+  icon: string;
+  color: string;
+  current_pesewas: number;
+  previous_pesewas: number;
+  change_pesewas: number;
+  change_percentage: number;
+}
+
+export type ChangeDirection = 'up' | 'down' | 'new';
+
+export interface SpendingChange {
+  category_name: string;
+  icon: string;
+  direction: ChangeDirection;
+  change_percentage: number;
+  current_pesewas: number;
+  previous_pesewas: number;
+}
+
+export interface InsightsData {
+  current_month: string;
+  previous_month: string;
+  current: MonthSummary;
+  previous: MonthSummary;
+  category_trends: CategoryTrend[];
+  top_changes: SpendingChange[];
+}
+
+export interface InsightsReport {
+  report: string;
+  month: string;
+}

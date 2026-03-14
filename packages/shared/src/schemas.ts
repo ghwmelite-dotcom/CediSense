@@ -213,3 +213,11 @@ export type UpdateBudgetInput = z.infer<typeof updateBudgetSchema>;
 export type CreateGoalInput = z.infer<typeof createGoalSchema>;
 export type UpdateGoalInput = z.infer<typeof updateGoalSchema>;
 export type ContributeInput = z.infer<typeof contributeSchema>;
+
+// ─── Insights schema ──────────────────────────────────────────────────────────
+
+export const insightsQuerySchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
+});
+
+export type InsightsQueryInput = z.infer<typeof insightsQuerySchema>;

@@ -208,3 +208,9 @@ export function assembleSummary(rows: SummaryRow[]): SummaryTotals {
 
   return { totalIncome, totalExpenses, totalFees, transactionCount };
 }
+
+export function previousMonth(month: string): string {
+  const [year, mon] = month.split('-').map(Number);
+  const d = new Date(year, mon - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
