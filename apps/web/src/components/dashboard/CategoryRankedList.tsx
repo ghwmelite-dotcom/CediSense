@@ -25,32 +25,40 @@ export function CategoryRankedList({ data, month }: CategoryRankedListProps) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {data.map((cat) => (
         <button
           key={cat.category_id}
           type="button"
           onClick={() => handleCategoryTap(cat.category_id)}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors text-left ${
-            cat.category_id === 'uncategorized' ? 'cursor-default' : 'cursor-pointer'
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-left group ${
+            cat.category_id === 'uncategorized'
+              ? 'cursor-default'
+              : 'cursor-pointer hover:bg-white/[0.06] hover:scale-[1.01] active:scale-100'
           }`}
         >
-          <span className="text-lg flex-shrink-0 w-8 text-center">{cat.icon}</span>
+          {/* Icon */}
+          <span className="text-lg flex-shrink-0 w-8 text-center leading-none">{cat.icon}</span>
+
+          {/* Name + progress bar */}
           <div className="flex-1 min-w-0">
-            <p className="text-white text-sm truncate">{cat.name}</p>
-            <div className="h-1.5 bg-white/10 rounded-full mt-1 overflow-hidden">
+            <p className="text-white text-sm font-medium truncate leading-none mb-1.5">{cat.name}</p>
+            <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-500"
+                className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
                   width: `${maxPercentage > 0 ? (cat.percentage / maxPercentage) * 100 : 0}%`,
                   backgroundColor: cat.color,
+                  boxShadow: `0 0 6px ${cat.color}60`,
                 }}
               />
             </div>
           </div>
-          <div className="text-right shrink-0">
-            <p className="text-white text-sm font-medium">{formatPesewas(cat.total_pesewas)}</p>
-            <p className="text-muted text-xs">{cat.percentage.toFixed(1)}%</p>
+
+          {/* Amount + percentage */}
+          <div className="text-right shrink-0 min-w-[72px]">
+            <p className="text-white text-sm font-semibold tabular-nums leading-none">{formatPesewas(cat.total_pesewas)}</p>
+            <p className="text-muted text-xs tabular-nums mt-1">{cat.percentage.toFixed(1)}%</p>
           </div>
         </button>
       ))}

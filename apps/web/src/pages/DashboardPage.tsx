@@ -16,6 +16,11 @@ function getCurrentMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
+/** Staggered delay utility — returns inline style with animation-delay */
+function stagger(index: number, baseMs = 80): React.CSSProperties {
+  return { animationDelay: `${index * baseMs}ms`, animationFillMode: 'both' };
+}
+
 export function DashboardPage() {
   const { user } = useAuth();
   const [month, setMonth] = useState(getCurrentMonth());
@@ -74,24 +79,35 @@ export function DashboardPage() {
     return 'Good evening';
   })();
 
+  const firstName = user?.name?.split(' ')[0] ?? '';
+
   return (
     <div className="pb-24">
       <MonthPicker month={month} onMonthChange={setMonth} />
 
-      <div className="px-4 pt-4 space-y-4 max-w-screen-lg mx-auto">
-        {/* Greeting */}
-        <p className="text-muted text-sm">
-          {greeting}, {user?.name?.split(' ')[0]}
-        </p>
+      <div className="px-4 pt-5 space-y-4 max-w-screen-lg mx-auto">
+        {/* Greeting — prominent hero text */}
+        <div className="motion-safe:animate-fade-in" style={stagger(0, 60)}>
+          <p className="text-xs text-muted uppercase tracking-widest font-medium">{greeting}</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-white mt-0.5">
+            {firstName
+              ? <><span>{firstName}</span> <span className="text-gold">👋</span></>
+              : 'Dashboard'
+            }
+          </h1>
+        </div>
 
-        {/* Loading skeleton */}
+        {/* Loading skeleton with shimmer */}
         {loading && (
           <div className="space-y-4">
-            <div className="h-28 rounded-xl bg-ghana-surface animate-pulse" />
-            <div className="h-36 rounded-xl bg-ghana-surface animate-pulse" />
-            <div className="h-[200px] rounded-xl bg-ghana-surface animate-pulse" />
-            <div className="h-64 rounded-xl bg-ghana-surface animate-pulse" />
-            <div className="h-48 rounded-xl bg-ghana-surface animate-pulse" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="h-28 rounded-xl skeleton" />
+              <div className="h-28 rounded-xl skeleton" />
+            </div>
+            <div className="h-[220px] rounded-xl skeleton" />
+            <div className="h-64 rounded-xl skeleton" />
+            <div className="h-48 rounded-xl skeleton" />
+            <div className="h-40 rounded-xl skeleton" />
           </div>
         )}
 
@@ -102,18 +118,21 @@ export function DashboardPage() {
             <button
               type="button"
               onClick={() => fetchDashboard(month)}
-              className="text-gold text-sm underline"
+              className="text-gold text-sm font-medium underline underline-offset-2 hover:text-gold/80 transition-colors"
             >
               Retry
             </button>
           </div>
         )}
 
-        {/* Dashboard content */}
+        {/* Dashboard content with staggered slide-up animations */}
         {data && !loading && !error && (
           <>
             {/* Balance + Summary: side-by-side on desktop */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 motion-safe:animate-slide-up"
+              style={stagger(1)}
+            >
               <BalanceCard
                 totalBalance={data.accounts.total_balance_pesewas}
                 accounts={data.accounts.items}
@@ -125,27 +144,37 @@ export function DashboardPage() {
               />
             </div>
 
-            <SpendingTrendChart data={data.daily_trend} />
+            <div className="motion-safe:animate-slide-up" style={stagger(2)}>
+              <SpendingTrendChart data={data.daily_trend} />
+            </div>
 
-            <CategoryBreakdownCard
-              data={data.category_breakdown}
-              totalExpenses={data.summary.total_expenses_pesewas}
-              month={month}
-            />
+            <div className="motion-safe:animate-slide-up" style={stagger(3)}>
+              <CategoryBreakdownCard
+                data={data.category_breakdown}
+                totalExpenses={data.summary.total_expenses_pesewas}
+                month={month}
+              />
+            </div>
 
-            <UpcomingBillsCard items={upcomingBills} />
+            <div className="motion-safe:animate-slide-up" style={stagger(4)}>
+              <UpcomingBillsCard items={upcomingBills} />
+            </div>
 
-            <RecentTransactions
-              transactions={data.recent_transactions}
-              categories={categories}
-            />
+            <div className="motion-safe:animate-slide-up" style={stagger(5)}>
+              <RecentTransactions
+                transactions={data.recent_transactions}
+                categories={categories}
+              />
+            </div>
 
-            <Link
-              to="/insights"
-              className="block text-center text-gold text-sm font-medium hover:text-gold/80 transition-colors mt-2"
-            >
-              View Insights →
-            </Link>
+            <div className="motion-safe:animate-fade-in" style={stagger(6)}>
+              <Link
+                to="/insights"
+                className="block text-center text-gold text-sm font-semibold hover:text-gold/80 transition-colors mt-2 py-2"
+              >
+                View Insights →
+              </Link>
+            </div>
           </>
         )}
       </div>
