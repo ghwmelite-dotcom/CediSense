@@ -72,16 +72,24 @@ Send a message and receive a streaming SSE response.
 **Server-side flow:**
 1. Validate message with Zod (non-empty, max 500 chars)
 2. Increment daily usage counter in KV: key `ai-usage:{userId}:{YYYY-MM-DD}`, TTL 86400s
-3. Save user message to `chat_messages` table
-4. Fetch last 15 messages from D1 (ordered by `created_at ASC`)
+3. Fetch last 15 messages from D1 (ordered by `created_at ASC`) — before saving the new user message, to get clean context. Also clean up any orphaned trailing user messages (user message with no following assistant message, from a previous failed stream).
+4. Save user message to `chat_messages` table
 5. Fetch current month's dashboard data (reuse dashboard aggregation queries)
 6. Build system prompt with financial context
 7. Call Workers AI with `{ stream: true }`
 8. Stream tokens via SSE, collecting the full response
-9. After stream completes, save full assistant response to D1
+9. After stream completes, save full assistant response to D1. If the stream fails or client disconnects before completion, the user message remains in D1 without a reply — this orphan is detected and cleaned up at the start of the next request (step 3).
 10. If daily count > 40, include `usage_warning` in the SSE metadata
 
-**Response:** SSE stream with content type `text/event-stream`
+**Note:** The system prompt is never persisted to D1 — it is constructed fresh on every request from the financial context. Only `user` and `assistant` messages are stored.
+
+**Response:** SSE stream with required headers:
+```
+Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+```
+No `Content-Length` header (chunked transfer).
 
 ```
 data: {"type":"token","content":"Here"}
@@ -99,7 +107,7 @@ SSE event types:
 
 **Error responses (non-streaming, JSON):**
 - 400: `{ error: { code: 'VALIDATION_ERROR', message: '...' } }` for invalid input
-- 500: `{ error: { code: 'AI_ERROR', message: 'Failed to generate response' } }`
+- 500: `{ error: { code: 'AI_ERROR', message: 'Failed to generate response' } }` — `AI_ERROR` is a new error code distinct from `INTERNAL_ERROR`, allowing the client to show a retry-specific message
 
 ### Endpoint 2: `GET /api/v1/ai/history`
 
@@ -121,24 +129,24 @@ interface ChatMessage {
 }
 ```
 
-**SQL:**
+**SQL (cursor uses rowid for stability — `created_at` has only second precision):**
 ```sql
 -- Without cursor:
 SELECT id, role, content, created_at
 FROM chat_messages
 WHERE user_id = ?
-ORDER BY created_at DESC
+ORDER BY rowid DESC
 LIMIT ?
 
 -- With cursor:
 SELECT id, role, content, created_at
 FROM chat_messages
-WHERE user_id = ? AND created_at < (SELECT created_at FROM chat_messages WHERE id = ?)
-ORDER BY created_at DESC
+WHERE user_id = ? AND rowid < (SELECT rowid FROM chat_messages WHERE id = ?)
+ORDER BY rowid DESC
 LIMIT ?
 ```
 
-Results reversed to ASC on the server before returning.
+Results reversed to ASC on the server before returning. Uses `rowid` instead of `created_at` for cursor stability — multiple messages can share the same `created_at` timestamp (second precision).
 
 ### Endpoint 3: `DELETE /api/v1/ai/history`
 
@@ -210,7 +218,7 @@ Recent transactions:
 - Mar 11: -₵35.00 MTN Data Bundle (Airtime & Data)
 ```
 
-This is assembled server-side using the same queries as the dashboard endpoint. Amounts are converted from pesewas to GHS for the prompt.
+This is assembled server-side by `apps/api/src/lib/ai-context.ts`. The dashboard aggregation queries (accounts, summary, categories, recent transactions) are extracted from `apps/api/src/routes/dashboard.ts` into a shared helper (e.g., `apps/api/src/lib/dashboard-queries.ts`) so both the dashboard route and the AI context builder can reuse them. Amounts are converted from pesewas to GHS for the prompt.
 
 ---
 
@@ -324,6 +332,15 @@ while (true) {
 
 This avoids `EventSource` (which doesn't support POST or custom headers).
 
+**Important implementation notes for `apps/web/src/lib/streaming.ts`:**
+- The SSE parser must buffer incomplete lines across chunks — a single `reader.read()` call may return partial JSON split across chunk boundaries
+- Use `AbortController` to cancel the fetch on component unmount or user navigation, preventing orphaned Workers AI inference:
+  ```typescript
+  const controller = new AbortController();
+  const response = await fetch(url, { signal: controller.signal, ... });
+  // On cleanup: controller.abort();
+  ```
+
 ### Responsive Layout
 
 **Mobile (<768px):**
@@ -396,9 +413,9 @@ Lightweight regex-based transforms on assistant message content. No heavy librar
 - Lines starting with `- ` or `* ` → `<li>` wrapped in `<ul class="list-disc pl-4 space-y-1">`
 - `` `inline code` `` → `<code class="bg-white/10 px-1 rounded text-xs">`
 
-**Sanitization:** Strip all HTML tags from AI output before applying markdown transforms to prevent XSS. Use a simple regex: `content.replace(/<[^>]*>/g, '')`.
+**Sanitization:** HTML-entity-encode the raw AI content (`&` → `&amp;`, `<` → `&lt;`, `>` → `&gt;`, `"` → `&quot;`, `'` → `&#39;`) **before** applying markdown transforms. This is safer than regex tag stripping (which fails on malformed tags, split chunks, etc.) and ensures no raw HTML can execute.
 
-Render with `dangerouslySetInnerHTML` after sanitization + markdown transform.
+Render with `dangerouslySetInnerHTML` after entity-encoding + markdown transform.
 
 ---
 
@@ -426,6 +443,9 @@ export const chatHistoryQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   before: z.string().optional(),
 });
+
+export type ChatMessageInput = z.infer<typeof chatMessageSchema>;
+export type ChatHistoryQueryInput = z.infer<typeof chatHistoryQuerySchema>;
 ```
 
 ---
@@ -448,9 +468,13 @@ export const chatHistoryQuerySchema = z.object({
 
 ### Modified Files
 - `packages/shared/src/types.ts` — Add `ChatMessage`, `ChatRole`
-- `packages/shared/src/schemas.ts` — Add `chatMessageSchema`, `chatHistoryQuerySchema`
+- `packages/shared/src/schemas.ts` — Add `chatMessageSchema`, `chatHistoryQuerySchema`, inferred types
 - `apps/api/src/index.ts` — Mount AI route with auth middleware
+- `apps/api/src/routes/dashboard.ts` — Extract aggregation queries to shared helper
 - `apps/web/src/App.tsx` — Replace AI chat placeholder with real `AIChatPage`
+
+### New Shared Files (extracted from dashboard)
+- `apps/api/src/lib/dashboard-queries.ts` — Shared aggregation queries used by both dashboard route and AI context builder
 
 ### Test Files
 - `apps/api/src/lib/ai-context.test.ts` — Financial context builder tests
