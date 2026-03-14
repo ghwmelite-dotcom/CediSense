@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import type { DashboardData, Category } from '@cedisense/shared';
@@ -131,6 +132,13 @@ export function DashboardPage() {
               transactions={data.recent_transactions}
               categories={categories}
             />
+
+            <Link
+              to="/insights"
+              className="block text-center text-gold text-sm font-medium hover:text-gold/80 transition-colors mt-2"
+            >
+              View Insights →
+            </Link>
           </>
         )}
       </div>

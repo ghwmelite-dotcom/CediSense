@@ -13,6 +13,7 @@ import { ImportPage } from '@/pages/ImportPage';
 import { AIChatPage } from '@/pages/AIChatPage';
 import { BudgetsPage } from '@/pages/BudgetsPage';
 import { GoalsPage } from '@/pages/GoalsPage';
+import { InsightsPage } from '@/pages/InsightsPage';
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -58,6 +59,7 @@ export function App() {
           <Route path="/ai-chat" element={<AIChatPage />} />
           <Route path="/add" element={<AddTransactionPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/insights" element={<InsightsPage />} />
         </Route>
 
         {/* Catch-all */}
