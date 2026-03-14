@@ -61,7 +61,7 @@ export function OnboardingPage() {
   async function handleFinish() {
     await api.put('/users/me/onboarding', { completed: true });
     await refreshUser();
-    navigate('/');
+    navigate('/dashboard');
   }
 
   if (loading) {

@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 
 const navItems = [
-  { to: '/', label: 'Home', icon: '🏠', isAction: false },
+  { to: '/dashboard', label: 'Home', icon: '🏠', isAction: false },
   { to: '/transactions', label: 'Txns', icon: '📋', isAction: false },
   { to: '/add', label: 'Add', icon: '+', isAction: true },
   { to: '/ai-chat', label: 'AI Chat', icon: '💬', isAction: false },
@@ -42,7 +42,7 @@ export function BottomNav() {
           <NavLink
             key={item.to}
             to={item.to}
-            end={item.to === '/'}
+            end={item.to === '/dashboard'}
             className={({ isActive }) =>
               `flex flex-col items-center gap-0.5 px-2 py-1 relative transition-colors duration-150 min-w-[44px] min-h-[44px] justify-center ${
                 isActive ? 'text-gold' : 'text-muted hover:text-white/70'

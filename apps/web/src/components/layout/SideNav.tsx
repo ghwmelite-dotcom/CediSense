@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: '🏠' },
+  { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
   { to: '/transactions', label: 'Transactions', icon: '📋' },
   { to: '/budgets', label: 'Budgets', icon: '📊' },
   { to: '/goals', label: 'Goals', icon: '🎯' },
@@ -40,7 +40,7 @@ export function SideNav() {
           <NavLink
             key={item.to}
             to={item.to}
-            end={item.to === '/'}
+            end={item.to === '/dashboard'}
             className={({ isActive }) =>
               `group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 relative overflow-hidden ${
                 isActive

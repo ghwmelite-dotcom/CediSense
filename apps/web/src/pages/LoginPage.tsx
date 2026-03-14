@@ -18,7 +18,7 @@ export function LoginPage() {
 
     try {
       await login({ phone: phone.replace(/\s|-/g, ''), pin });
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       if (err instanceof ApiRequestError) {
         setError(err.message);
