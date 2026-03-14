@@ -6,6 +6,10 @@ import { rateLimitMiddleware } from './middleware/rate-limit.js';
 import { auth } from './routes/auth.js';
 import { users } from './routes/users.js';
 import { accounts } from './routes/accounts.js';
+import { categories } from './routes/categories.js';
+import { categoryRules } from './routes/category-rules.js';
+import { transactions } from './routes/transactions.js';
+import { importRoutes } from './routes/import.js';
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -18,9 +22,19 @@ app.route('/api/v1/auth', auth);
 // Protected routes with rate limiting
 app.use('/api/v1/users/*', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/accounts/*', authMiddleware, rateLimitMiddleware);
+app.use('/api/v1/categories/*', authMiddleware, rateLimitMiddleware);
+app.use('/api/v1/category-rules/*', authMiddleware, rateLimitMiddleware);
+// IMPORTANT: /import must be registered before /transactions to prevent /:id catching /import
+app.use('/api/v1/import/*', authMiddleware, rateLimitMiddleware);
+app.use('/api/v1/transactions/*', authMiddleware, rateLimitMiddleware);
 
 app.route('/api/v1/users', users);
 app.route('/api/v1/accounts', accounts);
+app.route('/api/v1/categories', categories);
+app.route('/api/v1/category-rules', categoryRules);
+// Mount import BEFORE transactions so /transactions/import is never ambiguous
+app.route('/api/v1/import', importRoutes);
+app.route('/api/v1/transactions', transactions);
 
 // Health check
 app.get('/api/v1/health', (c) => {
