@@ -16,6 +16,8 @@ import { BudgetsPage } from '@/pages/BudgetsPage';
 import { GoalsPage } from '@/pages/GoalsPage';
 import { InsightsPage } from '@/pages/InsightsPage';
 import { RecurringPage } from '@/pages/RecurringPage';
+import { MonthlyReportPrint } from '@/pages/print/MonthlyReportPrint';
+import { TransactionsPrint } from '@/pages/print/TransactionsPrint';
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -42,6 +44,24 @@ export function App() {
           element={
             <ProtectedRoute>
               <OnboardingPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Print routes (protected, no shell) */}
+        <Route
+          path="/print/report"
+          element={
+            <ProtectedRoute>
+              <MonthlyReportPrint />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/print/transactions"
+          element={
+            <ProtectedRoute>
+              <TransactionsPrint />
             </ProtectedRoute>
           }
         />

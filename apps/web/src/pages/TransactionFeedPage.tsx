@@ -180,13 +180,29 @@ export function TransactionFeedPage() {
       <div className="sticky top-0 z-10 bg-ghana-dark/95 backdrop-blur border-b border-white/5 px-4 pt-4 pb-3 space-y-3">
         <div className="flex items-center justify-between">
           <h1 className="text-white text-xl font-bold">Transactions</h1>
-          <button
-            type="button"
-            onClick={() => navigate('/transactions/import')}
-            className="text-gold text-sm font-medium hover:text-gold/80 transition-colors"
-          >
-            Import
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (accountFilter) params.set('account_id', accountFilter);
+                if (categoryFilter) params.set('category_id', categoryFilter);
+                if (fromFilter) params.set('from', fromFilter);
+                if (toFilter) params.set('to', toFilter);
+                window.open(`/print/transactions?${params.toString()}`, '_blank');
+              }}
+              className="text-gold text-sm font-medium hover:text-gold/80 transition-colors"
+            >
+              Export
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/transactions/import')}
+              className="text-gold text-sm font-medium hover:text-gold/80 transition-colors"
+            >
+              Import
+            </button>
+          </div>
         </div>
 
         {/* Search */}

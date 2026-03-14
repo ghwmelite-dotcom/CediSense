@@ -52,6 +52,17 @@ export function InsightsPage() {
       <MonthPicker month={month} onMonthChange={setMonth} />
 
       <div className="px-4 pt-4 space-y-4 max-w-screen-lg mx-auto">
+        {/* Page header with export action */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-white text-xl font-bold">Insights</h1>
+          <button
+            type="button"
+            onClick={() => window.open(`/print/report?month=${month}`, '_blank')}
+            className="text-sm text-gold font-medium hover:text-gold/80 transition-colors no-print"
+          >
+            Export PDF
+          </button>
+        </div>
         {/* Loading skeleton */}
         {loading && (
           <div className="space-y-4">
