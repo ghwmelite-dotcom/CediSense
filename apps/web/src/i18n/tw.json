@@ -1,0 +1,146 @@
+{
+  "common": {
+    "save": "Kora",
+    "cancel": "Gyae",
+    "delete": "Yi Fi Hɔ",
+    "edit": "Sesa",
+    "loading": "Ɛreba…",
+    "retry": "Sɔ Bio",
+    "back": "San Kɔ",
+    "seeAll": "Hwɛ Nyinaa",
+    "confirm": "Adi Mu",
+    "dismiss": "Tu Mu",
+    "add": "Fa Bɛka",
+    "close": "To Mu",
+    "search": "Hwehwɛ",
+    "noData": "Nhoma biara nni hɔ"
+  },
+  "nav": {
+    "home": "Fie",
+    "transactions": "Adwumadi",
+    "add": "Fa Bɛka",
+    "aiChat": "AI Chat",
+    "settings": "Nhyehyɛe",
+    "budgets": "Sika Nhyehyɛe",
+    "goals": "Botaeɛ",
+    "recurring": "Adwumadi a Ɛda So",
+    "insights": "Suahu"
+  },
+  "auth": {
+    "login": "Wo Bɛn",
+    "register": "Yɛ Akontaa",
+    "phone": "Telefon Nɔma",
+    "pin": "PIN",
+    "name": "Din Pa",
+    "signOut": "Pue Fi Mu"
+  },
+  "dashboard": {
+    "totalBalance": "Sika a Aka Nyinaa",
+    "income": "Sika a Ɛba",
+    "expenses": "Sika a Wɔde Di Dwuma",
+    "net": "Ntoatoaso",
+    "fees": "Akafraboa",
+    "dailySpending": "Da Biara Akatua",
+    "spendingByCategory": "Akatua Mu Nhyehyɛe",
+    "recentTransactions": "Adwumadi a Atwam",
+    "viewInsights": "Hwɛ Suahu"
+  },
+  "transactions": {
+    "title": "Adwumadi",
+    "import": "De Bɛba",
+    "addManually": "Fa Bɛka Wo Nsa So",
+    "importSms": "De Fi SMS Bɛba",
+    "importCsv": "De CSV Bɛba",
+    "noTransactions": "Adwumadi biara nni hɔ",
+    "allLoaded": "Adwumadi nyinaa aba",
+    "searchPlaceholder": "Hwehwɛ adwumadi…"
+  },
+  "chat": {
+    "title": "AI Chat",
+    "placeholder": "Bisɛ wo sika ho asɛm…",
+    "generateReport": "Yɛ Ripɔte",
+    "suggestion1": "Sika ahe na mede dii dwuma mia yi?",
+    "suggestion2": "Dɛn na mede sika kɛse dii dwuma?",
+    "suggestion3": "Metumi akɔ sika nhyehyɛe mu anaa?",
+    "suggestion4": "Ɛte sɛn na metumi akora sika pii?",
+    "clear": "Yi Chat Nyinaa Fi Hɔ",
+    "clearConfirm": "Wopɛ sɛ wuyi chat nsɛm nyinaa anaa?",
+    "usageWarning": "Wubɛduru wo bosome mu nnipa nɔma so.",
+    "noHistory": "Chat nsɛm biara nni hɔ. Bisɛ me wo sika ho asɛm!"
+  },
+  "budgets": {
+    "title": "Sika Nhyehyɛe",
+    "addBudget": "Fa Sika Nhyehyɛe Bɛka",
+    "monthlyBudget": "Bosome Mu Sika Nhyehyɛe",
+    "remaining": "Sika a Aka",
+    "overBudget": "Wutwaa Nhyehyɛe So",
+    "noBudgets": "Sika nhyehyɛe biara nni hɔ",
+    "createFirst": "Yɛ wo nhyehyɛe a edi kan na worhu wo akatua",
+    "onTrack": "Ɛkɔ yie",
+    "warning": "Wubɛduru akyiri",
+    "exceeded": "Wutwaa nhyehyɛe so"
+  },
+  "goals": {
+    "title": "Botaeɛ",
+    "newGoal": "Botaeɛ Foforo",
+    "contribute": "Fa Sika Bɛka",
+    "goalReached": "Woduui Botaeɛ So!",
+    "noGoals": "Botaeɛ biara nni hɔ",
+    "createFirst": "Hyehyɛ sika kora botaeɛ na wofi ase yɛ adeɛ",
+    "daysLeft": "nna aka",
+    "overdue": "Dɔn Atwam",
+    "completed": "Asi Mu",
+    "noDeadline": "Bere biara nhyɛ",
+    "targetAmount": "Sika a Wɔpɛ"
+  },
+  "settings": {
+    "title": "Nhyehyɛe",
+    "profile": "Wo Ho Nhoma",
+    "accounts": "Akontaa",
+    "categories": "Nkyɛmu",
+    "rules": "Mmara",
+    "language": "Kasa",
+    "editProfile": "Sesa Wo Ho Nhoma",
+    "addAccount": "Fa Akontaa Bɛka",
+    "addCategory": "Fa Nkyɛmu Bɛka",
+    "addRule": "Fa Mmara Bɛka"
+  },
+  "insights": {
+    "title": "Suahu",
+    "biggestChanges": "Nsesa Kɛse",
+    "monthlySummary": "Bosome Mu Nkyɛkyɛmu",
+    "generateReport": "Yɛ Ripɔte",
+    "noChanges": "Nsesa biara nni mia yi mu",
+    "notEnoughData": "Nhoma biara nni hɔ. Kɔ so kora wo adwumadi!",
+    "vsLastMonth": "tia bosome a atwam"
+  },
+  "recurring": {
+    "title": "Adwumadi a Ɛda So",
+    "scanPatterns": "Hwehwɛ Nhyehyɛe",
+    "scanning": "Ɛrehwehwɛ…",
+    "candidates": "Nhyehyɛe a Wohuu",
+    "confirm": "Adi Mu Sɛ Ɛda So",
+    "noCandidates": "Nhyehyɛe biara a ɛda so nhuu",
+    "noRecurring": "Adwumadi biara a ɛda so nni hɔ",
+    "scanNow": "Hwehwɛ Seesei",
+    "upcomingBills": "Akatua a Ɛreba",
+    "dueIn": "Ɛbɛba",
+    "dueToday": "Ɛsɛ sɛ wotua ɛnnɛ",
+    "overdue": "Dɔn Atwam",
+    "paused": "Aka Hɔ",
+    "seenTimes": "lɛ ahunu"
+  },
+  "offline": {
+    "youreOffline": "Wonsɔ intanɛt so",
+    "changesPending": "Nsesa bi retwɛn sync",
+    "syncing": "Ɛresync…",
+    "allSynced": "Nyinaa asi mu",
+    "pending": "retwɛn"
+  },
+  "errors": {
+    "offline": "Wonsɔ intanɛt so. Hwɛ wo konnɛksen.",
+    "loadFailed": "Nhoma biara mmirew. Sɔ bio.",
+    "saveFailed": "Ɛantumi akora. Sɔ bio.",
+    "deleteFailed": "Ɛantumi ayii fi hɔ. Sɔ bio."
+  }
+}

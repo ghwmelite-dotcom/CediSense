@@ -1,0 +1,146 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading…",
+    "retry": "Retry",
+    "back": "Back",
+    "seeAll": "See All",
+    "confirm": "Confirm",
+    "dismiss": "Dismiss",
+    "add": "Add",
+    "close": "Close",
+    "search": "Search",
+    "noData": "No data available"
+  },
+  "nav": {
+    "home": "Home",
+    "transactions": "Transactions",
+    "add": "Add",
+    "aiChat": "AI Chat",
+    "settings": "Settings",
+    "budgets": "Budgets",
+    "goals": "Goals",
+    "recurring": "Recurring",
+    "insights": "Insights"
+  },
+  "auth": {
+    "login": "Log In",
+    "register": "Create Account",
+    "phone": "Phone Number",
+    "pin": "PIN",
+    "name": "Full Name",
+    "signOut": "Sign Out"
+  },
+  "dashboard": {
+    "totalBalance": "Total Balance",
+    "income": "Income",
+    "expenses": "Expenses",
+    "net": "Net",
+    "fees": "Fees",
+    "dailySpending": "Daily Spending",
+    "spendingByCategory": "Spending by Category",
+    "recentTransactions": "Recent Transactions",
+    "viewInsights": "View Insights"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "import": "Import",
+    "addManually": "Add Manually",
+    "importSms": "Import from SMS",
+    "importCsv": "Import CSV",
+    "noTransactions": "No transactions yet",
+    "allLoaded": "All transactions loaded",
+    "searchPlaceholder": "Search transactions…"
+  },
+  "chat": {
+    "title": "AI Chat",
+    "placeholder": "Ask about your finances…",
+    "generateReport": "Generate Report",
+    "suggestion1": "How much did I spend this month?",
+    "suggestion2": "What are my biggest expenses?",
+    "suggestion3": "Am I on track with my budget?",
+    "suggestion4": "How can I save more?",
+    "clear": "Clear Chat",
+    "clearConfirm": "Are you sure you want to clear the chat history?",
+    "usageWarning": "You're approaching your monthly message limit.",
+    "noHistory": "No chat history yet. Ask me anything about your finances!"
+  },
+  "budgets": {
+    "title": "Budgets",
+    "addBudget": "Add Budget",
+    "monthlyBudget": "Monthly Budget",
+    "remaining": "Remaining",
+    "overBudget": "Over Budget",
+    "noBudgets": "No budgets set",
+    "createFirst": "Create your first budget to start tracking spending",
+    "onTrack": "On track",
+    "warning": "Nearing limit",
+    "exceeded": "Budget exceeded"
+  },
+  "goals": {
+    "title": "Goals",
+    "newGoal": "New Goal",
+    "contribute": "Contribute",
+    "goalReached": "Goal Reached!",
+    "noGoals": "No goals yet",
+    "createFirst": "Set a savings goal to start building wealth",
+    "daysLeft": "days left",
+    "overdue": "Overdue",
+    "completed": "Completed",
+    "noDeadline": "No deadline",
+    "targetAmount": "Target Amount"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "accounts": "Accounts",
+    "categories": "Categories",
+    "rules": "Rules",
+    "language": "Language",
+    "editProfile": "Edit Profile",
+    "addAccount": "Add Account",
+    "addCategory": "Add Category",
+    "addRule": "Add Rule"
+  },
+  "insights": {
+    "title": "Insights",
+    "biggestChanges": "Biggest Changes",
+    "monthlySummary": "Monthly Summary",
+    "generateReport": "Generate Report",
+    "noChanges": "No significant changes this month",
+    "notEnoughData": "Not enough data yet. Keep tracking your transactions!",
+    "vsLastMonth": "vs last month"
+  },
+  "recurring": {
+    "title": "Recurring",
+    "scanPatterns": "Scan for Patterns",
+    "scanning": "Scanning…",
+    "candidates": "Detected Patterns",
+    "confirm": "Confirm Recurring",
+    "noCandidates": "No recurring patterns detected",
+    "noRecurring": "No recurring transactions",
+    "scanNow": "Scan Now",
+    "upcomingBills": "Upcoming Bills",
+    "dueIn": "Due in",
+    "dueToday": "Due today",
+    "overdue": "Overdue",
+    "paused": "Paused",
+    "seenTimes": "times seen"
+  },
+  "offline": {
+    "youreOffline": "You're offline",
+    "changesPending": "Changes pending sync",
+    "syncing": "Syncing…",
+    "allSynced": "All synced",
+    "pending": "pending"
+  },
+  "errors": {
+    "offline": "You're offline. Please check your connection.",
+    "loadFailed": "Failed to load data. Please try again.",
+    "saveFailed": "Failed to save. Please try again.",
+    "deleteFailed": "Failed to delete. Please try again."
+  }
+}
