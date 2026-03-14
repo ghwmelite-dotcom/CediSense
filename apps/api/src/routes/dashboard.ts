@@ -46,9 +46,10 @@ dashboard.get('/', async (c) => {
     );
   }
 
-  const month = parsed.data.month ?? currentMonth();
+  const now = currentMonth();
+  const month = parsed.data.month ?? now;
 
-  if (month > currentMonth()) {
+  if (month > now) {
     return c.json(
       { error: { code: 'VALIDATION_ERROR', message: 'Cannot view future months.' } },
       400

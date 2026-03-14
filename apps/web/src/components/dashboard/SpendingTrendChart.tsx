@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -9,18 +8,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { formatPesewas } from '@cedisense/shared';
-
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReduced(mql.matches);
-    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, []);
-  return reduced;
-}
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 interface DailyPoint {
   date: string;
