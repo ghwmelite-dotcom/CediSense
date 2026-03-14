@@ -10,11 +10,11 @@ export function SummaryCard({ income, expenses, fees }: SummaryCardProps) {
   const net = income - expenses;
 
   return (
-    <div className="glass-card rounded-2xl p-6 card-interactive motion-safe:animate-fade-in">
+    <div className="premium-card rounded-2xl p-6 card-interactive motion-safe:animate-fade-in">
       <div className="grid grid-cols-2 gap-3">
         {/* Income column */}
-        <div className="relative rounded-xl p-4 overflow-hidden bg-income/[0.06] border border-income/[0.08]">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-income/20 to-transparent" />
+        <div className="relative rounded-xl p-4 overflow-hidden bg-income/[0.05]">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-income/15 to-transparent" />
           <p className="text-xs text-muted uppercase tracking-widest font-medium">Income</p>
           <div className="flex items-center gap-1.5 mt-2.5">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-income/15 text-income text-xs font-bold flex-shrink-0">
@@ -27,8 +27,8 @@ export function SummaryCard({ income, expenses, fees }: SummaryCardProps) {
         </div>
 
         {/* Expenses column */}
-        <div className="relative rounded-xl p-4 overflow-hidden bg-expense/[0.06] border border-expense/[0.08]">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-expense/20 to-transparent" />
+        <div className="relative rounded-xl p-4 overflow-hidden bg-expense/[0.05]">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-expense/15 to-transparent" />
           <p className="text-xs text-muted uppercase tracking-widest font-medium">Expenses</p>
           <div className="flex items-center gap-1.5 mt-2.5">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-expense/15 text-expense text-xs font-bold flex-shrink-0">
@@ -39,13 +39,13 @@ export function SummaryCard({ income, expenses, fees }: SummaryCardProps) {
             <span className="text-lg font-bold text-expense tabular-nums">{formatPesewas(expenses)}</span>
           </div>
           {fees > 0 && (
-            <p className="text-muted/70 text-xs mt-2 pl-6.5">Fees: {formatPesewas(fees)}</p>
+            <p className="text-muted-dim text-xs mt-2 pl-6.5">Fees: {formatPesewas(fees)}</p>
           )}
         </div>
       </div>
 
       {/* Net row */}
-      <div className="mt-4 pt-4 border-t border-white/[0.04] flex items-center justify-between">
+      <div className="mt-4 pt-4 border-t border-[#1F1F35]/60 flex items-center justify-between">
         <span className="text-xs text-muted uppercase tracking-widest font-medium">Net</span>
         <span
           className={`text-base font-bold tabular-nums motion-safe:animate-fade-in ${

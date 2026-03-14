@@ -97,7 +97,18 @@
       "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx wrangler pages deploy dist --project-name cedisense --branch master 2>&1)",
       "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx vite build 2>&1 | tail -5)",
       "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx wrangler pages deploy dist --project-name cedisense --branch master --commit-dirty=true 2>&1)",
-      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx vite build 2>&1 | tail -8)"
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx vite build 2>&1 | tail -8)",
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\" && npx vitest run 2>&1 | tail -6)",
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx vite build 2>&1 | tail -5 && npx wrangler pages deploy dist --project-name cedisense --branch master --commit-dirty=true 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx vite build 2>&1 | tail -3 && npx wrangler pages deploy dist --project-name cedisense --branch master --commit-dirty=true 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx wrangler pages deployment list --project-name cedisense 2>&1 | head -30)",
+      "Bash(curl -s -X POST https://cedisense-api.ghwmelite.workers.dev/api/v1/auth/register \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"name\":\"Osborn Hodges\",\"phone\":\"0540125882\",\"pin\":\"1118\"}' 2>&1)",
+      "Bash(curl -s -X POST https://cedisense-api.ghwmelite.workers.dev/api/v1/auth/login \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"phone\":\"0540125882\",\"pin\":\"1118\"}' 2>&1)",
+      "Bash(curl -s -X POST https://cedisense-api.ghwmelite.workers.dev/api/v1/auth/login \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"phone\":\"0540125882\",\"pin\":\"1118\"}' -v 2>&1)",
+      "Bash(curl -s -X POST https://cedisense.pages.dev/api/v1/auth/login \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"phone\":\"0540125882\",\"pin\":\"1118\"}' 2>&1 | head -100)",
+      "WebSearch",
+      "WebFetch(domain:www.tech-rz.com)",
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx tsc --noEmit 2>&1 | head -50)"
     ]
   }
 }

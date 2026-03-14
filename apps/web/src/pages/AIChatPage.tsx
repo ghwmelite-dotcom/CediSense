@@ -135,7 +135,7 @@ export function AIChatPage() {
         style={{
           background:
             'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,168,67,0.02) 0%, transparent 70%), ' +
-            'radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,107,63,0.02) 0%, transparent 70%)',
+            'radial-gradient(ellipse 60% 40% at 50% 100%, rgba(34,197,94,0.02) 0%, transparent 70%)',
         }}
       >
         {isLoadingHistory && (

@@ -55,11 +55,11 @@ export function BudgetsPage() {
   return (
     <div className="pb-24">
       {/* Sticky page header */}
-      <div className="sticky top-0 z-30 backdrop-blur-xl bg-ghana-dark/95 border-b border-white/[0.04] px-4 py-4">
+      <div className="sticky top-0 z-30 backdrop-blur-xl bg-ghana-dark/95 border-b border-[#1F1F35]/40 px-4 py-4">
         <div className="flex items-center justify-between max-w-screen-lg mx-auto">
           <div className="flex items-center gap-2.5">
             <div className="w-0.5 h-5 rounded-full bg-gold/50" />
-            <h1 className="text-white text-xl font-bold tracking-tight">Budgets</h1>
+            <h1 className="text-text-primary text-xl font-bold tracking-tight">Budgets</h1>
           </div>
           <button
             type="button"
@@ -106,23 +106,51 @@ export function BudgetsPage() {
                 ))}
               </div>
             ) : (
-              /* Empty state */
+              /* Empty state -- UNIQUE: pie chart themed */
               <div className="flex flex-col items-center justify-center py-20 gap-5 text-center motion-safe:animate-slide-up">
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
-                    <svg className="w-10 h-10 text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
+                  {/* Pie chart illustration */}
+                  <div className="w-28 h-28 relative motion-safe:animate-float">
+                    <svg viewBox="0 0 112 112" fill="none" className="w-full h-full">
+                      {/* Outer ring segments */}
+                      <circle cx="56" cy="56" r="42" stroke="#1F1F35" strokeWidth="12" />
+                      <circle
+                        cx="56" cy="56" r="42"
+                        stroke="#D4A843" strokeWidth="12"
+                        strokeDasharray="66 198"
+                        strokeDashoffset="0"
+                        strokeLinecap="round"
+                        opacity="0.5"
+                        className="motion-safe:animate-pulse-soft"
+                      />
+                      <circle
+                        cx="56" cy="56" r="42"
+                        stroke="#22C55E" strokeWidth="12"
+                        strokeDasharray="44 220"
+                        strokeDashoffset="-66"
+                        strokeLinecap="round"
+                        opacity="0.4"
+                      />
+                      <circle
+                        cx="56" cy="56" r="42"
+                        stroke="#8B8BA3" strokeWidth="12"
+                        strokeDasharray="33 231"
+                        strokeDashoffset="-110"
+                        strokeLinecap="round"
+                        opacity="0.25"
+                      />
+                      {/* Center circle */}
+                      <circle cx="56" cy="56" r="24" fill="#0E0E18" />
+                      <text x="56" y="60" textAnchor="middle" fill="#D4A843" fontSize="14" fontWeight="bold" opacity="0.6">₵</text>
                     </svg>
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center">
-                    <span className="text-gold text-xs font-bold">0</span>
+                    {/* Ambient glow */}
+                    <div className="absolute inset-0 bg-gold/[0.04] blur-2xl rounded-full scale-150" />
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-white font-semibold mb-1.5">No budgets yet</h2>
+                  <h2 className="text-text-primary font-semibold text-lg mb-1.5">Take control of your spending</h2>
                   <p className="text-muted text-sm max-w-xs leading-relaxed">
-                    Set spending limits for your categories to track where your money goes each month.
+                    Set monthly limits for each category and watch your spending habits transform. Your wallet will thank you.
                   </p>
                 </div>
                 <button

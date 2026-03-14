@@ -16,7 +16,7 @@ function getCurrentMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
-/** Staggered delay utility — returns inline style with animation-delay */
+/** Staggered delay utility -- returns inline style with animation-delay */
 function stagger(index: number, baseMs = 80): React.CSSProperties {
   return { animationDelay: `${index * baseMs}ms`, animationFillMode: 'both' };
 }
@@ -30,7 +30,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Cache: month → DashboardData
+  // Cache: month -> DashboardData
   const cache = useRef<Map<string, DashboardData>>(new Map());
 
   // Fetch categories and upcoming bills once
@@ -86,11 +86,18 @@ export function DashboardPage() {
       <MonthPicker month={month} onMonthChange={setMonth} />
 
       <div className="px-4 pt-6 space-y-5 max-w-screen-lg mx-auto">
-        {/* Greeting — prominent hero text */}
+        {/* Greeting -- hero text with subtle gold accent */}
         <div className="motion-safe:animate-fade-in" style={stagger(0, 60)}>
           <p className="text-xs text-muted uppercase tracking-widest font-medium">{greeting}</p>
-          <h1 className="text-2xl md:text-3xl font-bold text-white mt-1 tracking-tight">
-            {firstName || 'Dashboard'}
+          <h1 className="text-2xl md:text-3xl font-bold text-text-primary mt-1 tracking-tight">
+            {firstName ? (
+              <>
+                {firstName}
+                <span className="text-gold/60">.</span>
+              </>
+            ) : (
+              'Dashboard'
+            )}
           </h1>
         </div>
 
@@ -111,7 +118,7 @@ export function DashboardPage() {
         {/* Error state */}
         {error && !loading && (
           <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-expense/[0.08] flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-expense/[0.06] flex items-center justify-center">
               <svg className="w-7 h-7 text-expense/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
               </svg>
@@ -172,7 +179,7 @@ export function DashboardPage() {
             <div className="motion-safe:animate-fade-in" style={stagger(6)}>
               <Link
                 to="/insights"
-                className="block text-center text-gold/80 text-sm font-medium hover:text-gold transition-colors mt-2 py-3"
+                className="block text-center text-gold/70 text-sm font-medium hover:text-gold transition-colors mt-2 py-3"
               >
                 View Insights
                 <svg className="inline-block w-3.5 h-3.5 ml-1.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

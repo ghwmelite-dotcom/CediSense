@@ -17,7 +17,7 @@ interface SettingsData {
 
 function SkeletonCard() {
   return (
-    <div className="glass-card rounded-2xl p-6 space-y-4">
+    <div className="premium-card rounded-2xl p-6 space-y-4">
       <div className="flex items-center gap-2 mb-1">
         <div className="w-0.5 h-4 rounded-full bg-white/[0.08]" />
         <div className="h-4 bg-white/[0.06] rounded-lg w-1/3 animate-pulse" />
@@ -31,7 +31,7 @@ function SkeletonCard() {
   );
 }
 
-/** Wrapper that gives each settings section a premium card look with consistent headers */
+/** Wrapper that gives each settings section a premium card look */
 function SettingsCard({
   children,
   accentColor = 'bg-gold',
@@ -40,7 +40,7 @@ function SettingsCard({
   accentColor?: string;
 }) {
   return (
-    <div className="glass-card rounded-2xl overflow-hidden card-interactive">
+    <div className="premium-card rounded-2xl overflow-hidden card-interactive">
       {/* Subtle top accent line */}
       <div className={`h-px w-full ${accentColor} opacity-15`} />
       <div className="p-6">{children}</div>
@@ -123,7 +123,7 @@ export function SettingsPage() {
       {/* Page header */}
       <div className="flex items-center gap-2.5 mb-8">
         <div className="w-0.5 h-5 rounded-full bg-gold/50" />
-        <h1 className="text-white text-xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-text-primary text-xl font-bold tracking-tight">Settings</h1>
       </div>
 
       {error && (
@@ -166,7 +166,7 @@ export function SettingsPage() {
             className="motion-safe:animate-slide-up"
             style={{ animationDelay: '60ms', animationFillMode: 'both' }}
           >
-            <SettingsCard accentColor="bg-ghana-green">
+            <SettingsCard accentColor="bg-income">
               <AccountsSection
                 accounts={data.accounts}
                 onRefresh={fetchAccounts}
@@ -192,7 +192,7 @@ export function SettingsPage() {
             className="motion-safe:animate-slide-up"
             style={{ animationDelay: '180ms', animationFillMode: 'both' }}
           >
-            <SettingsCard accentColor="bg-ghana-green">
+            <SettingsCard accentColor="bg-income">
               <RulesSection
                 rules={data.rules}
                 categories={data.categories}
@@ -206,12 +206,12 @@ export function SettingsPage() {
             className="pt-4 motion-safe:animate-slide-up"
             style={{ animationDelay: '240ms', animationFillMode: 'both' }}
           >
-            <div className="h-px bg-white/[0.04] mb-5" />
+            <div className="h-px bg-[#1F1F35]/40 mb-5" />
             <button
               onClick={handleLogout}
               className="w-full py-3.5 rounded-2xl font-semibold text-sm
-                bg-expense/[0.06] border border-expense/[0.08] text-expense/90
-                hover:bg-expense/[0.1] hover:border-expense/[0.12]
+                bg-expense/[0.06] text-expense/90
+                hover:bg-expense/[0.1]
                 active:scale-[0.98] transition-all min-h-[44px]
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-expense/30"
             >

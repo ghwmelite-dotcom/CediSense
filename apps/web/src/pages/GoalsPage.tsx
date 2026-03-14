@@ -58,7 +58,7 @@ export function GoalsPage() {
       }
       await fetchGoals();
     } catch {
-      // Non-fatal — user can try again
+      // Non-fatal -- user can try again
     }
   }
 
@@ -86,11 +86,11 @@ export function GoalsPage() {
   return (
     <div className="pb-24">
       {/* Sticky page header */}
-      <div className="sticky top-0 z-10 backdrop-blur-xl bg-ghana-dark/95 border-b border-white/[0.04] px-4 pt-4 pb-3">
+      <div className="sticky top-0 z-10 backdrop-blur-xl bg-ghana-dark/95 border-b border-[#1F1F35]/40 px-4 pt-4 pb-3">
         <div className="flex items-center justify-between max-w-screen-lg mx-auto">
           <div className="flex items-center gap-2.5">
             <div className="w-0.5 h-5 rounded-full bg-gold/50" />
-            <h1 className="text-white text-xl font-bold tracking-tight">Savings Goals</h1>
+            <h1 className="text-text-primary text-xl font-bold tracking-tight">Savings Goals</h1>
           </div>
           <button
             type="button"
@@ -111,7 +111,7 @@ export function GoalsPage() {
         >
           <div
             className="flex items-center gap-3 px-5 py-4 rounded-2xl
-              glass-card !border-gold/20 shadow-gold-glow-lg"
+              premium-card !border-gold/20 shadow-gold-glow-lg"
           >
             <div className="w-10 h-10 rounded-full bg-gold/15 border border-gold/25 flex items-center justify-center shrink-0">
               <svg className="w-5 h-5 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -120,7 +120,7 @@ export function GoalsPage() {
             </div>
             <div>
               <p className="text-gold font-semibold text-sm">Goal Reached!</p>
-              <p className="text-white/70 text-xs">{celebration}</p>
+              <p className="text-muted text-xs">{celebration}</p>
             </div>
           </div>
         </div>
@@ -139,7 +139,7 @@ export function GoalsPage() {
         {/* Error state */}
         {error && !loading && (
           <div className="text-center py-16 motion-safe:animate-fade-in">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-expense/[0.06] flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-expense/[0.06] flex items-center justify-center">
               <svg className="w-7 h-7 text-expense/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
               </svg>
@@ -158,21 +158,36 @@ export function GoalsPage() {
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Empty state -- UNIQUE: target/flag themed */}
         {!loading && !error && goals.length === 0 && (
           <div className="text-center py-20 px-6 motion-safe:animate-slide-up">
             <div className="relative inline-flex items-center justify-center mb-6">
-              <div className="w-24 h-24 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
-                <svg className="w-10 h-10 text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.732a48.524 48.524 0 01-.005-10.499l-3.11.732a9 9 0 01-6.085-.711l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5" />
+              <div className="relative w-28 h-28 motion-safe:animate-float">
+                <svg viewBox="0 0 112 112" fill="none" className="w-full h-full">
+                  {/* Mountain/flag illustration */}
+                  {/* Mountain */}
+                  <path d="M16 90 L56 30 L96 90 Z" fill="#171727" stroke="#D4A843" strokeWidth="1" strokeOpacity="0.2" />
+                  <path d="M36 90 L66 50 L96 90 Z" fill="#1D1D30" stroke="#D4A843" strokeWidth="0.5" strokeOpacity="0.15" />
+                  {/* Flag pole */}
+                  <line x1="56" y1="30" x2="56" y2="12" stroke="#D4A843" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+                  {/* Flag */}
+                  <path d="M56 12 L76 18 L56 24 Z" fill="#D4A843" opacity="0.4" className="motion-safe:animate-pulse-soft" />
+                  {/* Stars */}
+                  <circle cx="30" cy="24" r="1.5" fill="#E8C873" opacity="0.3" />
+                  <circle cx="82" cy="20" r="1" fill="#E8C873" opacity="0.25" />
+                  <circle cx="44" cy="16" r="1.2" fill="#E8C873" opacity="0.2" />
+                  {/* Base line */}
+                  <line x1="8" y1="90" x2="104" y2="90" stroke="#5A5A72" strokeWidth="1" strokeOpacity="0.2" />
                 </svg>
+                {/* Ambient glow */}
+                <div className="absolute inset-0 bg-gold/[0.04] blur-2xl rounded-full scale-150" />
               </div>
             </div>
-            <h2 className="text-white text-lg font-semibold mb-2">
-              Start saving towards your goals
+            <h2 className="text-text-primary text-lg font-semibold mb-2">
+              Dream it. Save it. Achieve it.
             </h2>
             <p className="text-muted text-sm mb-8 max-w-xs mx-auto leading-relaxed">
-              Set a target, track your progress, and celebrate when you reach it.
+              Whether it is a new phone, a trip to Cape Coast, or an emergency fund -- set a target and watch your progress climb.
             </p>
             <button
               type="button"
