@@ -10,6 +10,7 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { TransactionFeedPage } from '@/pages/TransactionFeedPage';
 import { AddTransactionPage } from '@/pages/AddTransactionPage';
 import { ImportPage } from '@/pages/ImportPage';
+import { AIChatPage } from '@/pages/AIChatPage';
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -52,7 +53,7 @@ export function App() {
           <Route path="/transactions/import" element={<ImportPage />} />
           <Route path="/budgets" element={<Placeholder name="Budgets" />} />
           <Route path="/goals" element={<Placeholder name="Goals" />} />
-          <Route path="/ai-chat" element={<Placeholder name="AI Chat" />} />
+          <Route path="/ai-chat" element={<AIChatPage />} />
           <Route path="/add" element={<AddTransactionPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
