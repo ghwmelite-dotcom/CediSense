@@ -7,6 +7,9 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { TransactionFeedPage } from '@/pages/TransactionFeedPage';
+import { AddTransactionPage } from '@/pages/AddTransactionPage';
+import { ImportPage } from '@/pages/ImportPage';
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -45,11 +48,12 @@ export function App() {
           }
         >
           <Route path="/" element={<DashboardPage />} />
-          <Route path="/transactions" element={<Placeholder name="Transactions" />} />
+          <Route path="/transactions" element={<TransactionFeedPage />} />
+          <Route path="/transactions/import" element={<ImportPage />} />
           <Route path="/budgets" element={<Placeholder name="Budgets" />} />
           <Route path="/goals" element={<Placeholder name="Goals" />} />
           <Route path="/ai-chat" element={<Placeholder name="AI Chat" />} />
-          <Route path="/add" element={<Placeholder name="Add Transaction" />} />
+          <Route path="/add" element={<AddTransactionPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
