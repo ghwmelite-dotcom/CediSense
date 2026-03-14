@@ -1,0 +1,69 @@
+import type { SusuGroup, SusuFrequency } from '@cedisense/shared';
+import { formatPesewas } from '@cedisense/shared';
+
+interface GroupCardProps {
+  group: SusuGroup & { member_count: number };
+  isCreator: boolean;
+  onClick: () => void;
+}
+
+function frequencyLabel(freq: SusuFrequency): string {
+  switch (freq) {
+    case 'daily': return 'Daily';
+    case 'weekly': return 'Weekly';
+    case 'monthly': return 'Monthly';
+  }
+}
+
+export function GroupCard({ group, isCreator, onClick }: GroupCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full text-left bg-ghana-surface border border-white/10 rounded-xl p-4 space-y-3
+        hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5 active:scale-[0.99]
+        transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
+    >
+      {/* Row 1: group name + role badge */}
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-white font-semibold text-base truncate flex-1">{group.name}</p>
+        {isCreator ? (
+          <span className="shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gold/20 text-gold">
+            Creator
+          </span>
+        ) : (
+          <span className="shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/10 text-muted">
+            Member
+          </span>
+        )}
+      </div>
+
+      {/* Row 2: contribution amount + member count + round */}
+      <div className="flex items-center gap-4 text-sm">
+        <span className="text-white font-bold">
+          {formatPesewas(group.contribution_pesewas)}/{frequencyLabel(group.frequency).toLowerCase()}
+        </span>
+        <span className="text-muted">{group.member_count} member{group.member_count !== 1 ? 's' : ''}</span>
+        <span className="text-muted">Round {group.current_round}</span>
+      </div>
+
+      {/* Row 3: frequency badge + active/inactive status */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/10 text-muted">
+          {frequencyLabel(group.frequency)}
+        </span>
+        {group.is_active ? (
+          <span className="flex items-center gap-1 text-xs font-medium text-income">
+            <span className="w-1.5 h-1.5 rounded-full bg-income inline-block" aria-hidden="true" />
+            Active
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 text-xs font-medium text-muted">
+            <span className="w-1.5 h-1.5 rounded-full bg-muted inline-block" aria-hidden="true" />
+            Inactive
+          </span>
+        )}
+      </div>
+    </button>
+  );
+}
