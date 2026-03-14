@@ -20,11 +20,29 @@ export async function buildFinancialContext(db: D1Database, userId: string): Pro
   const startDate = `${month}-01`;
   const endDate = lastDayOfMonth(month);
 
-  const [accounts, summaryRows, categories, recentTxns] = await Promise.all([
+  const [accounts, summaryRows, categories, recentTxns, budgetResult, goalResult] = await Promise.all([
     fetchAccounts(db, userId),
     fetchSummary(db, userId, startDate, endDate),
     fetchCategoryBreakdown(db, userId, startDate, endDate),
     fetchRecentTransactions(db, userId, 5),
+    // Budget data for AI context
+    db.prepare(
+      `SELECT b.amount_pesewas, c.name as category_name, COALESCE(s.spent, 0) as spent_pesewas
+       FROM budgets b
+       JOIN categories c ON b.category_id = c.id
+       LEFT JOIN (
+         SELECT category_id, SUM(amount_pesewas) as spent
+         FROM transactions WHERE user_id = ? AND type = 'debit'
+           AND transaction_date >= ? AND transaction_date <= ?
+         GROUP BY category_id
+       ) s ON b.category_id = s.category_id
+       WHERE b.user_id = ?
+       ORDER BY COALESCE(s.spent, 0) * 1.0 / b.amount_pesewas DESC`
+    ).bind(userId, startDate, endDate, userId).all(),
+    // Goals data for AI context
+    db.prepare(
+      'SELECT name, target_pesewas, current_pesewas, deadline FROM savings_goals WHERE user_id = ? ORDER BY current_pesewas * 1.0 / target_pesewas DESC'
+    ).bind(userId).all(),
   ]);
 
   const { totalIncome, totalExpenses, totalFees, transactionCount } = assembleSummary(summaryRows);
@@ -71,6 +89,44 @@ export async function buildFinancialContext(db: D1Database, userId: string): Pro
       const desc = txn.description || txn.counterparty || 'Transaction';
       const cat = txn.category_name ? ` (${txn.category_name})` : '';
       lines.push(`- ${dateLabel}: ${sign}${formatGHS(txn.amount_pesewas)} ${desc}${cat}`);
+    }
+  }
+
+  // Extract rows
+  const budgetRows = (budgetResult.results ?? []) as Array<{ amount_pesewas: number; category_name: string; spent_pesewas: number }>;
+  const goalRows = (goalResult.results ?? []) as Array<{ name: string; target_pesewas: number; current_pesewas: number; deadline: string | null }>;
+
+  // Budget context
+  if (budgetRows.length > 0) {
+    lines.push('');
+    lines.push('Budgets (this month):');
+    let totalBudgeted = 0;
+    let totalBudgetSpent = 0;
+    for (const b of budgetRows) {
+      const spent = b.spent_pesewas ?? 0;
+      const amount = b.amount_pesewas;
+      const pct = amount > 0 ? Math.round((spent / amount) * 1000) / 10 : 0;
+      const indicator = pct >= 100 ? '❌' : pct >= 80 ? '⚠️' : '✓';
+      lines.push(`- ${b.category_name}: ${formatGHS(spent)}/${formatGHS(amount)} (${pct.toFixed(1)}%) ${indicator}`);
+      totalBudgeted += amount;
+      totalBudgetSpent += spent;
+    }
+    const totalPct = totalBudgeted > 0 ? Math.round((totalBudgetSpent / totalBudgeted) * 1000) / 10 : 0;
+    lines.push(`Total: ${formatGHS(totalBudgetSpent)}/${formatGHS(totalBudgeted)} budgeted (${totalPct.toFixed(1)}%)`);
+  }
+
+  // Goals context
+  if (goalRows.length > 0) {
+    lines.push('');
+    lines.push('Savings Goals:');
+    for (const g of goalRows) {
+      const pct = Math.min(Math.round((g.current_pesewas / g.target_pesewas) * 1000) / 10, 100);
+      let deadlineStr = 'no deadline';
+      if (g.deadline) {
+        const days = Math.ceil((new Date(g.deadline + 'T23:59:59').getTime() - Date.now()) / 86400000);
+        deadlineStr = days < 0 ? 'overdue' : `${days} days left`;
+      }
+      lines.push(`- ${g.name}: ${formatGHS(g.current_pesewas)}/${formatGHS(g.target_pesewas)} (${pct.toFixed(1)}%) — ${deadlineStr}`);
     }
   }
 
