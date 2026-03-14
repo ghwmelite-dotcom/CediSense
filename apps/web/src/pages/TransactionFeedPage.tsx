@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Transaction, Category, Account } from '@cedisense/shared';
 import { api } from '@/lib/api';
 import { TransactionRow } from '@/components/transactions/TransactionRow';
@@ -34,6 +34,7 @@ function groupByDate(transactions: Transaction[]): [string, Transaction[]][] {
 
 export function TransactionFeedPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // Data
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -48,10 +49,12 @@ export function TransactionFeedPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Filters
-  const [accountFilter, setAccountFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [accountFilter, setAccountFilter] = useState(searchParams.get('account_id') ?? '');
+  const [categoryFilter, setCategoryFilter] = useState(searchParams.get('category_id') ?? '');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [fromFilter] = useState(searchParams.get('from') ?? '');
+  const [toFilter] = useState(searchParams.get('to') ?? '');
 
   // Delete state
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -82,9 +85,11 @@ export function TransactionFeedPage() {
       if (accountFilter) params.set('account_id', accountFilter);
       if (categoryFilter) params.set('category_id', categoryFilter);
       if (search) params.set('search', search);
+      if (fromFilter) params.set('from', fromFilter);
+      if (toFilter) params.set('to', toFilter);
       return `/transactions?${params.toString()}`;
     },
-    [accountFilter, categoryFilter, search]
+    [accountFilter, categoryFilter, search, fromFilter, toFilter]
   );
 
   // Fetch first page whenever filters change
