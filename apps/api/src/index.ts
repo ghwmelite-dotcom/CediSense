@@ -11,6 +11,7 @@ import { categoryRules } from './routes/category-rules.js';
 import { transactions } from './routes/transactions.js';
 import { importRoutes } from './routes/import.js';
 import { dashboard } from './routes/dashboard.js';
+import { ai } from './routes/ai.js';
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -29,6 +30,7 @@ app.use('/api/v1/category-rules/*', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/import/*', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/transactions/*', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/dashboard', authMiddleware, rateLimitMiddleware);
+app.use('/api/v1/ai/*', authMiddleware, rateLimitMiddleware);
 
 app.route('/api/v1/users', users);
 app.route('/api/v1/accounts', accounts);
@@ -38,6 +40,7 @@ app.route('/api/v1/category-rules', categoryRules);
 app.route('/api/v1/import', importRoutes);
 app.route('/api/v1/transactions', transactions);
 app.route('/api/v1/dashboard', dashboard);
+app.route('/api/v1/ai', ai);
 
 // Health check
 app.get('/api/v1/health', (c) => {
