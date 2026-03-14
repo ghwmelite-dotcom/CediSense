@@ -16,6 +16,7 @@ import { budgets } from './routes/budgets.js';
 import { goals } from './routes/goals.js';
 import { insights } from './routes/insights.js';
 import { recurring } from './routes/recurring.js';
+import { ious } from './routes/ious.js';
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -45,6 +46,8 @@ app.use('/api/v1/insights/*', authMiddleware, rateLimitMiddleware);
 // IMPORTANT: Both bare path AND wildcard required — GET / needs the first, nested routes need the second.
 app.use('/api/v1/recurring', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/recurring/*', authMiddleware, rateLimitMiddleware);
+app.use('/api/v1/ious', authMiddleware, rateLimitMiddleware);
+app.use('/api/v1/ious/*', authMiddleware, rateLimitMiddleware);
 
 app.route('/api/v1/users', users);
 app.route('/api/v1/accounts', accounts);
@@ -59,6 +62,7 @@ app.route('/api/v1/budgets', budgets);
 app.route('/api/v1/goals', goals);
 app.route('/api/v1/insights', insights);
 app.route('/api/v1/recurring', recurring);
+app.route('/api/v1/ious', ious);
 
 // Health check
 app.get('/api/v1/health', (c) => {
