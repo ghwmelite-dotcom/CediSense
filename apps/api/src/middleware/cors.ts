@@ -8,6 +8,7 @@ export function corsMiddleware() {
       const allowed = [
         'https://cedisense.com',
         'https://www.cedisense.com',
+        'https://cedisense.pages.dev',
       ];
 
       // Allow Pages preview deploys
