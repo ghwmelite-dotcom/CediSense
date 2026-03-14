@@ -180,3 +180,53 @@ export interface ImportResult {
   failed: number;
   transactions: RawTransaction[];
 }
+
+// ─── Dashboard types ──────────────────────────────────────────────────────────
+
+export interface CategoryBreakdownItem {
+  category_id: string;
+  name: string;
+  icon: string;
+  color: string;
+  total_pesewas: number;
+  transaction_count: number;
+  percentage: number;
+}
+
+export interface DashboardRecentTransaction {
+  id: string;
+  account_id: string;
+  category_id: string | null;
+  type: TransactionType;
+  amount_pesewas: number;
+  fee_pesewas: number;
+  description: string | null;
+  counterparty: string | null;
+  reference: string | null;
+  source: TransactionSource;
+  transaction_date: string;
+  created_at: string;
+  category_name: string | null;
+  category_icon: string | null;
+  account_name: string;
+}
+
+export interface DashboardData {
+  month: string;
+  accounts: {
+    total_balance_pesewas: number;
+    items: Array<Pick<Account, 'id' | 'name' | 'type' | 'provider' | 'balance_pesewas'>>;
+  };
+  summary: {
+    total_income_pesewas: number;
+    total_expenses_pesewas: number;
+    total_fees_pesewas: number;
+    transaction_count: number;
+  };
+  category_breakdown: CategoryBreakdownItem[];
+  daily_trend: Array<{
+    date: string;
+    total_pesewas: number;
+  }>;
+  recent_transactions: DashboardRecentTransaction[];
+}

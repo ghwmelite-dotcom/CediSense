@@ -153,3 +153,11 @@ export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
 export type CreateCategoryRuleInput = z.infer<typeof createCategoryRuleSchema>;
 export type TransactionQueryInput = z.infer<typeof transactionQuerySchema>;
+
+// ─── Dashboard schema ────────────────────────────────────────────────────────
+
+export const dashboardQuerySchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must be YYYY-MM format').optional(),
+});
+
+export type DashboardQueryInput = z.infer<typeof dashboardQuerySchema>;
