@@ -366,3 +366,20 @@ export interface RecurringCandidate {
   occurrence_count: number;
   last_occurrence_date: string;
 }
+
+// ─── IOU types ────────────────────────────────────────────────────────────────
+
+export type IOUDirection = 'owed_to_me' | 'i_owe';
+
+export interface IOU {
+  id: string;
+  user_id: string;
+  person_name: string;
+  description: string | null;
+  amount_pesewas: number;
+  direction: IOUDirection;
+  is_settled: boolean;
+  transaction_id: string | null;
+  settled_at: string | null;
+  created_at: string;
+}

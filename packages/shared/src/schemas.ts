@@ -241,3 +241,15 @@ export const updateRecurringSchema = z.object({
 
 export type ConfirmCandidateInput = z.infer<typeof confirmCandidateSchema>;
 export type UpdateRecurringInput = z.infer<typeof updateRecurringSchema>;
+
+// ─── IOU schemas ──────────────────────────────────────────────────────────────
+
+export const createIOUSchema = z.object({
+  person_name: z.string().min(1).max(100),
+  amount_pesewas: z.number().int().positive(),
+  direction: z.enum(['owed_to_me', 'i_owe']),
+  description: z.string().max(200).optional(),
+  transaction_id: z.string().optional(),
+});
+
+export type CreateIOUInput = z.infer<typeof createIOUSchema>;
