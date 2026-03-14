@@ -14,6 +14,7 @@ import { AIChatPage } from '@/pages/AIChatPage';
 import { BudgetsPage } from '@/pages/BudgetsPage';
 import { GoalsPage } from '@/pages/GoalsPage';
 import { InsightsPage } from '@/pages/InsightsPage';
+import { RecurringPage } from '@/pages/RecurringPage';
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -60,6 +61,7 @@ export function App() {
           <Route path="/add" element={<AddTransactionPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/insights" element={<InsightsPage />} />
+          <Route path="/recurring" element={<RecurringPage />} />
         </Route>
 
         {/* Catch-all */}

@@ -5,8 +5,8 @@ import { AmountInput } from '@/components/transactions/AmountInput';
 
 interface RecurringCardProps {
   item: RecurringWithStatus;
-  onUpdate: (id: string, data: Record<string, unknown>) => void;
-  onDelete: (id: string) => void;
+  onUpdate: (id: string, data: Record<string, unknown>) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }
 
 const FREQUENCY_LABELS: Record<RecurringFrequency, string> = {

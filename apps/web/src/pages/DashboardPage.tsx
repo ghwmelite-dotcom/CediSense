@@ -2,13 +2,14 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
-import type { DashboardData, Category } from '@cedisense/shared';
+import type { DashboardData, Category, RecurringWithStatus } from '@cedisense/shared';
 import { MonthPicker } from '@/components/dashboard/MonthPicker';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
 import { SummaryCard } from '@/components/dashboard/SummaryCard';
 import { SpendingTrendChart } from '@/components/dashboard/SpendingTrendChart';
 import { CategoryBreakdownCard } from '@/components/dashboard/CategoryBreakdownCard';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
+import { UpcomingBillsCard } from '@/components/recurring/UpcomingBillsCard';
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -20,16 +21,20 @@ export function DashboardPage() {
   const [month, setMonth] = useState(getCurrentMonth());
   const [data, setData] = useState<DashboardData | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [upcomingBills, setUpcomingBills] = useState<RecurringWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Cache: month → DashboardData
   const cache = useRef<Map<string, DashboardData>>(new Map());
 
-  // Fetch categories once for TransactionRow
+  // Fetch categories and upcoming bills once
   useEffect(() => {
     api.get<Category[]>('/categories')
       .then(setCategories)
+      .catch(() => {/* non-fatal */});
+    api.get<RecurringWithStatus[]>('/recurring/upcoming?limit=5')
+      .then(setUpcomingBills)
       .catch(() => {/* non-fatal */});
   }, []);
 
@@ -127,6 +132,8 @@ export function DashboardPage() {
               totalExpenses={data.summary.total_expenses_pesewas}
               month={month}
             />
+
+            <UpcomingBillsCard items={upcomingBills} />
 
             <RecentTransactions
               transactions={data.recent_transactions}
