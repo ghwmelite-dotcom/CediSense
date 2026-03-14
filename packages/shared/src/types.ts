@@ -418,3 +418,56 @@ export interface InvestmentSummary {
   total_returns_pesewas: number;
   by_type: Array<{ type: InvestmentType; count: number; total_pesewas: number }>;
 }
+
+// ─── Susu types ───────────────────────────────────────────────────────────────
+
+export type SusuFrequency = 'daily' | 'weekly' | 'monthly';
+
+export interface SusuGroup {
+  id: string;
+  name: string;
+  creator_id: string;
+  invite_code: string;
+  contribution_pesewas: number;
+  frequency: SusuFrequency;
+  max_members: number;
+  current_round: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SusuMember {
+  id: string;
+  group_id: string;
+  user_id: string;
+  display_name: string;
+  payout_order: number;
+  joined_at: string;
+}
+
+export interface SusuContribution {
+  id: string;
+  group_id: string;
+  member_id: string;
+  round: number;
+  amount_pesewas: number;
+  contributed_at: string;
+}
+
+export interface SusuPayout {
+  id: string;
+  group_id: string;
+  member_id: string;
+  round: number;
+  amount_pesewas: number;
+  paid_at: string;
+}
+
+export interface SusuGroupWithDetails extends SusuGroup {
+  member_count: number;
+  members: Array<SusuMember & { has_contributed_this_round: boolean }>;
+  payout_recipient: SusuMember | null;
+  my_member_id: string | null;
+  is_creator: boolean;
+}

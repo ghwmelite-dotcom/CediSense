@@ -18,6 +18,7 @@ import { insights } from './routes/insights.js';
 import { recurring } from './routes/recurring.js';
 import { ious } from './routes/ious.js';
 import { investments } from './routes/investments.js';
+import { susu } from './routes/susu.js';
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -52,6 +53,9 @@ app.use('/api/v1/ious/*', authMiddleware, rateLimitMiddleware);
 // IMPORTANT: Both bare path AND wildcard required — GET / and GET /summary need the first, nested routes need the second.
 app.use('/api/v1/investments', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/investments/*', authMiddleware, rateLimitMiddleware);
+// IMPORTANT: Both bare path AND wildcard required — GET /groups needs the first, nested group routes need the second.
+app.use('/api/v1/susu', authMiddleware, rateLimitMiddleware);
+app.use('/api/v1/susu/*', authMiddleware, rateLimitMiddleware);
 
 app.route('/api/v1/users', users);
 app.route('/api/v1/accounts', accounts);
@@ -68,6 +72,7 @@ app.route('/api/v1/insights', insights);
 app.route('/api/v1/recurring', recurring);
 app.route('/api/v1/ious', ious);
 app.route('/api/v1/investments', investments);
+app.route('/api/v1/susu', susu);
 
 // Health check
 app.get('/api/v1/health', (c) => {

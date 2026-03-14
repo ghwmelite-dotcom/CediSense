@@ -276,3 +276,34 @@ export const updateInvestmentSchema = z.object({
 
 export type CreateInvestmentInput = z.infer<typeof createInvestmentSchema>;
 export type UpdateInvestmentInput = z.infer<typeof updateInvestmentSchema>;
+
+// ─── Susu schemas ─────────────────────────────────────────────────────────────
+
+export const createSusuGroupSchema = z.object({
+  name: z.string().min(1).max(100),
+  contribution_pesewas: z.number().int().positive(),
+  frequency: z.enum(['daily', 'weekly', 'monthly']),
+  max_members: z.number().int().min(2).max(50).default(12),
+});
+
+export const joinSusuGroupSchema = z.object({
+  invite_code: z.string().min(1),
+});
+
+export const recordContributionSchema = z.object({
+  member_id: z.string().min(1),
+  amount_pesewas: z.number().int().positive(),
+});
+
+export const updateSusuGroupSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  contribution_pesewas: z.number().int().positive().optional(),
+  frequency: z.enum(['daily', 'weekly', 'monthly']).optional(),
+  max_members: z.number().int().min(2).max(50).optional(),
+  is_active: z.boolean().optional(),
+});
+
+export type CreateSusuGroupInput = z.infer<typeof createSusuGroupSchema>;
+export type JoinSusuGroupInput = z.infer<typeof joinSusuGroupSchema>;
+export type RecordContributionInput = z.infer<typeof recordContributionSchema>;
+export type UpdateSusuGroupInput = z.infer<typeof updateSusuGroupSchema>;
