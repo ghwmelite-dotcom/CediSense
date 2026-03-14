@@ -253,3 +253,26 @@ export const createIOUSchema = z.object({
 });
 
 export type CreateIOUInput = z.infer<typeof createIOUSchema>;
+
+// ─── Investment schemas ───────────────────────────────────────────────────────
+
+export const createInvestmentSchema = z.object({
+  type: z.enum(['tbill', 'mutual_fund', 'fixed_deposit', 'other']),
+  name: z.string().min(1).max(100),
+  institution: z.string().max(100).optional(),
+  amount_pesewas: z.number().int().positive(),
+  rate_percent: z.number().min(0).max(100).optional(),
+  purchase_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  maturity_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  current_value_pesewas: z.number().int().positive().optional(),
+  notes: z.string().max(500).optional(),
+});
+
+export const updateInvestmentSchema = z.object({
+  current_value_pesewas: z.number().int().positive().optional(),
+  maturity_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  notes: z.string().max(500).optional(),
+});
+
+export type CreateInvestmentInput = z.infer<typeof createInvestmentSchema>;
+export type UpdateInvestmentInput = z.infer<typeof updateInvestmentSchema>;

@@ -383,3 +383,38 @@ export interface IOU {
   settled_at: string | null;
   created_at: string;
 }
+
+// ─── Investment types ─────────────────────────────────────────────────────────
+
+export type InvestmentType = 'tbill' | 'mutual_fund' | 'fixed_deposit' | 'other';
+
+export interface Investment {
+  id: string;
+  user_id: string;
+  type: InvestmentType;
+  name: string;
+  institution: string | null;
+  amount_pesewas: number;
+  rate_percent: number | null;
+  purchase_date: string;
+  maturity_date: string | null;
+  current_value_pesewas: number | null;
+  is_matured: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvestmentWithReturns extends Investment {
+  expected_return_pesewas: number;
+  current_value_computed_pesewas: number;
+  days_held: number;
+  days_to_maturity: number | null;
+}
+
+export interface InvestmentSummary {
+  total_invested_pesewas: number;
+  total_current_value_pesewas: number;
+  total_returns_pesewas: number;
+  by_type: Array<{ type: InvestmentType; count: number; total_pesewas: number }>;
+}
