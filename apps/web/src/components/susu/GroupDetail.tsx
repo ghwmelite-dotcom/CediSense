@@ -133,7 +133,7 @@ export function GroupDetail({
                   >
                     {member.payout_order}
                   </span>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex items-center gap-2">
                     <p className={`font-semibold text-sm truncate
                       ${isRecipient ? 'text-gold' : 'text-white'}`}>
                       {member.display_name}
@@ -141,6 +141,21 @@ export function GroupDetail({
                         <span className="ml-1.5 text-xs font-normal text-muted">(you)</span>
                       )}
                     </p>
+                    {/* Trust score badge */}
+                    <span
+                      className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-bold shrink-0 border
+                        ${member.trust_score >= 80
+                          ? 'bg-income/15 border-income/40 text-income'
+                          : member.trust_score >= 60
+                            ? 'bg-gold/15 border-gold/40 text-gold'
+                            : member.trust_score >= 40
+                              ? 'bg-white/10 border-white/20 text-muted'
+                              : 'bg-expense/15 border-expense/40 text-expense'
+                        }`}
+                      title={`Trust: ${member.trust_score} (${member.trust_label})`}
+                    >
+                      {member.trust_score}
+                    </span>
                   </div>
                 </div>
 

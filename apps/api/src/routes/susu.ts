@@ -8,6 +8,7 @@ import {
 } from '@cedisense/shared';
 import type { SusuFrequency } from '@cedisense/shared';
 import { generateId } from '../lib/db.js';
+import { computeTrustScore, getTrustLabel } from '../lib/trust-score.js';
 
 const susu = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -171,10 +172,13 @@ susu.get('/groups/:id', async (c) => {
   }
 
   const { results: members } = await c.env.DB.prepare(
-    `SELECT id, group_id, user_id, display_name, payout_order, joined_at
-     FROM susu_members WHERE group_id = ?
-     ORDER BY payout_order ASC`
-  ).bind(groupId).all<SusuMemberRow>();
+    `SELECT sm.id, sm.group_id, sm.user_id, sm.display_name, sm.payout_order, sm.joined_at,
+            COALESCE(ts.score, 50) AS trust_score
+     FROM susu_members sm
+     LEFT JOIN trust_scores ts ON ts.user_id = sm.user_id
+     WHERE sm.group_id = ?
+     ORDER BY sm.payout_order ASC`
+  ).bind(groupId).all<SusuMemberRow & { trust_score: number }>();
 
   const { results: contributions } = await c.env.DB.prepare(
     `SELECT member_id FROM susu_contributions
@@ -194,6 +198,8 @@ susu.get('/groups/:id', async (c) => {
   const membersWithContrib = members.map((m) => ({
     ...m,
     has_contributed_this_round: contributedSet.has(m.id),
+    trust_score: m.trust_score,
+    trust_label: getTrustLabel(m.trust_score),
   }));
 
   return c.json({
@@ -476,6 +482,42 @@ susu.post('/groups/:id/contributions', async (c) => {
     throw err;
   }
 
+  // Update trust score for the contributing user
+  const contributingMember = await c.env.DB.prepare(
+    `SELECT user_id FROM susu_members WHERE id = ?`
+  ).bind(member_id).first<{ user_id: string }>();
+
+  if (contributingMember) {
+    await c.env.DB.prepare(
+      `INSERT INTO trust_scores (user_id, score, total_contributions, on_time_contributions, updated_at)
+       VALUES (?, 51, 1, 1, datetime('now'))
+       ON CONFLICT(user_id) DO UPDATE SET
+         total_contributions = total_contributions + 1,
+         on_time_contributions = on_time_contributions + 1,
+         updated_at = datetime('now')`
+    ).bind(contributingMember.user_id).run();
+
+    // Recompute score from current stats
+    const stats = await c.env.DB.prepare(
+      `SELECT total_contributions, on_time_contributions, late_contributions,
+              missed_contributions, groups_completed
+       FROM trust_scores WHERE user_id = ?`
+    ).bind(contributingMember.user_id).first<{
+      total_contributions: number;
+      on_time_contributions: number;
+      late_contributions: number;
+      missed_contributions: number;
+      groups_completed: number;
+    }>();
+
+    if (stats) {
+      const newScore = computeTrustScore(stats);
+      await c.env.DB.prepare(
+        `UPDATE trust_scores SET score = ? WHERE user_id = ?`
+      ).bind(newScore, contributingMember.user_id).run();
+    }
+  }
+
   const contribution = await c.env.DB.prepare(
     `SELECT id, group_id, member_id, round, amount_pesewas, contributed_at
      FROM susu_contributions WHERE id = ?`
@@ -607,6 +649,47 @@ susu.post('/groups/:id/advance-round', async (c) => {
   ).bind(groupId).first<SusuGroupRow>();
 
   return c.json({ data: mapGroup(updated!) });
+});
+
+// ─── GET /groups/trust/:userId — get a user's trust score ─────────────────────
+
+susu.get('/groups/trust/:userId', async (c) => {
+  const targetUserId = c.req.param('userId');
+
+  const row = await c.env.DB.prepare(
+    `SELECT score, total_contributions, on_time_contributions, late_contributions,
+            missed_contributions, groups_completed
+     FROM trust_scores WHERE user_id = ?`
+  ).bind(targetUserId).first<{
+    score: number;
+    total_contributions: number;
+    on_time_contributions: number;
+    late_contributions: number;
+    missed_contributions: number;
+    groups_completed: number;
+  }>();
+
+  if (!row) {
+    // No trust record yet — return defaults
+    return c.json({
+      data: {
+        score: 50,
+        total_contributions: 0,
+        on_time_contributions: 0,
+        late_contributions: 0,
+        missed_contributions: 0,
+        groups_completed: 0,
+        label: getTrustLabel(50),
+      },
+    });
+  }
+
+  return c.json({
+    data: {
+      ...row,
+      label: getTrustLabel(row.score),
+    },
+  });
 });
 
 // ─── GET /groups/:id/history — all contributions + payouts ───────────────────

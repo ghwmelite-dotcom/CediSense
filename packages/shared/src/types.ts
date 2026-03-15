@@ -464,9 +464,19 @@ export interface SusuPayout {
   paid_at: string;
 }
 
+export interface TrustScore {
+  score: number;
+  total_contributions: number;
+  on_time_contributions: number;
+  late_contributions: number;
+  missed_contributions: number;
+  groups_completed: number;
+  label: 'Excellent' | 'Good' | 'Fair' | 'Poor';
+}
+
 export interface SusuGroupWithDetails extends SusuGroup {
   member_count: number;
-  members: Array<SusuMember & { has_contributed_this_round: boolean }>;
+  members: Array<SusuMember & { has_contributed_this_round: boolean; trust_score: number; trust_label: string }>;
   payout_recipient: SusuMember | null;
   my_member_id: string | null;
   is_creator: boolean;
