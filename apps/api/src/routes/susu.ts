@@ -8,7 +8,7 @@ import {
   earlyPayoutRequestSchema,
   earlyPayoutVoteSchema,
 } from '@cedisense/shared';
-import type { SusuFrequency } from '@cedisense/shared';
+import type { SusuFrequency, SusuVariant } from '@cedisense/shared';
 import { generateId } from '../lib/db.js';
 import { computeTrustScore, getTrustLabel } from '../lib/trust-score.js';
 
@@ -28,8 +28,23 @@ interface SusuGroupRow {
   max_members: number;
   current_round: number;
   is_active: number;
+  variant: SusuVariant;
+  goal_amount_pesewas: number | null;
+  goal_description: string | null;
+  penalty_percent: number;
+  penalty_pool_pesewas: number;
   created_at: string;
   updated_at: string;
+}
+
+interface SusuPenaltyRow {
+  id: string;
+  group_id: string;
+  member_id: string;
+  round: number;
+  penalty_pesewas: number;
+  reason: string;
+  created_at: string;
 }
 
 interface SusuMemberRow {
@@ -89,7 +104,7 @@ susu.post('/groups', async (c) => {
     );
   }
 
-  const { name, contribution_pesewas, frequency, max_members } = parsed.data;
+  const { name, contribution_pesewas, frequency, max_members, variant, goal_amount_pesewas, goal_description } = parsed.data;
 
   // Fetch creator display_name
   const user = await c.env.DB.prepare(
@@ -106,9 +121,13 @@ susu.post('/groups', async (c) => {
 
   await c.env.DB.prepare(
     `INSERT INTO susu_groups
-       (id, name, creator_id, invite_code, contribution_pesewas, frequency, max_members)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).bind(groupId, name, userId, invite_code, contribution_pesewas, frequency, max_members).run();
+       (id, name, creator_id, invite_code, contribution_pesewas, frequency, max_members,
+        variant, goal_amount_pesewas, goal_description)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    groupId, name, userId, invite_code, contribution_pesewas, frequency, max_members,
+    variant, goal_amount_pesewas ?? null, goal_description ?? null
+  ).run();
 
   // Auto-add creator as first member
   await c.env.DB.prepare(
@@ -118,7 +137,8 @@ susu.post('/groups', async (c) => {
 
   const group = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
-            max_members, current_round, is_active, created_at, updated_at
+            max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
+            penalty_percent, penalty_pool_pesewas, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -133,6 +153,8 @@ susu.get('/groups', async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT g.id, g.name, g.creator_id, g.invite_code, g.contribution_pesewas,
             g.frequency, g.max_members, g.current_round, g.is_active,
+            g.variant, g.goal_amount_pesewas, g.goal_description,
+            g.penalty_percent, g.penalty_pool_pesewas,
             g.created_at, g.updated_at,
             (SELECT COUNT(*) FROM susu_members m2 WHERE m2.group_id = g.id) AS member_count
      FROM susu_groups g
@@ -165,7 +187,8 @@ susu.get('/groups/:id', async (c) => {
 
   const group = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
-            max_members, current_round, is_active, created_at, updated_at
+            max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
+            penalty_percent, penalty_pool_pesewas, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -190,12 +213,14 @@ susu.get('/groups/:id', async (c) => {
   const contributedSet = new Set(contributions.map((c) => c.member_id));
   const member_count = members.length;
 
-  // Determine payout recipient: payout_order = ((current_round - 1) % member_count) + 1
+  // Determine payout recipient (only relevant for rotating variant)
   const payoutOrder = member_count > 0
     ? ((group.current_round - 1) % member_count) + 1
     : 1;
 
-  const payout_recipient = members.find((m) => m.payout_order === payoutOrder) ?? null;
+  const payout_recipient = group.variant === 'rotating'
+    ? (members.find((m) => m.payout_order === payoutOrder) ?? null)
+    : null;
 
   const membersWithContrib = members.map((m) => ({
     ...m,
@@ -203,6 +228,29 @@ susu.get('/groups/:id', async (c) => {
     trust_score: m.trust_score,
     trust_label: getTrustLabel(m.trust_score),
   }));
+
+  // Compute goal progress for goal_based / accumulating variants
+  const totalContribRow = await c.env.DB.prepare(
+    `SELECT COALESCE(SUM(amount_pesewas), 0) AS total FROM susu_contributions WHERE group_id = ?`
+  ).bind(groupId).first<{ total: number }>();
+  const total_contributed_pesewas = totalContribRow?.total ?? 0;
+
+  const goal_progress = group.variant === 'goal_based' && group.goal_amount_pesewas
+    ? {
+        total_contributed_pesewas,
+        goal_amount_pesewas: group.goal_amount_pesewas,
+        goal_description: group.goal_description,
+        percentage: Math.min(100, Math.round((total_contributed_pesewas / group.goal_amount_pesewas) * 100)),
+        is_complete: total_contributed_pesewas >= group.goal_amount_pesewas,
+      }
+    : null;
+
+  const accumulating_info = group.variant === 'accumulating'
+    ? {
+        total_pool_pesewas: total_contributed_pesewas,
+        your_share_pesewas: member_count > 0 ? Math.floor(total_contributed_pesewas / member_count) : 0,
+      }
+    : null;
 
   return c.json({
     data: {
@@ -212,6 +260,8 @@ susu.get('/groups/:id', async (c) => {
       payout_recipient,
       my_member_id: myMember.id,
       is_creator: group.creator_id === userId,
+      goal_progress,
+      accumulating_info,
     },
   });
 });
@@ -269,7 +319,8 @@ susu.put('/groups/:id', async (c) => {
 
   const updated = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
-            max_members, current_round, is_active, created_at, updated_at
+            max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
+            penalty_percent, penalty_pool_pesewas, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -431,8 +482,8 @@ susu.post('/groups/:id/contributions', async (c) => {
   const groupId = c.req.param('id');
 
   const group = await c.env.DB.prepare(
-    `SELECT id, creator_id, current_round FROM susu_groups WHERE id = ?`
-  ).bind(groupId).first<{ id: string; creator_id: string; current_round: number }>();
+    `SELECT id, creator_id, current_round, penalty_percent FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; creator_id: string; current_round: number; penalty_percent: number }>();
 
   if (!group) {
     return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
@@ -458,7 +509,7 @@ susu.post('/groups/:id/contributions', async (c) => {
     );
   }
 
-  const { member_id, amount_pesewas } = parsed.data;
+  const { member_id, amount_pesewas, is_late } = parsed.data;
 
   // Verify member belongs to this group
   const member = await c.env.DB.prepare(
@@ -484,20 +535,50 @@ susu.post('/groups/:id/contributions', async (c) => {
     throw err;
   }
 
+  // Handle penalty if contribution is late
+  let penalty_pesewas = 0;
+  if (is_late) {
+    penalty_pesewas = Math.round(amount_pesewas * group.penalty_percent / 100);
+    if (penalty_pesewas > 0) {
+      const penaltyId = generateId();
+      await c.env.DB.prepare(
+        `INSERT INTO susu_penalties (id, group_id, member_id, round, penalty_pesewas, reason)
+         VALUES (?, ?, ?, ?, ?, 'late_contribution')`
+      ).bind(penaltyId, groupId, member_id, group.current_round, penalty_pesewas).run();
+
+      await c.env.DB.prepare(
+        `UPDATE susu_groups
+         SET penalty_pool_pesewas = penalty_pool_pesewas + ?, updated_at = datetime('now')
+         WHERE id = ?`
+      ).bind(penalty_pesewas, groupId).run();
+    }
+  }
+
   // Update trust score for the contributing user
   const contributingMember = await c.env.DB.prepare(
     `SELECT user_id FROM susu_members WHERE id = ?`
   ).bind(member_id).first<{ user_id: string }>();
 
   if (contributingMember) {
-    await c.env.DB.prepare(
-      `INSERT INTO trust_scores (user_id, score, total_contributions, on_time_contributions, updated_at)
-       VALUES (?, 51, 1, 1, datetime('now'))
-       ON CONFLICT(user_id) DO UPDATE SET
-         total_contributions = total_contributions + 1,
-         on_time_contributions = on_time_contributions + 1,
-         updated_at = datetime('now')`
-    ).bind(contributingMember.user_id).run();
+    if (is_late) {
+      await c.env.DB.prepare(
+        `INSERT INTO trust_scores (user_id, score, total_contributions, on_time_contributions, late_contributions, updated_at)
+         VALUES (?, 49, 1, 0, 1, datetime('now'))
+         ON CONFLICT(user_id) DO UPDATE SET
+           total_contributions = total_contributions + 1,
+           late_contributions = late_contributions + 1,
+           updated_at = datetime('now')`
+      ).bind(contributingMember.user_id).run();
+    } else {
+      await c.env.DB.prepare(
+        `INSERT INTO trust_scores (user_id, score, total_contributions, on_time_contributions, updated_at)
+         VALUES (?, 51, 1, 1, datetime('now'))
+         ON CONFLICT(user_id) DO UPDATE SET
+           total_contributions = total_contributions + 1,
+           on_time_contributions = on_time_contributions + 1,
+           updated_at = datetime('now')`
+      ).bind(contributingMember.user_id).run();
+    }
 
     // Recompute score from current stats
     const stats = await c.env.DB.prepare(
@@ -542,6 +623,8 @@ susu.post('/groups/:id/contributions', async (c) => {
       member_name: memberRow?.display_name ?? '',
       round: group.current_round,
       total_rounds: groupRow?.max_members ?? 0,
+      is_late: is_late ?? false,
+      penalty_pesewas,
     },
   }, 201);
 });
@@ -553,8 +636,16 @@ susu.post('/groups/:id/payouts', async (c) => {
   const groupId = c.req.param('id');
 
   const group = await c.env.DB.prepare(
-    `SELECT id, creator_id, current_round, contribution_pesewas FROM susu_groups WHERE id = ?`
-  ).bind(groupId).first<{ id: string; creator_id: string; current_round: number; contribution_pesewas: number }>();
+    `SELECT id, creator_id, current_round, contribution_pesewas, variant, goal_amount_pesewas, max_members FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{
+    id: string;
+    creator_id: string;
+    current_round: number;
+    contribution_pesewas: number;
+    variant: SusuVariant;
+    goal_amount_pesewas: number | null;
+    max_members: number;
+  }>();
 
   if (!group) {
     return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
@@ -574,6 +665,82 @@ susu.post('/groups/:id/payouts', async (c) => {
     return c.json({ error: { code: 'BAD_REQUEST', message: 'Group has no members' } }, 400);
   }
 
+  // ── Accumulating variant: final split payout ──────────────────────────────
+  if (group.variant === 'accumulating') {
+    // Only allow when all rounds are complete (current_round > max_members)
+    if (group.current_round <= group.max_members) {
+      return c.json({
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'Accumulating groups can only distribute after all rounds are complete',
+        },
+      }, 400);
+    }
+
+    const totalRow = await c.env.DB.prepare(
+      `SELECT COALESCE(SUM(amount_pesewas), 0) AS total FROM susu_contributions WHERE group_id = ?`
+    ).bind(groupId).first<{ total: number }>();
+    const totalPool = totalRow?.total ?? 0;
+    const sharePerMember = member_count > 0 ? Math.floor(totalPool / member_count) : 0;
+
+    const { results: allMembers } = await c.env.DB.prepare(
+      `SELECT id FROM susu_members WHERE group_id = ?`
+    ).bind(groupId).all<{ id: string }>();
+
+    const payouts: SusuPayoutRow[] = [];
+    for (const m of allMembers) {
+      const payoutId = generateId();
+      await c.env.DB.prepare(
+        `INSERT INTO susu_payouts (id, group_id, member_id, round, amount_pesewas)
+         VALUES (?, ?, ?, ?, ?)`
+      ).bind(payoutId, groupId, m.id, group.current_round, sharePerMember).run();
+      const p = await c.env.DB.prepare(
+        `SELECT id, group_id, member_id, round, amount_pesewas, paid_at FROM susu_payouts WHERE id = ?`
+      ).bind(payoutId).first<SusuPayoutRow>();
+      if (p) payouts.push(p);
+    }
+
+    return c.json({ data: { type: 'accumulating_distribution', payouts, share_per_member: sharePerMember } }, 201);
+  }
+
+  // ── Goal-based variant: final distribution when goal is met ──────────────
+  if (group.variant === 'goal_based') {
+    const totalRow = await c.env.DB.prepare(
+      `SELECT COALESCE(SUM(amount_pesewas), 0) AS total FROM susu_contributions WHERE group_id = ?`
+    ).bind(groupId).first<{ total: number }>();
+    const totalPool = totalRow?.total ?? 0;
+
+    if (group.goal_amount_pesewas && totalPool < group.goal_amount_pesewas) {
+      return c.json({
+        error: {
+          code: 'BAD_REQUEST',
+          message: `Goal not yet reached. Contributed: ${totalPool}, Goal: ${group.goal_amount_pesewas}`,
+        },
+      }, 400);
+    }
+
+    const sharePerMember = member_count > 0 ? Math.floor(totalPool / member_count) : 0;
+    const { results: allMembers } = await c.env.DB.prepare(
+      `SELECT id FROM susu_members WHERE group_id = ?`
+    ).bind(groupId).all<{ id: string }>();
+
+    const payouts: SusuPayoutRow[] = [];
+    for (const m of allMembers) {
+      const payoutId = generateId();
+      await c.env.DB.prepare(
+        `INSERT INTO susu_payouts (id, group_id, member_id, round, amount_pesewas)
+         VALUES (?, ?, ?, ?, ?)`
+      ).bind(payoutId, groupId, m.id, group.current_round, sharePerMember).run();
+      const p = await c.env.DB.prepare(
+        `SELECT id, group_id, member_id, round, amount_pesewas, paid_at FROM susu_payouts WHERE id = ?`
+      ).bind(payoutId).first<SusuPayoutRow>();
+      if (p) payouts.push(p);
+    }
+
+    return c.json({ data: { type: 'goal_distribution', payouts, total_pool: totalPool, share_per_member: sharePerMember } }, 201);
+  }
+
+  // ── Rotating / Bidding variant: one member gets payout per round ──────────
   const payoutOrder = ((group.current_round - 1) % member_count) + 1;
 
   const payout_member = await c.env.DB.prepare(
@@ -615,8 +782,15 @@ susu.post('/groups/:id/advance-round', async (c) => {
   const groupId = c.req.param('id');
 
   const group = await c.env.DB.prepare(
-    `SELECT id, creator_id, current_round FROM susu_groups WHERE id = ?`
-  ).bind(groupId).first<{ id: string; creator_id: string; current_round: number }>();
+    `SELECT id, creator_id, current_round, variant, goal_amount_pesewas, max_members FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{
+    id: string;
+    creator_id: string;
+    current_round: number;
+    variant: SusuVariant;
+    goal_amount_pesewas: number | null;
+    max_members: number;
+  }>();
 
   if (!group) {
     return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
@@ -632,7 +806,7 @@ susu.post('/groups/:id/advance-round', async (c) => {
 
   const member_count = countRow?.cnt ?? 0;
 
-  // Check all members contributed
+  // Check all members contributed this round
   const contribCount = await c.env.DB.prepare(
     `SELECT COUNT(*) AS cnt FROM susu_contributions WHERE group_id = ? AND round = ?`
   ).bind(groupId, group.current_round).first<{ cnt: number }>();
@@ -644,27 +818,95 @@ susu.post('/groups/:id/advance-round', async (c) => {
     );
   }
 
-  // Check payout recorded
-  const payoutRow = await c.env.DB.prepare(
-    `SELECT id FROM susu_payouts WHERE group_id = ? AND round = ?`
-  ).bind(groupId, group.current_round).first();
+  // ── Variant-specific advance logic ────────────────────────────────────────
 
-  if (!payoutRow) {
-    return c.json(
-      { error: { code: 'BAD_REQUEST', message: 'Payout has not been recorded for this round' } },
-      400
-    );
+  if (group.variant === 'accumulating') {
+    // No per-round payout required. When all rounds complete, flag as complete.
+    // All rounds complete = current_round >= max_members
+    await c.env.DB.prepare(
+      `UPDATE susu_groups
+       SET current_round = current_round + 1, updated_at = datetime('now')
+       WHERE id = ?`
+    ).bind(groupId).run();
+
+  } else if (group.variant === 'goal_based') {
+    // No per-round payout. Check if goal has been reached to mark complete.
+    const totalRow = await c.env.DB.prepare(
+      `SELECT COALESCE(SUM(amount_pesewas), 0) AS total FROM susu_contributions WHERE group_id = ?`
+    ).bind(groupId).first<{ total: number }>();
+    const totalContributed = totalRow?.total ?? 0;
+    const goalReached = group.goal_amount_pesewas !== null && totalContributed >= group.goal_amount_pesewas;
+
+    await c.env.DB.prepare(
+      `UPDATE susu_groups
+       SET current_round = current_round + 1,
+           is_active = CASE WHEN ? THEN 0 ELSE is_active END,
+           updated_at = datetime('now')
+       WHERE id = ?`
+    ).bind(goalReached ? 1 : 0, groupId).run();
+
+  } else {
+    // rotating or bidding — payout must be recorded first
+    const payoutRow = await c.env.DB.prepare(
+      `SELECT id FROM susu_payouts WHERE group_id = ? AND round = ?`
+    ).bind(groupId, group.current_round).first();
+
+    if (!payoutRow) {
+      return c.json(
+        { error: { code: 'BAD_REQUEST', message: 'Payout has not been recorded for this round' } },
+        400
+      );
+    }
+
+    // Distribute penalty pool as bonus if all contributions were on time this round
+    const latePenaltyCount = await c.env.DB.prepare(
+      `SELECT COUNT(*) AS cnt FROM susu_penalties WHERE group_id = ? AND round = ?`
+    ).bind(groupId, group.current_round).first<{ cnt: number }>();
+
+    const allOnTime = (latePenaltyCount?.cnt ?? 0) === 0;
+
+    if (allOnTime) {
+      const poolRow = await c.env.DB.prepare(
+        `SELECT penalty_pool_pesewas FROM susu_groups WHERE id = ?`
+      ).bind(groupId).first<{ penalty_pool_pesewas: number }>();
+
+      const pool = poolRow?.penalty_pool_pesewas ?? 0;
+
+      if (pool > 0 && member_count > 0) {
+        const bonusPerMember = Math.floor(pool / member_count);
+        if (bonusPerMember > 0) {
+          const { results: allMembers } = await c.env.DB.prepare(
+            `SELECT id FROM susu_members WHERE group_id = ?`
+          ).bind(groupId).all<{ id: string }>();
+
+          for (const m of allMembers) {
+            const bonusPayoutId = generateId();
+            await c.env.DB.prepare(
+              `INSERT INTO susu_payouts (id, group_id, member_id, round, amount_pesewas)
+               VALUES (?, ?, ?, ?, ?)`
+            ).bind(bonusPayoutId, groupId, m.id, group.current_round, bonusPerMember).run().catch(() => {
+              // Ignore duplicate if payout already exists — bonus is best-effort
+            });
+          }
+
+          await c.env.DB.prepare(
+            `UPDATE susu_groups SET penalty_pool_pesewas = 0, updated_at = datetime('now') WHERE id = ?`
+          ).bind(groupId).run();
+        }
+      }
+    }
+
+    await c.env.DB.prepare(
+      `UPDATE susu_groups
+       SET current_round = current_round + 1, updated_at = datetime('now')
+       WHERE id = ?`
+    ).bind(groupId).run();
   }
-
-  await c.env.DB.prepare(
-    `UPDATE susu_groups
-     SET current_round = current_round + 1, updated_at = datetime('now')
-     WHERE id = ?`
-  ).bind(groupId).run();
 
   const updated = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
-            max_members, current_round, is_active, created_at, updated_at
+            max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
+            penalty_percent, penalty_pool_pesewas, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 

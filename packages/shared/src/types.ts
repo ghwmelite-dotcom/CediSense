@@ -423,6 +423,8 @@ export interface InvestmentSummary {
 
 export type SusuFrequency = 'daily' | 'weekly' | 'monthly';
 
+export type SusuVariant = 'rotating' | 'accumulating' | 'goal_based' | 'bidding';
+
 export interface SusuGroup {
   id: string;
   name: string;
@@ -433,8 +435,24 @@ export interface SusuGroup {
   max_members: number;
   current_round: number;
   is_active: boolean;
+  variant: SusuVariant;
+  goal_amount_pesewas: number | null;
+  goal_description: string | null;
+  penalty_percent: number;
+  penalty_pool_pesewas: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface SusuPenalty {
+  id: string;
+  group_id: string;
+  member_id: string;
+  member_name?: string;
+  round: number;
+  penalty_pesewas: number;
+  reason: string;
+  created_at: string;
 }
 
 export interface SusuMember {
@@ -474,12 +492,27 @@ export interface TrustScore {
   label: 'Excellent' | 'Good' | 'Fair' | 'Poor';
 }
 
+export interface SusuGoalProgress {
+  total_contributed_pesewas: number;
+  goal_amount_pesewas: number;
+  goal_description: string | null;
+  percentage: number;
+  is_complete: boolean;
+}
+
+export interface SusuAccumulatingInfo {
+  total_pool_pesewas: number;
+  your_share_pesewas: number;
+}
+
 export interface SusuGroupWithDetails extends SusuGroup {
   member_count: number;
   members: Array<SusuMember & { has_contributed_this_round: boolean; trust_score: number; trust_label: string }>;
   payout_recipient: SusuMember | null;
   my_member_id: string | null;
   is_creator: boolean;
+  goal_progress: SusuGoalProgress | null;
+  accumulating_info: SusuAccumulatingInfo | null;
 }
 
 export interface ContributionReceipt {

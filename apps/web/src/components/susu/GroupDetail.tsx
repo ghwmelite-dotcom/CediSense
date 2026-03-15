@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { SusuGroupWithDetails, EarlyPayoutRequest } from '@cedisense/shared';
+import type { SusuGroupWithDetails, EarlyPayoutRequest, SusuVariant } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 import { InviteQRModal } from './InviteQRModal';
 import { EarlyPayoutCard } from './EarlyPayoutCard';
@@ -14,11 +14,19 @@ interface GroupDetailProps {
   onRequestEarlyPayout: () => void;
   onVoteEarlyPayout: (vote: 'for' | 'against') => void;
   onPayEarlyPayout: () => void;
+  onPlaceBid?: () => void;
   earlyPayoutVoting?: boolean;
   earlyPayoutPaying?: boolean;
   /** Called when the user taps "View Receipt" for a member who has contributed */
   onViewReceipt?: (memberId: string) => void;
 }
+
+const VARIANT_LABEL: Record<SusuVariant, string> = {
+  rotating: 'Rotating',
+  accumulating: 'Accumulating',
+  goal_based: 'Goal-based',
+  bidding: 'Bidding',
+};
 
 export function GroupDetail({
   group,
@@ -30,6 +38,7 @@ export function GroupDetail({
   onRequestEarlyPayout,
   onVoteEarlyPayout,
   onPayEarlyPayout,
+  onPlaceBid,
   earlyPayoutVoting = false,
   earlyPayoutPaying = false,
   onViewReceipt,
@@ -117,6 +126,94 @@ export function GroupDetail({
           </p>
         </div>
       </div>
+
+      {/* Accumulating info */}
+      {group.variant === 'accumulating' && group.accumulating_info && (
+        <div className="bg-income/10 border border-income/30 rounded-xl p-4 space-y-2">
+          <p className="text-income text-xs font-semibold uppercase tracking-wide">
+            {VARIANT_LABEL.accumulating} — Shared Pool
+          </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <p className="text-muted text-xs">Total Pool</p>
+              <p className="text-white font-bold text-base">
+                {formatPesewas(group.accumulating_info.total_pool_pesewas)}
+              </p>
+            </div>
+            <div className="text-right space-y-0.5">
+              <p className="text-muted text-xs">Your Share</p>
+              <p className="text-income font-bold text-base">
+                {formatPesewas(group.accumulating_info.your_share_pesewas)}
+              </p>
+            </div>
+          </div>
+          {group.current_round > group.max_members && (
+            <p className="text-income text-xs font-medium">
+              All rounds complete — ready for distribution
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Goal-based progress */}
+      {group.variant === 'goal_based' && group.goal_progress && (
+        <div className="bg-gold/5 border border-gold/30 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-gold text-xs font-semibold uppercase tracking-wide">
+              {VARIANT_LABEL.goal_based}
+            </p>
+            <span className="text-gold font-bold text-sm">
+              {group.goal_progress.percentage}%
+            </span>
+          </div>
+          {group.goal_progress.goal_description && (
+            <p className="text-muted text-sm">{group.goal_progress.goal_description}</p>
+          )}
+          {/* Progress bar */}
+          <div
+            className="h-2.5 rounded-full bg-white/10 overflow-hidden"
+            role="progressbar"
+            aria-valuenow={group.goal_progress.percentage}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div
+              className="h-full rounded-full bg-gold transition-all duration-500"
+              style={{ width: `${group.goal_progress.percentage}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted">
+              {formatPesewas(group.goal_progress.total_contributed_pesewas)} raised
+            </span>
+            <span className="text-gold font-medium">
+              Goal: {formatPesewas(group.goal_progress.goal_amount_pesewas)}
+            </span>
+          </div>
+          {group.goal_progress.is_complete && (
+            <p className="text-income text-xs font-semibold">
+              Goal reached — ready for distribution
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Bidding: Place Bid button (members only) */}
+      {group.variant === 'bidding' && group.my_member_id && onPlaceBid && (
+        <button
+          type="button"
+          onClick={onPlaceBid}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
+            bg-purple-600/20 border border-purple-500/40 text-purple-300 font-semibold text-sm
+            hover:bg-purple-600/30 active:scale-95 transition-all min-h-[44px]"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round"
+              d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+          </svg>
+          Place Bid
+        </button>
+      )}
 
       {/* Payout recipient */}
       {hasPayoutRecipient && (

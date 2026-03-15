@@ -284,7 +284,13 @@ export const createSusuGroupSchema = z.object({
   contribution_pesewas: z.number().int().positive(),
   frequency: z.enum(['daily', 'weekly', 'monthly']),
   max_members: z.number().int().min(2).max(50).default(12),
-});
+  variant: z.enum(['rotating', 'accumulating', 'goal_based', 'bidding']).default('rotating'),
+  goal_amount_pesewas: z.number().int().positive().optional(),
+  goal_description: z.string().max(200).optional(),
+}).refine(
+  (data) => data.variant !== 'goal_based' || data.goal_amount_pesewas !== undefined,
+  { message: 'goal_amount_pesewas is required for goal_based variant', path: ['goal_amount_pesewas'] }
+);
 
 export const joinSusuGroupSchema = z.object({
   invite_code: z.string().min(1),
@@ -293,6 +299,7 @@ export const joinSusuGroupSchema = z.object({
 export const recordContributionSchema = z.object({
   member_id: z.string().min(1),
   amount_pesewas: z.number().int().positive(),
+  is_late: z.boolean().optional(),
 });
 
 export const updateSusuGroupSchema = z.object({

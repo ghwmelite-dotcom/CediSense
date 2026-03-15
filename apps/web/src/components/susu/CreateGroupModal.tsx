@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { SusuFrequency } from '@cedisense/shared';
+import type { SusuFrequency, SusuVariant } from '@cedisense/shared';
 import { AmountInput } from '@/components/transactions/AmountInput';
 
 interface CreateGroupData {
@@ -7,6 +7,9 @@ interface CreateGroupData {
   contribution_pesewas: number;
   frequency: SusuFrequency;
   max_members: number;
+  variant: SusuVariant;
+  goal_amount_pesewas?: number;
+  goal_description?: string;
 }
 
 interface CreateGroupModalProps {
@@ -15,39 +18,63 @@ interface CreateGroupModalProps {
   onSave: (data: CreateGroupData) => void;
 }
 
+const VARIANT_OPTIONS: { value: SusuVariant; label: string; description: string }[] = [
+  { value: 'rotating', label: 'Rotating', description: 'One member gets the pot each round' },
+  { value: 'accumulating', label: 'Accumulating', description: 'Everyone saves, split at the end' },
+  { value: 'goal_based', label: 'Goal-based', description: 'Save together for a shared goal' },
+  { value: 'bidding', label: 'Bidding', description: 'Bid for early payout each round' },
+];
+
 export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProps) {
   const [name, setName] = useState('');
   const [contributionPesewas, setContributionPesewas] = useState(0);
   const [frequency, setFrequency] = useState<SusuFrequency>('monthly');
   const [maxMembers, setMaxMembers] = useState(12);
+  const [variant, setVariant] = useState<SusuVariant>('rotating');
+  const [goalAmountPesewas, setGoalAmountPesewas] = useState(0);
+  const [goalDescription, setGoalDescription] = useState('');
 
   if (!open) return null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || contributionPesewas <= 0) return;
+    if (variant === 'goal_based' && goalAmountPesewas <= 0) return;
+
     onSave({
       name: name.trim(),
       contribution_pesewas: contributionPesewas,
       frequency,
       max_members: maxMembers,
+      variant,
+      goal_amount_pesewas: variant === 'goal_based' ? goalAmountPesewas : undefined,
+      goal_description: variant === 'goal_based' && goalDescription.trim() ? goalDescription.trim() : undefined,
     });
-    // Reset form
+
+    resetForm();
+  }
+
+  function resetForm() {
     setName('');
     setContributionPesewas(0);
     setFrequency('monthly');
     setMaxMembers(12);
+    setVariant('rotating');
+    setGoalAmountPesewas(0);
+    setGoalDescription('');
   }
 
   function handleClose() {
-    setName('');
-    setContributionPesewas(0);
-    setFrequency('monthly');
-    setMaxMembers(12);
+    resetForm();
     onClose();
   }
 
   const clampMembers = (val: number) => Math.min(50, Math.max(2, val));
+
+  const isSubmitDisabled =
+    !name.trim() ||
+    contributionPesewas <= 0 ||
+    (variant === 'goal_based' && goalAmountPesewas <= 0);
 
   return (
     <div
@@ -65,7 +92,7 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
 
       {/* Panel */}
       <div className="relative w-full max-w-md bg-ghana-dark border border-white/10 rounded-2xl
-        shadow-2xl shadow-black/40 p-6 space-y-5">
+        shadow-2xl shadow-black/40 p-6 space-y-5 max-h-[90vh] overflow-y-auto">
         <h2 id="create-group-title" className="text-white text-lg font-bold">
           Create Susu Group
         </h2>
@@ -88,6 +115,63 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
                 focus:border-gold"
             />
           </div>
+
+          {/* Variant selector */}
+          <div className="space-y-2">
+            <p className="text-muted text-sm font-medium">Susu Type</p>
+            <div className="grid grid-cols-2 gap-2">
+              {VARIANT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setVariant(opt.value)}
+                  className={`flex flex-col gap-1 p-3 rounded-xl border text-left transition-all
+                    active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/50
+                    ${variant === opt.value
+                      ? 'bg-gold/15 border-gold/60 text-gold'
+                      : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                    }`}
+                >
+                  <span className="text-sm font-semibold">{opt.label}</span>
+                  <span className={`text-xs leading-snug ${variant === opt.value ? 'text-gold/80' : 'text-muted'}`}>
+                    {opt.description}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Goal-based fields */}
+          {variant === 'goal_based' && (
+            <div className="space-y-3 rounded-xl border border-gold/20 bg-gold/5 p-4">
+              <p className="text-gold text-xs font-semibold uppercase tracking-wide">Goal Settings</p>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">Goal Amount</label>
+                <AmountInput
+                  valuePesewas={goalAmountPesewas}
+                  onChange={setGoalAmountPesewas}
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="goal-description" className="text-muted text-sm font-medium">
+                  Goal Description <span className="text-muted/60">(optional)</span>
+                </label>
+                <input
+                  id="goal-description"
+                  type="text"
+                  value={goalDescription}
+                  onChange={(e) => setGoalDescription(e.target.value)}
+                  placeholder="e.g. Buy a shared bus"
+                  maxLength={200}
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                    placeholder-muted text-sm focus:outline-none focus:ring-2 focus:ring-gold/50
+                    focus:border-gold"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Contribution amount */}
           <div className="space-y-1.5">
@@ -174,7 +258,7 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
             </button>
             <button
               type="submit"
-              disabled={!name.trim() || contributionPesewas <= 0}
+              disabled={isSubmitDisabled}
               className="flex-1 px-4 py-3 rounded-xl bg-gold text-ghana-dark font-semibold
                 text-sm hover:brightness-110 active:scale-95 transition-all min-h-[44px]
                 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"

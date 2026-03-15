@@ -1,4 +1,4 @@
-import type { SusuGroup, SusuFrequency } from '@cedisense/shared';
+import type { SusuGroup, SusuFrequency, SusuVariant } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 
 interface GroupCardProps {
@@ -12,6 +12,24 @@ function frequencyLabel(freq: SusuFrequency): string {
     case 'daily': return 'Daily';
     case 'weekly': return 'Weekly';
     case 'monthly': return 'Monthly';
+  }
+}
+
+interface VariantBadgeConfig {
+  label: string;
+  className: string;
+}
+
+function variantBadge(variant: SusuVariant): VariantBadgeConfig {
+  switch (variant) {
+    case 'rotating':
+      return { label: 'Rotating', className: 'bg-blue-500/15 text-blue-300 border-blue-500/30' };
+    case 'accumulating':
+      return { label: 'Accumulating', className: 'bg-income/15 text-income border-income/30' };
+    case 'goal_based':
+      return { label: 'Goal-based', className: 'bg-gold/15 text-gold border-gold/30' };
+    case 'bidding':
+      return { label: 'Bidding', className: 'bg-purple-500/15 text-purple-300 border-purple-500/30' };
   }
 }
 
@@ -47,11 +65,19 @@ export function GroupCard({ group, isCreator, onClick }: GroupCardProps) {
         <span className="text-muted">Round {group.current_round}</span>
       </div>
 
-      {/* Row 3: frequency badge + active/inactive status */}
-      <div className="flex items-center gap-2">
+      {/* Row 3: frequency badge + variant badge + active/inactive status */}
+      <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/10 text-muted">
           {frequencyLabel(group.frequency)}
         </span>
+        {(() => {
+          const badge = variantBadge(group.variant ?? 'rotating');
+          return (
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${badge.className}`}>
+              {badge.label}
+            </span>
+          );
+        })()}
         {group.is_active ? (
           <span className="flex items-center gap-1 text-xs font-medium text-income">
             <span className="w-1.5 h-1.5 rounded-full bg-income inline-block" aria-hidden="true" />
