@@ -168,11 +168,11 @@ export function SusuPage() {
 
   // ── Contribute ──────────────────────────────────────────────────────────────
 
-  async function handleContribute(memberId: string) {
+  async function handleContribute(memberId: string, isLate: boolean) {
     if (!selectedGroup) return;
     const contribution = await api.post<ContributionReceipt & { id: string; group_id: string; member_id: string; round: number }>(
       `/susu/groups/${selectedGroup.id}/contributions`,
-      { member_id: memberId, amount_pesewas: selectedGroup.contribution_pesewas }
+      { member_id: memberId, amount_pesewas: selectedGroup.contribution_pesewas, is_late: isLate }
     );
     // Show the receipt immediately
     setActiveReceipt({

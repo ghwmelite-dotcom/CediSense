@@ -913,6 +913,33 @@ susu.post('/groups/:id/advance-round', async (c) => {
   return c.json({ data: mapGroup(updated!) });
 });
 
+
+// ─── GET /groups/:id/penalties — list penalties for the group ────────────────
+
+susu.get('/groups/:id/penalties', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT sp.id, sp.group_id, sp.member_id, sm.display_name AS member_name,
+            sp.round, sp.penalty_pesewas, sp.reason, sp.created_at
+     FROM susu_penalties sp
+     INNER JOIN susu_members sm ON sm.id = sp.member_id
+     WHERE sp.group_id = ?
+     ORDER BY sp.created_at DESC`
+  ).bind(groupId).all<SusuPenaltyRow & { member_name: string }>();
+
+  return c.json({ data: results });
+});
 // ─── GET /groups/trust/:userId — get a user's trust score ─────────────────────
 
 susu.get('/groups/trust/:userId', async (c) => {

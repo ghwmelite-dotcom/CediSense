@@ -7,7 +7,7 @@ import { EarlyPayoutCard } from './EarlyPayoutCard';
 interface GroupDetailProps {
   group: SusuGroupWithDetails;
   earlyPayoutRequest: EarlyPayoutRequest | null;
-  onContribute: (memberId: string) => void;
+  onContribute: (memberId: string, isLate: boolean) => void;
   onPayout: () => void;
   onAdvanceRound: () => void;
   onLeave: () => void;
@@ -45,6 +45,7 @@ export function GroupDetail({
 }: GroupDetailProps) {
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [lateMembers, setLateMembers] = useState<Set<string>>(new Set());
 
   async function copyInviteCode() {
     await navigator.clipboard.writeText(group.invite_code);
@@ -126,6 +127,19 @@ export function GroupDetail({
           </p>
         </div>
       </div>
+
+      {/* Penalty pool display */}
+      {group.penalty_pool_pesewas > 0 && (
+        <div className="bg-expense/10 border border-expense/30 rounded-xl px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-expense shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="text-xs text-expense font-semibold">Penalty Pool</span>
+          </div>
+          <span className="text-expense font-bold text-sm">{formatPesewas(group.penalty_pool_pesewas)}</span>
+        </div>
+      )}
 
       {/* Accumulating info */}
       {group.variant === 'accumulating' && group.accumulating_info && (
@@ -371,14 +385,39 @@ export function GroupDetail({
 
                   {/* Creator: record contribution button (only for unpaid members) */}
                   {group.is_creator && !member.has_contributed_this_round && (
-                    <button
-                      type="button"
-                      onClick={() => onContribute(member.id)}
-                      className="px-3 py-1.5 rounded-lg bg-gold/20 border border-gold/40 text-gold
-                        text-xs font-semibold hover:bg-gold/30 active:scale-95 transition-all min-h-[36px]"
-                    >
-                      Record
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none" title="Mark as late contribution">
+                        <input
+                          type="checkbox"
+                          checked={lateMembers.has(member.id)}
+                          onChange={(e) => {
+                            setLateMembers((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) { next.add(member.id); } else { next.delete(member.id); }
+                              return next;
+                            });
+                          }}
+                          className="w-3.5 h-3.5 accent-expense cursor-pointer"
+                          aria-label={`Mark ${member.display_name} as late`}
+                        />
+                        <span className="text-[10px] text-expense font-medium">Late?</span>
+                      </label>
+                      {lateMembers.has(member.id) && (
+                        <span className="text-[10px] text-expense font-mono">+{formatPesewas(Math.round(group.contribution_pesewas * (group.penalty_percent ?? 2) / 100))}</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const isLate = lateMembers.has(member.id);
+                          onContribute(member.id, isLate);
+                          setLateMembers((prev) => { const next = new Set(prev); next.delete(member.id); return next; });
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-gold/20 border border-gold/40 text-gold
+                          text-xs font-semibold hover:bg-gold/30 active:scale-95 transition-all min-h-[36px]"
+                      >
+                        Record
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
