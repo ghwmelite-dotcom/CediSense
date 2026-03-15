@@ -21,6 +21,14 @@ function stagger(index: number, baseMs = 80): React.CSSProperties {
   return { animationDelay: `${index * baseMs}ms`, animationFillMode: 'both' };
 }
 
+function formatTodayDate(): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date());
+}
+
 export function DashboardPage() {
   const { user } = useAuth();
   const [month, setMonth] = useState(getCurrentMonth());
@@ -29,6 +37,7 @@ export function DashboardPage() {
   const [upcomingBills, setUpcomingBills] = useState<RecurringWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [transitioning, setTransitioning] = useState(false);
 
   // Cache: month -> DashboardData
   const cache = useRef<Map<string, DashboardData>>(new Map());
@@ -43,14 +52,18 @@ export function DashboardPage() {
       .catch(() => {/* non-fatal */});
   }, []);
 
-  // Fetch dashboard data
+  // Fetch dashboard data with crossfade transition
   const fetchDashboard = useCallback(async (m: string) => {
     const isCurrent = m === getCurrentMonth();
 
     // Use cache for non-current months
     if (!isCurrent && cache.current.has(m)) {
-      setData(cache.current.get(m)!);
-      setLoading(false);
+      setTransitioning(true);
+      setTimeout(() => {
+        setData(cache.current.get(m)!);
+        setLoading(false);
+        setTransitioning(false);
+      }, 150);
       return;
     }
 
@@ -65,6 +78,7 @@ export function DashboardPage() {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard');
     } finally {
       setLoading(false);
+      setTransitioning(false);
     }
   }, []);
 
@@ -82,11 +96,11 @@ export function DashboardPage() {
   const firstName = user?.name?.split(' ')[0] ?? '';
 
   return (
-    <div className="pb-24">
+    <div className="pb-24 ambient-glow">
       <MonthPicker month={month} onMonthChange={setMonth} />
 
-      <div className="px-6 pt-6 space-y-6 max-w-screen-lg mx-auto">
-        {/* Greeting -- generous, clean like YNAB */}
+      <div className="px-6 pt-6 space-y-6 max-w-screen-lg mx-auto relative">
+        {/* Greeting -- generous, clean, with date */}
         <div className="motion-safe:animate-fade-in" style={stagger(0, 60)}>
           <p className="section-label">{greeting}</p>
           <h1 className="text-3xl md:text-4xl font-extrabold text-text-primary mt-2 tracking-[-0.02em]">
@@ -99,23 +113,24 @@ export function DashboardPage() {
               'Dashboard'
             )}
           </h1>
+          <p className="text-muted text-sm mt-1">{formatTodayDate()}</p>
         </div>
 
-        {/* Loading skeleton with gentle shimmer */}
+        {/* Loading skeleton with premium shimmer */}
         {loading && (
-          <div className="space-y-6">
+          <div className="space-y-6 motion-safe:animate-fade-in">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="h-36 rounded-2xl skeleton" />
-              <div className="h-36 rounded-2xl skeleton" />
+              <div className="h-40 rounded-2xl skeleton" />
+              <div className="h-40 rounded-2xl skeleton" />
             </div>
-            <div className="h-[240px] rounded-2xl skeleton" />
-            <div className="h-64 rounded-2xl skeleton" />
-            <div className="h-48 rounded-2xl skeleton" />
-            <div className="h-40 rounded-2xl skeleton" />
+            <div className="h-[260px] rounded-2xl skeleton" style={{ animationDelay: '100ms' }} />
+            <div className="h-64 rounded-2xl skeleton" style={{ animationDelay: '200ms' }} />
+            <div className="h-48 rounded-2xl skeleton" style={{ animationDelay: '300ms' }} />
+            <div className="h-40 rounded-2xl skeleton" style={{ animationDelay: '400ms' }} />
           </div>
         )}
 
-        {/* Error state — warm and encouraging */}
+        {/* Error state -- warm and encouraging */}
         {error && !loading && (
           <div className="text-center py-20">
             <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-expense/[0.06] flex items-center justify-center">
@@ -134,9 +149,11 @@ export function DashboardPage() {
           </div>
         )}
 
-        {/* Dashboard content with staggered slide-up animations */}
+        {/* Dashboard content with staggered slide-up animations and crossfade */}
         {data && !loading && !error && (
-          <>
+          <div
+            className={`transition-opacity duration-200 ${transitioning ? 'opacity-0' : 'opacity-100'}`}
+          >
             {/* Balance + Summary: side-by-side on desktop */}
             <div
               className="grid grid-cols-1 md:grid-cols-2 gap-6 motion-safe:animate-slide-up"
@@ -153,11 +170,11 @@ export function DashboardPage() {
               />
             </div>
 
-            <div className="motion-safe:animate-slide-up" style={stagger(2)}>
+            <div className="mt-6 motion-safe:animate-slide-up" style={stagger(2)}>
               <SpendingTrendChart data={data.daily_trend} />
             </div>
 
-            <div className="motion-safe:animate-slide-up" style={stagger(3)}>
+            <div className="mt-6 motion-safe:animate-slide-up" style={stagger(3)}>
               <CategoryBreakdownCard
                 data={data.category_breakdown}
                 totalExpenses={data.summary.total_expenses_pesewas}
@@ -165,18 +182,18 @@ export function DashboardPage() {
               />
             </div>
 
-            <div className="motion-safe:animate-slide-up" style={stagger(4)}>
+            <div className="mt-6 motion-safe:animate-slide-up" style={stagger(4)}>
               <UpcomingBillsCard items={upcomingBills} />
             </div>
 
-            <div className="motion-safe:animate-slide-up" style={stagger(5)}>
+            <div className="mt-6 motion-safe:animate-slide-up" style={stagger(5)}>
               <RecentTransactions
                 transactions={data.recent_transactions}
                 categories={categories}
               />
             </div>
 
-            <div className="motion-safe:animate-fade-in" style={stagger(6)}>
+            <div className="mt-6 motion-safe:animate-fade-in" style={stagger(6)}>
               <Link
                 to="/insights"
                 className="block text-center text-muted text-sm font-medium hover:text-text-primary transition-colors mt-2 py-4"
@@ -187,7 +204,7 @@ export function DashboardPage() {
                 </svg>
               </Link>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

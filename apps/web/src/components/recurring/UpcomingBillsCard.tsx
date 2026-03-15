@@ -12,7 +12,8 @@ function StatusBadge({ item }: { item: RecurringWithStatus }) {
       <span
         className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0
           bg-gradient-to-r from-expense/20 to-expense/10
-          text-expense border border-expense/25"
+          text-expense border border-expense/25
+          motion-safe:animate-red-pulse"
       >
         Overdue
       </span>
@@ -24,7 +25,8 @@ function StatusBadge({ item }: { item: RecurringWithStatus }) {
       <span
         className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0
           bg-gradient-to-r from-gold/20 to-gold/10
-          text-gold border border-gold/25"
+          text-gold border border-gold/25
+          motion-safe:animate-gold-pulse"
       >
         {label}
       </span>
@@ -39,29 +41,36 @@ export function UpcomingBillsCard({ items }: UpcomingBillsCardProps) {
   if (items.length === 0) return null;
 
   return (
-    <div
-      className="card-interactive bg-ghana-surface border border-white/10 rounded-xl p-4 space-y-3
-        hover:border-white/20 hover:shadow-card-hover"
-    >
+    <div className="premium-card rounded-2xl p-4 overflow-hidden">
+      {/* Top highlight */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-white font-semibold text-sm">Upcoming Bills</h3>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-4 rounded-full bg-gradient-to-b from-gold to-gold/40" />
+          <h3 className="text-xs text-muted uppercase tracking-widest font-semibold">Upcoming Bills</h3>
+        </div>
         <Link
           to="/recurring"
-          className="text-xs text-gold hover:brightness-110 hover:text-gold
-            hover:underline underline-offset-2 transition-all duration-200"
+          className="text-xs text-gold/80 font-medium hover:text-gold transition-colors duration-200"
         >
-          View all →
+          View all
+          <svg className="inline-block w-3 h-3 ml-1 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
         </Link>
       </div>
 
       {/* Bill rows */}
       <div className="space-y-1">
-        {items.map((item) => (
+        {items.map((item, i) => (
           <div
             key={item.id}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-lg
-              hover:bg-white/[0.05] transition-colors duration-150 -mx-2"
+            className="flex items-center gap-2 px-2 py-2 rounded-lg
+              hover:bg-white/[0.04] transition-all duration-200 -mx-2
+              motion-safe:animate-stagger-in"
+            style={{ animationDelay: `${i * 50}ms` }}
           >
             {item.category_icon && (
               <span

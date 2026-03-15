@@ -47,6 +47,12 @@ export function TransactionRow({
 
   const amountSign = isCredit ? '+' : isTransfer ? '' : '-';
 
+  const barClass = isCredit
+    ? 'txn-bar-income'
+    : isTransfer
+    ? 'txn-bar-transfer'
+    : 'txn-bar-expense';
+
   const label =
     transaction.description ||
     transaction.counterparty ||
@@ -61,14 +67,14 @@ export function TransactionRow({
   }
 
   return (
-    <div className="overflow-hidden group">
+    <div className={`overflow-hidden group rounded-lg ${barClass}`}>
       {/* Main row */}
       <button
         onClick={handleRowClick}
         className={`w-full flex items-center gap-3 px-4 py-3.5
           transition-all duration-200 text-left
           ${compact
-            ? 'cursor-default'
+            ? 'cursor-default hover:bg-white/[0.02]'
             : 'cursor-pointer hover:bg-white/[0.03] active:bg-white/[0.05]'
           }`}
         aria-expanded={expanded}
@@ -79,7 +85,7 @@ export function TransactionRow({
           className="flex-shrink-0 w-10 h-10 rounded-full bg-white/[0.05] border border-white/[0.06] flex items-center
             justify-center text-base transition-all duration-200 group-hover:bg-white/[0.07]"
         >
-          {category?.icon ?? (isCredit ? '↓' : isTransfer ? '↔' : '↑')}
+          {category?.icon ?? (isCredit ? '\u2193' : isTransfer ? '\u2194' : '\u2191')}
         </div>
 
         {/* Description + meta */}

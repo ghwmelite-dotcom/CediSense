@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -31,36 +32,51 @@ function formatTooltipDate(date: string): string {
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
   if (!active || !payload?.length || !label) return null;
   return (
-    <div className="bg-ghana-elevated rounded-xl px-4 py-3 shadow-card-hover">
+    <div
+      className="rounded-2xl px-4 py-3"
+      style={{
+        background: 'rgba(30, 30, 56, 0.95)',
+        backdropFilter: 'blur(12px)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.04)',
+      }}
+    >
       <p className="text-muted text-xs mb-1">{formatTooltipDate(label)}</p>
-      <p className="text-text-primary text-sm font-extrabold tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>{formatPesewas(payload[0].value)}</p>
+      <p className="text-text-primary text-sm font-extrabold tracking-tight tabular-nums">{formatPesewas(payload[0].value)}</p>
     </div>
   );
 }
 
-/** Empty state — warm and encouraging like YNAB */
+/** Empty state — warm, illustration-style, encouraging */
 function ChartEmptyState() {
+  const navigate = useNavigate();
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
-      {/* Faded chart illustration */}
-      <div className="relative w-48 h-20 mb-6 opacity-25">
-        <svg viewBox="0 0 200 80" fill="none" className="w-full h-full">
-          <line x1="20" y1="15" x2="180" y2="15" stroke="#8888A8" strokeWidth="0.5" strokeDasharray="4 4" />
-          <line x1="20" y1="35" x2="180" y2="35" stroke="#8888A8" strokeWidth="0.5" strokeDasharray="4 4" />
-          <line x1="20" y1="55" x2="180" y2="55" stroke="#8888A8" strokeWidth="0.5" strokeDasharray="4 4" />
+    <div className="flex flex-col items-center justify-center py-14 px-4">
+      {/* Faded chart illustration with gentle float */}
+      <div className="relative w-56 h-24 mb-8 motion-safe:animate-float">
+        <svg viewBox="0 0 224 96" fill="none" className="w-full h-full">
+          {/* Grid lines */}
+          <line x1="20" y1="16" x2="204" y2="16" stroke="#8888A8" strokeWidth="0.5" strokeDasharray="4 4" opacity="0.3" />
+          <line x1="20" y1="36" x2="204" y2="36" stroke="#8888A8" strokeWidth="0.5" strokeDasharray="4 4" opacity="0.3" />
+          <line x1="20" y1="56" x2="204" y2="56" stroke="#8888A8" strokeWidth="0.5" strokeDasharray="4 4" opacity="0.3" />
+          <line x1="20" y1="76" x2="204" y2="76" stroke="#8888A8" strokeWidth="0.5" opacity="0.2" />
+          {/* Trend line */}
           <path
-            d="M 20 50 Q 50 45, 70 35 T 120 25 T 180 15"
+            d="M 20 60 Q 50 55, 70 42 T 120 30 T 180 18 L 204 14"
             stroke="#D4A843"
-            strokeWidth="2"
+            strokeWidth="2.5"
             strokeLinecap="round"
             fill="none"
-            opacity="0.6"
+            opacity="0.5"
           />
+          {/* Gradient fill */}
           <path
-            d="M 20 50 Q 50 45, 70 35 T 120 25 T 180 15 L 180 65 L 20 65 Z"
+            d="M 20 60 Q 50 55, 70 42 T 120 30 T 180 18 L 204 14 L 204 76 L 20 76 Z"
             fill="url(#emptyGradient)"
-            opacity="0.3"
+            opacity="0.25"
           />
+          {/* Dot at end */}
+          <circle cx="204" cy="14" r="4" fill="#D4A843" opacity="0.4" />
+          <circle cx="204" cy="14" r="2" fill="#D4A843" opacity="0.7" />
           <defs>
             <linearGradient id="emptyGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#D4A843" stopOpacity="0.4" />
@@ -70,9 +86,16 @@ function ChartEmptyState() {
         </svg>
       </div>
       <h3 className="text-text-primary font-semibold text-sm mb-1.5">Your spending story starts here</h3>
-      <p className="text-muted text-xs text-center max-w-[240px] leading-relaxed">
+      <p className="text-muted text-xs text-center max-w-[260px] leading-relaxed mb-5">
         Add some transactions and watch your daily spending trends come to life.
       </p>
+      <button
+        type="button"
+        onClick={() => navigate('/transactions/add')}
+        className="text-xs font-medium px-5 py-2 rounded-xl bg-gold/[0.08] text-gold hover:bg-gold/[0.14] transition-colors duration-200"
+      >
+        Add your first transaction
+      </button>
     </div>
   );
 }
@@ -87,6 +110,9 @@ export function SpendingTrendChart({ data }: SpendingTrendChartProps) {
       {hasData && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-gold/[0.02] to-transparent rounded-b-2xl" />
       )}
+
+      {/* Top highlight */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
 
       <p className="section-label mb-5">Daily Spending</p>
 
@@ -128,7 +154,8 @@ export function SpendingTrendChart({ data }: SpendingTrendChartProps) {
                 strokeWidth={2.5}
                 fill="url(#goldGradient)"
                 isAnimationActive={!prefersReducedMotion}
-                animationDuration={800}
+                animationDuration={1200}
+                animationEasing="ease-out"
                 filter="url(#goldLineShadow)"
               />
             </AreaChart>

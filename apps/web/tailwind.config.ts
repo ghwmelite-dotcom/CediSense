@@ -79,6 +79,46 @@ export default {
           '0%': { transform: 'scaleY(0)', opacity: '0' },
           '100%': { transform: 'scaleY(1)', opacity: '1' },
         },
+        breathe: {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.02)' },
+        },
+        bounceOnce: {
+          '0%': { transform: 'translateY(0)' },
+          '30%': { transform: 'translateY(-6px)' },
+          '50%': { transform: 'translateY(0)' },
+          '70%': { transform: 'translateY(-3px)' },
+          '100%': { transform: 'translateY(0)' },
+        },
+        countUp: {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        crossfade: {
+          '0%': { opacity: '0', transform: 'translateY(-4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        staggerIn: {
+          '0%': { opacity: '0', transform: 'translateX(-8px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        growWidth: {
+          '0%': { width: '0%' },
+          '100%': { width: 'var(--target-width)' },
+        },
+        goldPulse: {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(212, 168, 67, 0)' },
+          '50%': { boxShadow: '0 0 8px 2px rgba(212, 168, 67, 0.25)' },
+        },
+        redPulse: {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)' },
+          '50%': { boxShadow: '0 0 8px 2px rgba(239, 68, 68, 0.2)' },
+        },
+        gradientSweep: {
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' },
+        },
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
@@ -91,6 +131,15 @@ export default {
         'glow-pulse': 'glowPulse 3s ease-in-out infinite',
         float: 'float 4s ease-in-out infinite',
         'scale-in': 'scaleIn 0.3s ease-out',
+        breathe: 'breathe 4s ease-in-out infinite',
+        'bounce-once': 'bounceOnce 0.6s ease-out',
+        'count-up': 'countUp 0.5s ease-out',
+        crossfade: 'crossfade 0.25s ease-out',
+        'stagger-in': 'staggerIn 0.35s ease-out both',
+        'grow-width': 'growWidth 0.8s ease-out both',
+        'gold-pulse': 'goldPulse 2.5s ease-in-out infinite',
+        'red-pulse': 'redPulse 2.5s ease-in-out infinite',
+        'gradient-sweep': 'gradientSweep 6s ease infinite',
       },
       boxShadow: {
         card: '0 1px 3px rgba(0, 0, 0, 0.4)',
