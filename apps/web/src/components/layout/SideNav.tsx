@@ -1,11 +1,22 @@
 import { NavLink } from 'react-router-dom';
 
-const navItems = [
+const mainNav = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
   { to: '/transactions', label: 'Transactions', icon: '📋' },
   { to: '/budgets', label: 'Budgets', icon: '📊' },
   { to: '/goals', label: 'Goals', icon: '🎯' },
+  { to: '/susu', label: 'Susu Groups', icon: '🤝', highlight: true },
+  { to: '/investments', label: 'Investments', icon: '📈' },
+];
+
+const secondaryNav = [
+  { to: '/recurring', label: 'Bills & Recurring', icon: '🔄' },
+  { to: '/splits', label: 'Shared Expenses', icon: '💸' },
+  { to: '/insights', label: 'Insights', icon: '✨' },
   { to: '/ai-chat', label: 'AI Chat', icon: '💬' },
+];
+
+const bottomNav = [
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
@@ -34,9 +45,9 @@ export function SideNav() {
       {/* Divider */}
       <div className="mx-4 h-px bg-[#1F1F35]/60 mb-2" />
 
-      {/* Nav items */}
-      <nav className="flex flex-col gap-0.5 px-3 mt-1 flex-1">
-        {navItems.map((item) => (
+      {/* Main nav */}
+      <nav className="flex flex-col gap-0.5 px-3 mt-1 flex-1 overflow-y-auto">
+        {mainNav.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -44,18 +55,78 @@ export function SideNav() {
             className={({ isActive }) =>
               `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative ${
                 isActive
-                  ? 'bg-white/[0.03] text-text-primary'
+                  ? 'bg-white/[0.04] text-text-primary'
+                  : item.highlight
+                    ? 'text-gold hover:text-gold-light hover:bg-gold/[0.04]'
+                    : 'text-muted hover:text-text-primary hover:bg-white/[0.02]'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-gradient-to-b from-gold-light to-gold rounded-r-full shadow-[0_0_8px_rgba(212,168,67,0.3)]" />
+                )}
+                <span className="text-base leading-none">{item.icon}</span>
+                <span>{item.label}</span>
+                {item.highlight && !isActive && (
+                  <span className="ml-auto text-[9px] font-bold uppercase tracking-wider bg-gold/15 text-gold px-1.5 py-0.5 rounded-md">New</span>
+                )}
+              </>
+            )}
+          </NavLink>
+        ))}
+
+        {/* Divider */}
+        <div className="mx-2 my-2 h-px bg-[#1F1F35]/60" />
+
+        {/* Secondary nav */}
+        {secondaryNav.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              `group flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 relative ${
+                isActive
+                  ? 'bg-white/[0.04] text-text-primary'
                   : 'text-muted hover:text-text-primary hover:bg-white/[0.02]'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                {/* Active left accent bar — subtle gold, 2px */}
                 {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-gradient-to-b from-gold-light to-gold rounded-r-full shadow-[0_0_8px_rgba(212,168,67,0.3)]" />
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-gradient-to-b from-gold-light to-gold rounded-r-full" />
                 )}
-                <span className="text-base leading-none">{item.icon}</span>
+                <span className="text-sm leading-none">{item.icon}</span>
+                <span>{item.label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
+
+        {/* Divider */}
+        <div className="mx-2 my-2 h-px bg-[#1F1F35]/60" />
+
+        {/* Bottom nav */}
+        {bottomNav.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              `group flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 relative ${
+                isActive
+                  ? 'bg-white/[0.04] text-text-primary'
+                  : 'text-muted hover:text-text-primary hover:bg-white/[0.02]'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-gradient-to-b from-gold-light to-gold rounded-r-full" />
+                )}
+                <span className="text-sm leading-none">{item.icon}</span>
                 <span>{item.label}</span>
               </>
             )}
