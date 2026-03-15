@@ -553,3 +553,55 @@ export interface EarlyPayoutVote {
   vote: 'for' | 'against';
   voted_at: string;
 }
+
+// ─── Susu Analytics types ─────────────────────────────────────────────────────
+
+export interface SusuAnalytics {
+  total_contributed_pesewas: number;
+  total_payouts_pesewas: number;
+  penalty_pool_pesewas: number;
+  contribution_rate: number;
+  on_time_rate: number;
+  rounds_completed: number;
+  total_rounds: number;
+  projected_completion_date: string | null;
+  per_round: Array<{
+    round: number;
+    total_pesewas: number;
+    contributions: number;
+    expected: number;
+  }>;
+  per_member: Array<{
+    member_name: string;
+    contributions: number;
+    on_time: number;
+    total_pesewas: number;
+  }>;
+}
+
+// ─── Gamification types ───────────────────────────────────────────────────────
+
+export type BadgeType =
+  | 'first_contribution'
+  | 'first_payout'
+  | 'perfect_round'
+  | 'streak_5'
+  | 'streak_10'
+  | 'streak_20'
+  | 'group_founder'
+  | 'group_completed';
+
+export interface SusuBadge {
+  id: string;
+  badge_type: BadgeType;
+  badge_name: string;
+  earned_at: string;
+}
+
+export interface LeaderboardEntry {
+  member_name: string;
+  trust_score: number;
+  current_streak: number;
+  total_contributions: number;
+  badges_count: number;
+}

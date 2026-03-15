@@ -83,6 +83,49 @@ function mapGroup(row: SusuGroupRow) {
   };
 }
 
+// Badge name lookup
+const BADGE_NAMES: Record<string, string> = {
+  first_contribution: 'First Step',
+  first_payout: 'First Payout',
+  perfect_round: 'Perfect Round',
+  streak_5: '5 Streak',
+  streak_10: '10 Streak',
+  streak_20: '20 Streak',
+  group_founder: 'Founder',
+  group_completed: 'Completer',
+};
+
+// Award a badge if the user doesn't already have it for this group
+async function awardBadge(
+  db: D1Database,
+  userId: string,
+  badgeType: string,
+  groupId: string | null = null
+): Promise<void> {
+  const existing = groupId
+    ? await db
+        .prepare(`SELECT id FROM susu_badges WHERE user_id = ? AND badge_type = ? AND group_id = ?`)
+        .bind(userId, badgeType, groupId)
+        .first()
+    : await db
+        .prepare(`SELECT id FROM susu_badges WHERE user_id = ? AND badge_type = ?`)
+        .bind(userId, badgeType)
+        .first();
+
+  if (existing) return;
+
+  const badgeId = generateId();
+  const badgeName = BADGE_NAMES[badgeType] ?? badgeType;
+
+  await db
+    .prepare(
+      `INSERT INTO susu_badges (id, user_id, badge_type, badge_name, group_id)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+    .bind(badgeId, userId, badgeType, badgeName, groupId)
+    .run();
+}
+
 // ─── POST /groups — create a new susu group ───────────────────────────────────
 
 susu.post('/groups', async (c) => {
@@ -134,6 +177,9 @@ susu.post('/groups', async (c) => {
     `INSERT INTO susu_members (id, group_id, user_id, display_name, payout_order)
      VALUES (?, ?, ?, ?, 1)`
   ).bind(memberId, groupId, userId, user.name).run();
+
+  // Award group_founder badge
+  await awardBadge(c.env.DB, userId, 'group_founder', groupId);
 
   const group = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
@@ -560,44 +606,69 @@ susu.post('/groups/:id/contributions', async (c) => {
   ).bind(member_id).first<{ user_id: string }>();
 
   if (contributingMember) {
+    const membUserId = contributingMember.user_id;
+
     if (is_late) {
+      // Late contribution — reset streak, increment late count
       await c.env.DB.prepare(
-        `INSERT INTO trust_scores (user_id, score, total_contributions, on_time_contributions, late_contributions, updated_at)
-         VALUES (?, 49, 1, 0, 1, datetime('now'))
+        `INSERT INTO trust_scores (user_id, score, total_contributions, on_time_contributions, late_contributions, current_streak, longest_streak, updated_at)
+         VALUES (?, 49, 1, 0, 1, 0, 0, datetime('now'))
          ON CONFLICT(user_id) DO UPDATE SET
            total_contributions = total_contributions + 1,
            late_contributions = late_contributions + 1,
+           current_streak = 0,
            updated_at = datetime('now')`
-      ).bind(contributingMember.user_id).run();
+      ).bind(membUserId).run();
     } else {
+      // On-time contribution — increment streak
       await c.env.DB.prepare(
-        `INSERT INTO trust_scores (user_id, score, total_contributions, on_time_contributions, updated_at)
-         VALUES (?, 51, 1, 1, datetime('now'))
+        `INSERT INTO trust_scores (user_id, score, total_contributions, on_time_contributions, current_streak, longest_streak, updated_at)
+         VALUES (?, 51, 1, 1, 1, 1, datetime('now'))
          ON CONFLICT(user_id) DO UPDATE SET
            total_contributions = total_contributions + 1,
            on_time_contributions = on_time_contributions + 1,
+           current_streak = current_streak + 1,
+           longest_streak = MAX(longest_streak, current_streak + 1),
            updated_at = datetime('now')`
-      ).bind(contributingMember.user_id).run();
+      ).bind(membUserId).run();
     }
 
-    // Recompute score from current stats
+    // Recompute score from current stats and fetch streak for badge checks
     const stats = await c.env.DB.prepare(
       `SELECT total_contributions, on_time_contributions, late_contributions,
-              missed_contributions, groups_completed
+              missed_contributions, groups_completed, current_streak
        FROM trust_scores WHERE user_id = ?`
-    ).bind(contributingMember.user_id).first<{
+    ).bind(membUserId).first<{
       total_contributions: number;
       on_time_contributions: number;
       late_contributions: number;
       missed_contributions: number;
       groups_completed: number;
+      current_streak: number;
     }>();
 
     if (stats) {
       const newScore = computeTrustScore(stats);
       await c.env.DB.prepare(
         `UPDATE trust_scores SET score = ? WHERE user_id = ?`
-      ).bind(newScore, contributingMember.user_id).run();
+      ).bind(newScore, membUserId).run();
+
+      // Award first_contribution badge
+      if (stats.total_contributions === 1) {
+        await awardBadge(c.env.DB, membUserId, 'first_contribution', groupId);
+      }
+
+      // Award streak milestone badges (only on-time contributions trigger these)
+      if (!is_late) {
+        const streak = stats.current_streak;
+        if (streak >= 20) {
+          await awardBadge(c.env.DB, membUserId, 'streak_20', groupId);
+        } else if (streak >= 10) {
+          await awardBadge(c.env.DB, membUserId, 'streak_10', groupId);
+        } else if (streak >= 5) {
+          await awardBadge(c.env.DB, membUserId, 'streak_5', groupId);
+        }
+      }
     }
   }
 
@@ -1393,6 +1464,237 @@ susu.post('/groups/:id/early-payout/:requestId/pay', async (c) => {
       payout_amount_pesewas: totalPayout,
     },
   });
+});
+
+// ─── GET /groups/:id/analytics — group analytics dashboard ──────────────────
+
+susu.get('/groups/:id/analytics', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  // Verify membership or creator access
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  const groupRow = await c.env.DB.prepare(
+    `SELECT id, creator_id, contribution_pesewas, frequency, max_members,
+            current_round, penalty_pool_pesewas, created_at
+     FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{
+    id: string;
+    creator_id: string;
+    contribution_pesewas: number;
+    frequency: SusuFrequency;
+    max_members: number;
+    current_round: number;
+    penalty_pool_pesewas: number;
+    created_at: string;
+  }>();
+
+  if (!groupRow || (!myMember && groupRow.creator_id !== userId)) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Total contributions (count + sum)
+  const totalContribRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS cnt, COALESCE(SUM(amount_pesewas), 0) AS total
+     FROM susu_contributions WHERE group_id = ?`
+  ).bind(groupId).first<{ cnt: number; total: number }>();
+
+  const total_contributed_pesewas = totalContribRow?.total ?? 0;
+  const totalContribCount = totalContribRow?.cnt ?? 0;
+
+  // Total payouts
+  const totalPayoutsRow = await c.env.DB.prepare(
+    `SELECT COALESCE(SUM(amount_pesewas), 0) AS total FROM susu_payouts WHERE group_id = ?`
+  ).bind(groupId).first<{ total: number }>();
+
+  const total_payouts_pesewas = totalPayoutsRow?.total ?? 0;
+
+  // Late contributions: any contribution that has a penalty entry
+  // (penalty is keyed on member_id + round)
+  const { results: penaltyRows } = await c.env.DB.prepare(
+    `SELECT DISTINCT member_id, round FROM susu_penalties WHERE group_id = ?`
+  ).bind(groupId).all<{ member_id: string; round: number }>();
+
+  const lateSet = new Set(penaltyRows.map((p) => `${p.member_id}:${p.round}`));
+  const lateCount = lateSet.size;
+  const onTimeCount = Math.max(0, totalContribCount - lateCount);
+
+  // Member count for expected contributions
+  const memberCountRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS cnt FROM susu_members WHERE group_id = ?`
+  ).bind(groupId).first<{ cnt: number }>();
+  const memberCount = memberCountRow?.cnt ?? 0;
+
+  // Rounds completed = current_round - 1 (rounds before the current one)
+  const rounds_completed = Math.max(0, groupRow.current_round - 1);
+  const total_rounds = groupRow.max_members;
+
+  // Expected contributions = member_count * rounds_completed
+  const expectedContributions = memberCount * rounds_completed;
+  const contribution_rate =
+    expectedContributions > 0
+      ? Math.round((totalContribCount / expectedContributions) * 100)
+      : 100;
+
+  const on_time_rate =
+    totalContribCount > 0
+      ? Math.round((onTimeCount / totalContribCount) * 100)
+      : 100;
+
+  // Per-round breakdown
+  const { results: roundRows } = await c.env.DB.prepare(
+    `SELECT round,
+            COUNT(*) AS contributions,
+            COALESCE(SUM(amount_pesewas), 0) AS total_pesewas
+     FROM susu_contributions
+     WHERE group_id = ?
+     GROUP BY round
+     ORDER BY round ASC`
+  ).bind(groupId).all<{ round: number; contributions: number; total_pesewas: number }>();
+
+  const per_round = roundRows.map((r) => ({
+    round: r.round,
+    total_pesewas: r.total_pesewas,
+    contributions: r.contributions,
+    expected: memberCount,
+  }));
+
+  // Per-member breakdown
+  const { results: memberRows } = await c.env.DB.prepare(
+    `SELECT sm.display_name AS member_name,
+            COUNT(sc.id) AS contributions,
+            COALESCE(SUM(sc.amount_pesewas), 0) AS total_pesewas
+     FROM susu_members sm
+     LEFT JOIN susu_contributions sc ON sc.member_id = sm.id AND sc.group_id = sm.group_id
+     WHERE sm.group_id = ?
+     GROUP BY sm.id, sm.display_name
+     ORDER BY total_pesewas DESC`
+  ).bind(groupId).all<{ member_name: string; contributions: number; total_pesewas: number }>();
+
+  // Per-member on-time count: contributions - late entries for that member
+  const { results: memberPenaltyRows } = await c.env.DB.prepare(
+    `SELECT sm.display_name AS member_name, COUNT(DISTINCT sp.round) AS late_count
+     FROM susu_penalties sp
+     INNER JOIN susu_members sm ON sm.id = sp.member_id
+     WHERE sp.group_id = ?
+     GROUP BY sp.member_id, sm.display_name`
+  ).bind(groupId).all<{ member_name: string; late_count: number }>();
+
+  const lateByMember = new Map(memberPenaltyRows.map((r) => [r.member_name, r.late_count]));
+
+  const per_member = memberRows.map((m) => {
+    const lateForMember = lateByMember.get(m.member_name) ?? 0;
+    const on_time = Math.max(0, m.contributions - lateForMember);
+    return {
+      member_name: m.member_name,
+      contributions: m.contributions,
+      on_time,
+      total_pesewas: m.total_pesewas,
+    };
+  });
+
+  // Projected completion date based on frequency
+  let projected_completion_date: string | null = null;
+  const remainingRounds = total_rounds - rounds_completed;
+
+  if (remainingRounds > 0) {
+    const now = new Date();
+    let projectedMs = now.getTime();
+
+    const freqMs: Record<SusuFrequency, number> = {
+      daily: 24 * 60 * 60 * 1000,
+      weekly: 7 * 24 * 60 * 60 * 1000,
+      monthly: 30 * 24 * 60 * 60 * 1000,
+    };
+
+    projectedMs += remainingRounds * freqMs[groupRow.frequency];
+    projected_completion_date = new Date(projectedMs).toISOString().split('T')[0];
+  }
+
+  return c.json({
+    data: {
+      total_contributed_pesewas,
+      total_payouts_pesewas,
+      penalty_pool_pesewas: groupRow.penalty_pool_pesewas,
+      contribution_rate,
+      on_time_rate,
+      rounds_completed,
+      total_rounds,
+      projected_completion_date,
+      per_round,
+      per_member,
+    },
+  });
+});
+
+// ─── GET /groups/:id/leaderboard — ranked member list ────────────────────────
+
+susu.get('/groups/:id/leaderboard', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT
+       sm.display_name AS member_name,
+       COALESCE(ts.score, 50) AS trust_score,
+       COALESCE(ts.current_streak, 0) AS current_streak,
+       COALESCE(ts.total_contributions, 0) AS total_contributions,
+       (SELECT COUNT(*) FROM susu_badges b WHERE b.user_id = sm.user_id AND b.group_id = ?) AS badges_count
+     FROM susu_members sm
+     LEFT JOIN trust_scores ts ON ts.user_id = sm.user_id
+     WHERE sm.group_id = ?
+     ORDER BY trust_score DESC, current_streak DESC, total_contributions DESC`
+  ).bind(groupId, groupId).all<{
+    member_name: string;
+    trust_score: number;
+    current_streak: number;
+    total_contributions: number;
+    badges_count: number;
+  }>();
+
+  return c.json({ data: results });
+});
+
+// ─── GET /groups/:id/badges — badges earned by the current user in this group ─
+
+susu.get('/groups/:id/badges', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT id, badge_type, badge_name, earned_at
+     FROM susu_badges
+     WHERE user_id = ? AND group_id = ?
+     ORDER BY earned_at ASC`
+  ).bind(userId, groupId).all<{
+    id: string;
+    badge_type: string;
+    badge_name: string;
+    earned_at: string;
+  }>();
+
+  return c.json({ data: results });
 });
 
 export { susu };

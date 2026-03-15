@@ -1,8 +1,13 @@
 import { useState } from 'react';
-import type { SusuGroupWithDetails, EarlyPayoutRequest, SusuVariant } from '@cedisense/shared';
+import type { SusuGroupWithDetails, EarlyPayoutRequest, SusuVariant, SusuAnalytics, SusuBadge, LeaderboardEntry } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 import { InviteQRModal } from './InviteQRModal';
 import { EarlyPayoutCard } from './EarlyPayoutCard';
+import { GroupAnalytics } from './GroupAnalytics';
+import { BadgeDisplay } from './BadgeDisplay';
+import { Leaderboard } from './Leaderboard';
+
+type GroupDetailTab = 'overview' | 'analytics' | 'leaderboard';
 
 interface GroupDetailProps {
   group: SusuGroupWithDetails;
@@ -19,6 +24,15 @@ interface GroupDetailProps {
   earlyPayoutPaying?: boolean;
   /** Called when the user taps "View Receipt" for a member who has contributed */
   onViewReceipt?: (memberId: string) => void;
+  /** Analytics data — fetched lazily when Analytics tab is opened */
+  analytics?: SusuAnalytics | null;
+  analyticsLoading?: boolean;
+  onLoadAnalytics?: () => void;
+  /** Gamification */
+  badges?: SusuBadge[];
+  leaderboard?: LeaderboardEntry[];
+  leaderboardLoading?: boolean;
+  onLoadLeaderboard?: () => void;
 }
 
 const VARIANT_LABEL: Record<SusuVariant, string> = {
@@ -42,10 +56,18 @@ export function GroupDetail({
   earlyPayoutVoting = false,
   earlyPayoutPaying = false,
   onViewReceipt,
+  analytics,
+  analyticsLoading = false,
+  onLoadAnalytics,
+  badges = [],
+  leaderboard = [],
+  leaderboardLoading = false,
+  onLoadLeaderboard,
 }: GroupDetailProps) {
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [lateMembers, setLateMembers] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<GroupDetailTab>('overview');
 
   async function copyInviteCode() {
     await navigator.clipboard.writeText(group.invite_code);
@@ -63,8 +85,117 @@ export function GroupDetail({
 
   const sortedMembers = [...group.members].sort((a, b) => a.payout_order - b.payout_order);
 
+  function handleAnalyticsTab() {
+    setActiveTab('analytics');
+    if (!analytics && !analyticsLoading && onLoadAnalytics) {
+      onLoadAnalytics();
+    }
+  }
+
+  function handleLeaderboardTab() {
+    setActiveTab('leaderboard');
+    if (leaderboard.length === 0 && !leaderboardLoading && onLoadLeaderboard) {
+      onLoadLeaderboard();
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Tab switcher */}
+      <div className="flex gap-1 bg-ghana-surface border border-white/10 rounded-xl p-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('overview')}
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all min-h-[40px]
+            ${activeTab === 'overview'
+              ? 'bg-gold text-ghana-dark shadow-sm'
+              : 'text-muted hover:text-white'
+            }`}
+        >
+          Overview
+        </button>
+        <button
+          type="button"
+          onClick={handleLeaderboardTab}
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all min-h-[40px]
+            ${activeTab === 'leaderboard'
+              ? 'bg-gold text-ghana-dark shadow-sm'
+              : 'text-muted hover:text-white'
+            }`}
+        >
+          Leaderboard
+        </button>
+        <button
+          type="button"
+          onClick={handleAnalyticsTab}
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all min-h-[40px]
+            ${activeTab === 'analytics'
+              ? 'bg-gold text-ghana-dark shadow-sm'
+              : 'text-muted hover:text-white'
+            }`}
+        >
+          Analytics
+        </button>
+      </div>
+
+      {/* Leaderboard tab content */}
+      {activeTab === 'leaderboard' && (
+        <div className="space-y-4">
+          <Leaderboard entries={leaderboard} loading={leaderboardLoading} />
+          {!leaderboardLoading && leaderboard.length === 0 && onLoadLeaderboard && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={onLoadLeaderboard}
+                className="px-4 py-2 rounded-xl border border-gold/40 text-gold text-sm font-semibold
+                  hover:bg-gold/10 active:scale-95 transition-all min-h-[44px]"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Analytics tab content */}
+      {activeTab === 'analytics' && (
+        <>
+          {analyticsLoading && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-20 rounded-xl bg-ghana-surface animate-pulse" />
+                <div className="h-20 rounded-xl bg-ghana-surface animate-pulse" />
+                <div className="h-20 rounded-xl bg-ghana-surface animate-pulse" />
+                <div className="h-20 rounded-xl bg-ghana-surface animate-pulse" />
+              </div>
+              <div className="h-40 rounded-xl bg-ghana-surface animate-pulse" />
+            </div>
+          )}
+          {!analyticsLoading && analytics && (
+            <GroupAnalytics analytics={analytics} />
+          )}
+          {!analyticsLoading && !analytics && (
+            <div className="text-center py-12 space-y-3">
+              <p className="text-muted text-sm">No analytics data available yet.</p>
+              {onLoadAnalytics && (
+                <button
+                  type="button"
+                  onClick={onLoadAnalytics}
+                  className="px-4 py-2 rounded-xl border border-gold/40 text-gold text-sm font-semibold
+                    hover:bg-gold/10 active:scale-95 transition-all min-h-[44px]"
+                >
+                  Retry
+                </button>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Overview tab content */}
+      {activeTab === 'overview' && (
+      <div className="space-y-6">
+
       {/* Header */}
       <div className="space-y-3">
         <h2 className="text-white text-xl font-bold">{group.name}</h2>
@@ -285,6 +416,14 @@ export function GroupDetail({
           Request Early Payout
         </button>
       )}
+
+      {/* My badges */}
+      <div className="space-y-2">
+        <h3 className="text-muted text-xs font-semibold uppercase tracking-wide px-1">
+          My Badges
+        </h3>
+        <BadgeDisplay badges={badges} />
+      </div>
 
       {/* Member list */}
       <div className="space-y-2">
@@ -511,6 +650,8 @@ export function GroupDetail({
             Leave Group
           </button>
         </div>
+      )}
+      </div>
       )}
     </div>
   );

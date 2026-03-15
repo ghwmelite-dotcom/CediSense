@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { SusuGroup, SusuGroupWithDetails, SusuFrequency, ContributionReceipt, EarlyPayoutRequest } from '@cedisense/shared';
+import type { SusuGroup, SusuGroupWithDetails, SusuFrequency, ContributionReceipt, EarlyPayoutRequest, SusuAnalytics, SusuBadge, LeaderboardEntry } from '@cedisense/shared';
 import { api } from '@/lib/api';
 import { GroupCard } from '@/components/susu/GroupCard';
 import { GroupDetail } from '@/components/susu/GroupDetail';
@@ -87,6 +87,15 @@ export function SusuPage() {
   const [earlyPayoutVoting, setEarlyPayoutVoting] = useState(false);
   const [earlyPayoutPaying, setEarlyPayoutPaying] = useState(false);
 
+  // Analytics state
+  const [analytics, setAnalytics] = useState<SusuAnalytics | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  // Gamification state
+  const [badges, setBadges] = useState<SusuBadge[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+
   const fetchGroups = useCallback(async () => {
     try {
       const data = await api.get<SusuGroupWithCount[]>('/susu/groups');
@@ -114,12 +123,48 @@ export function SusuPage() {
     }
   }
 
+  async function fetchAnalytics(groupId: string) {
+    setAnalyticsLoading(true);
+    try {
+      const data = await api.get<SusuAnalytics>(`/susu/groups/${groupId}/analytics`);
+      setAnalytics(data);
+    } catch {
+      setAnalytics(null);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }
+
+  async function fetchBadges(groupId: string) {
+    try {
+      const data = await api.get<SusuBadge[]>(`/susu/groups/${groupId}/badges`);
+      setBadges(data);
+    } catch {
+      setBadges([]);
+    }
+  }
+
+  async function fetchLeaderboard(groupId: string) {
+    setLeaderboardLoading(true);
+    try {
+      const data = await api.get<LeaderboardEntry[]>(`/susu/groups/${groupId}/leaderboard`);
+      setLeaderboard(data);
+    } catch {
+      setLeaderboard([]);
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  }
+
   async function handleGroupClick(id: string) {
     setDetailLoading(true);
     try {
       const data = await api.get<SusuGroupWithDetails>(`/susu/groups/${id}`);
       setSelectedGroup(data);
-      await fetchEarlyPayout(id);
+      await Promise.all([
+        fetchEarlyPayout(id),
+        fetchBadges(id),
+      ]);
     } catch {
       // Stay on list view
     } finally {
@@ -130,6 +175,9 @@ export function SusuPage() {
   function handleBack() {
     setSelectedGroup(null);
     setEarlyPayoutRequest(null);
+    setAnalytics(null);
+    setBadges([]);
+    setLeaderboard([]);
   }
 
   // ── Create ──────────────────────────────────────────────────────────────────
@@ -339,6 +387,13 @@ export function SusuPage() {
               earlyPayoutVoting={earlyPayoutVoting}
               earlyPayoutPaying={earlyPayoutPaying}
               onViewReceipt={handleViewReceipt}
+              analytics={analytics}
+              analyticsLoading={analyticsLoading}
+              onLoadAnalytics={() => fetchAnalytics(selectedGroup.id)}
+              badges={badges}
+              leaderboard={leaderboard}
+              leaderboardLoading={leaderboardLoading}
+              onLoadLeaderboard={() => fetchLeaderboard(selectedGroup.id)}
             />
           </div>
         </div>
