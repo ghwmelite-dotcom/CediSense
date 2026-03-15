@@ -20,6 +20,7 @@ import { RecurringPage } from '@/pages/RecurringPage';
 import { SplitsPage } from '@/pages/SplitsPage';
 import { InvestmentsPage } from '@/pages/InvestmentsPage';
 import { SusuPage } from '@/pages/SusuPage';
+import { JoinByLinkPage } from '@/pages/JoinByLinkPage';
 import { MonthlyReportPrint } from '@/pages/print/MonthlyReportPrint';
 import { TransactionsPrint } from '@/pages/print/TransactionsPrint';
 
@@ -42,6 +43,7 @@ export function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/join" element={<JoinByLinkPage />} />
 
         {/* Onboarding (protected, no shell) */}
         <Route

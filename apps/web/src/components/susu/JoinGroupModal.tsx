@@ -93,6 +93,11 @@ export function JoinGroupModal({ open, onClose, onJoin, error }: JoinGroupModalW
                 ${error ? 'border-expense focus:border-expense' : 'border-white/10 focus:border-gold'}`}
             />
 
+            {/* QR hint */}
+            <p className="text-muted text-xs mt-1">
+              Or scan a QR code shared by the group creator
+            </p>
+
             {/* Error message */}
             {error && (
               <div className="flex items-start gap-2 mt-1">

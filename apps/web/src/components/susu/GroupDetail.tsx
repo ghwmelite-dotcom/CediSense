@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { SusuGroupWithDetails } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
+import { InviteQRModal } from './InviteQRModal';
 
 interface GroupDetailProps {
   group: SusuGroupWithDetails;
@@ -18,6 +19,7 @@ export function GroupDetail({
   onLeave,
 }: GroupDetailProps) {
   const [copied, setCopied] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
   async function copyInviteCode() {
     await navigator.clipboard.writeText(group.invite_code);
@@ -59,6 +61,29 @@ export function GroupDetail({
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
+
+        {/* Invite Members button */}
+        <button
+          type="button"
+          onClick={() => setQrOpen(true)}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
+            border border-gold/40 text-gold font-semibold text-sm
+            hover:bg-gold/10 active:scale-95 transition-all min-h-[44px]"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round"
+              d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+          </svg>
+          Invite Members
+        </button>
+
+        {/* QR Code Modal */}
+        <InviteQRModal
+          open={qrOpen}
+          onClose={() => setQrOpen(false)}
+          groupName={group.name}
+          inviteCode={group.invite_code}
+        />
       </div>
 
       {/* Round indicator */}
