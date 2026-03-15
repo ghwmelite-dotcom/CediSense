@@ -3,6 +3,7 @@ import {
   fetchRecentTransactions, assembleSummary,
   currentMonth, lastDayOfMonth,
 } from './dashboard-queries.js';
+import { getTrustLabel } from './trust-score.js';
 
 function formatGHS(pesewas: number): string {
   const ghs = pesewas / 100;
@@ -20,7 +21,7 @@ export async function buildFinancialContext(db: D1Database, userId: string): Pro
   const startDate = `${month}-01`;
   const endDate = lastDayOfMonth(month);
 
-  const [accounts, summaryRows, categories, recentTxns, budgetResult, goalResult] = await Promise.all([
+  const [accounts, summaryRows, categories, recentTxns, budgetResult, goalResult, susuResult] = await Promise.all([
     fetchAccounts(db, userId),
     fetchSummary(db, userId, startDate, endDate),
     fetchCategoryBreakdown(db, userId, startDate, endDate),
@@ -43,6 +44,17 @@ export async function buildFinancialContext(db: D1Database, userId: string): Pro
     db.prepare(
       'SELECT name, target_pesewas, current_pesewas, deadline FROM savings_goals WHERE user_id = ? ORDER BY current_pesewas * 1.0 / target_pesewas DESC'
     ).bind(userId).all(),
+    // Susu group data for AI context
+    db.prepare(
+      `SELECT sg.name, sg.contribution_pesewas, sg.frequency, sg.current_round, sg.max_members,
+              sg.variant, sg.is_active, sg.goal_amount_pesewas,
+              (SELECT COUNT(*) FROM susu_members WHERE group_id = sg.id) as member_count,
+              ts.score as trust_score, ts.current_streak
+       FROM susu_groups sg
+       JOIN susu_members sm ON sg.id = sm.group_id AND sm.user_id = ?
+       LEFT JOIN trust_scores ts ON ts.user_id = ?
+       WHERE sg.is_active = 1`
+    ).bind(userId, userId).all(),
   ]);
 
   const { totalIncome, totalExpenses, totalFees, transactionCount } = assembleSummary(summaryRows);
@@ -95,6 +107,19 @@ export async function buildFinancialContext(db: D1Database, userId: string): Pro
   // Extract rows
   const budgetRows = (budgetResult.results ?? []) as Array<{ amount_pesewas: number; category_name: string; spent_pesewas: number }>;
   const goalRows = (goalResult.results ?? []) as Array<{ name: string; target_pesewas: number; current_pesewas: number; deadline: string | null }>;
+  const susuRows = (susuResult.results ?? []) as Array<{
+    name: string;
+    contribution_pesewas: number;
+    frequency: string;
+    current_round: number;
+    max_members: number;
+    variant: string;
+    is_active: number;
+    goal_amount_pesewas: number | null;
+    member_count: number;
+    trust_score: number | null;
+    current_streak: number | null;
+  }>;
 
   // Budget context
   if (budgetRows.length > 0) {
@@ -130,6 +155,29 @@ export async function buildFinancialContext(db: D1Database, userId: string): Pro
     }
   }
 
+  // Susu groups context
+  if (susuRows.length > 0) {
+    lines.push('');
+    lines.push('Susu Groups:');
+    for (const s of susuRows) {
+      const contrib = formatGHS(s.contribution_pesewas);
+      const freq = s.frequency;
+      if (s.variant === 'rotating') {
+        const trustLabel = s.trust_score != null ? getTrustLabel(s.trust_score) : null;
+        const trustStr = s.trust_score != null
+          ? `, Trust score: ${s.trust_score} (${trustLabel})`
+          : '';
+        const streakStr = s.current_streak != null ? `, ${s.current_streak}-round streak` : '';
+        lines.push(`- ${s.name} (rotating, ${freq}): Round ${s.current_round} of ${s.max_members}, ${s.member_count} members, ${contrib}/${freq}${trustStr}${streakStr}`);
+      } else if (s.variant === 'goal_based' && s.goal_amount_pesewas != null) {
+        const poolPct = Math.min(Math.round((s.contribution_pesewas * s.current_round / s.goal_amount_pesewas) * 1000) / 10, 100);
+        lines.push(`- ${s.name} (goal_based, ${freq}): ${poolPct.toFixed(0)}% of ${formatGHS(s.goal_amount_pesewas)} goal reached, ${s.member_count} members, ${contrib}/${freq}`);
+      } else {
+        lines.push(`- ${s.name} (${s.variant}, ${freq}): Round ${s.current_round}, ${s.member_count} members, ${contrib}/${freq}`);
+      }
+    }
+  }
+
   return lines.join('\n');
 }
 
@@ -142,6 +190,7 @@ You understand:
 - Local costs: trotro fares, ECG prepaid, water bills, rent advances
 - MoMo fee structures and how to minimize them
 - Savings options: T-Bills, mutual funds, susu collectors
+- Susu (rotating savings groups): traditional Ghanaian communal savings, trust scores, contribution streaks
 
 Guidelines:
 - Be warm, practical, and non-judgmental
