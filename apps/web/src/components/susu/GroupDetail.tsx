@@ -1,24 +1,37 @@
 import { useState } from 'react';
-import type { SusuGroupWithDetails } from '@cedisense/shared';
+import type { SusuGroupWithDetails, EarlyPayoutRequest } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 import { InviteQRModal } from './InviteQRModal';
+import { EarlyPayoutCard } from './EarlyPayoutCard';
 
 interface GroupDetailProps {
   group: SusuGroupWithDetails;
+  earlyPayoutRequest: EarlyPayoutRequest | null;
   onContribute: (memberId: string) => void;
   onPayout: () => void;
   onAdvanceRound: () => void;
   onLeave: () => void;
+  onRequestEarlyPayout: () => void;
+  onVoteEarlyPayout: (vote: 'for' | 'against') => void;
+  onPayEarlyPayout: () => void;
+  earlyPayoutVoting?: boolean;
+  earlyPayoutPaying?: boolean;
   /** Called when the user taps "View Receipt" for a member who has contributed */
   onViewReceipt?: (memberId: string) => void;
 }
 
 export function GroupDetail({
   group,
+  earlyPayoutRequest,
   onContribute,
   onPayout,
   onAdvanceRound,
   onLeave,
+  onRequestEarlyPayout,
+  onVoteEarlyPayout,
+  onPayEarlyPayout,
+  earlyPayoutVoting = false,
+  earlyPayoutPaying = false,
   onViewReceipt,
 }: GroupDetailProps) {
   const [copied, setCopied] = useState(false);
@@ -131,6 +144,35 @@ export function GroupDetail({
             <p className="text-gold font-bold">{group.payout_recipient!.display_name}</p>
           </div>
         </div>
+      )}
+
+      {/* Early Payout Request */}
+      {earlyPayoutRequest && (
+        <EarlyPayoutCard
+          request={earlyPayoutRequest}
+          isCreator={group.is_creator}
+          isRequester={earlyPayoutRequest.requester_member_id === group.my_member_id}
+          onVote={onVoteEarlyPayout}
+          onPay={onPayEarlyPayout}
+          voting={earlyPayoutVoting}
+          paying={earlyPayoutPaying}
+        />
+      )}
+
+      {/* Request Early Payout button (members only, no pending request) */}
+      {group.my_member_id && !earlyPayoutRequest && (
+        <button
+          type="button"
+          onClick={onRequestEarlyPayout}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
+            border border-gold/30 text-gold font-semibold text-sm
+            hover:bg-gold/10 active:scale-95 transition-all min-h-[44px]"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Request Early Payout
+        </button>
       )}
 
       {/* Member list */}

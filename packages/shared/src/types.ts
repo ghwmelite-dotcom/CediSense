@@ -491,3 +491,32 @@ export interface ContributionReceipt {
   amount_pesewas: number;
   contributed_at: string;
 }
+
+// ─── Early Payout types ──────────────────────────────────────────────────────
+
+export type EarlyPayoutStatus = 'pending' | 'approved' | 'denied' | 'paid';
+
+export interface EarlyPayoutRequest {
+  id: string;
+  group_id: string;
+  requester_member_id: string;
+  requester_name: string;
+  reason: string | null;
+  amount_pesewas: number;
+  premium_percent: number;
+  premium_pesewas: number;
+  status: EarlyPayoutStatus;
+  votes_for: number;
+  votes_against: number;
+  votes_needed: number;
+  my_vote: 'for' | 'against' | null;
+  created_at: string;
+}
+
+export interface EarlyPayoutVote {
+  id: string;
+  member_id: string;
+  display_name: string;
+  vote: 'for' | 'against';
+  voted_at: string;
+}

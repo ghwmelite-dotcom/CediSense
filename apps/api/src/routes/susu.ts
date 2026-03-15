@@ -5,6 +5,8 @@ import {
   joinSusuGroupSchema,
   recordContributionSchema,
   updateSusuGroupSchema,
+  earlyPayoutRequestSchema,
+  earlyPayoutVoteSchema,
 } from '@cedisense/shared';
 import type { SusuFrequency } from '@cedisense/shared';
 import { generateId } from '../lib/db.js';
@@ -788,6 +790,338 @@ susu.get('/groups/:groupId/contributions/:id/receipt', async (c) => {
       total_rounds: groupRow?.max_members ?? 0,
       amount_pesewas: contribution.amount_pesewas,
       contributed_at: contribution.contributed_at,
+    },
+  });
+});
+
+// ─── Row types for early payouts ─────────────────────────────────────────────
+
+interface EarlyPayoutRequestRow {
+  id: string;
+  group_id: string;
+  requester_member_id: string;
+  reason: string | null;
+  amount_pesewas: number;
+  premium_percent: number;
+  status: string;
+  votes_for: number;
+  votes_against: number;
+  votes_needed: number;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+interface EarlyPayoutVoteRow {
+  id: string;
+  request_id: string;
+  member_id: string;
+  vote: string;
+  voted_at: string;
+}
+
+// ─── POST /groups/:id/early-payout — request an early payout ─────────────────
+
+susu.post('/groups/:id/early-payout', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  const body = await c.req.json();
+  const parsed = earlyPayoutRequestSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request',
+          details: { fieldErrors: parsed.error.flatten().fieldErrors },
+        },
+      },
+      400
+    );
+  }
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Check no pending request already exists for this member
+  const existing = await c.env.DB.prepare(
+    `SELECT id FROM early_payout_requests
+     WHERE group_id = ? AND requester_member_id = ? AND status = 'pending'`
+  ).bind(groupId, myMember.id).first();
+
+  if (existing) {
+    return c.json(
+      { error: { code: 'CONFLICT', message: 'You already have a pending early payout request' } },
+      409
+    );
+  }
+
+  // Get group info and member count
+  const group = await c.env.DB.prepare(
+    `SELECT contribution_pesewas FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ contribution_pesewas: number }>();
+
+  if (!group) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  const countRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS cnt FROM susu_members WHERE group_id = ?`
+  ).bind(groupId).first<{ cnt: number }>();
+
+  const memberCount = countRow?.cnt ?? 0;
+  const amount = group.contribution_pesewas * memberCount;
+  const votesNeeded = Math.ceil(memberCount / 2);
+
+  const requestId = generateId();
+
+  await c.env.DB.prepare(
+    `INSERT INTO early_payout_requests
+       (id, group_id, requester_member_id, reason, amount_pesewas, votes_needed)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(requestId, groupId, myMember.id, parsed.data.reason ?? null, amount, votesNeeded).run();
+
+  const row = await c.env.DB.prepare(
+    `SELECT epr.*, sm.display_name AS requester_name
+     FROM early_payout_requests epr
+     INNER JOIN susu_members sm ON sm.id = epr.requester_member_id
+     WHERE epr.id = ?`
+  ).bind(requestId).first<EarlyPayoutRequestRow & { requester_name: string }>();
+
+  return c.json({
+    data: {
+      ...row!,
+      premium_pesewas: Math.round(row!.amount_pesewas * row!.premium_percent / 100),
+      my_vote: null,
+    },
+  }, 201);
+});
+
+// ─── GET /groups/:id/early-payout — get active early payout request ──────────
+
+susu.get('/groups/:id/early-payout', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Find active request (pending or approved)
+  const request = await c.env.DB.prepare(
+    `SELECT epr.*, sm.display_name AS requester_name
+     FROM early_payout_requests epr
+     INNER JOIN susu_members sm ON sm.id = epr.requester_member_id
+     WHERE epr.group_id = ? AND epr.status IN ('pending', 'approved')
+     ORDER BY epr.created_at DESC LIMIT 1`
+  ).bind(groupId).first<EarlyPayoutRequestRow & { requester_name: string }>();
+
+  if (!request) {
+    return c.json({ data: null });
+  }
+
+  // Get votes
+  const { results: votes } = await c.env.DB.prepare(
+    `SELECT epv.id, epv.member_id, sm.display_name, epv.vote, epv.voted_at
+     FROM early_payout_votes epv
+     INNER JOIN susu_members sm ON sm.id = epv.member_id
+     WHERE epv.request_id = ?
+     ORDER BY epv.voted_at ASC`
+  ).bind(request.id).all<EarlyPayoutVoteRow & { display_name: string }>();
+
+  // Find my vote
+  const myVote = votes.find((v) => v.member_id === myMember.id);
+
+  return c.json({
+    data: {
+      ...request,
+      premium_pesewas: Math.round(request.amount_pesewas * request.premium_percent / 100),
+      my_vote: myVote?.vote ?? null,
+      votes,
+    },
+  });
+});
+
+// ─── POST /groups/:id/early-payout/:requestId/vote — cast a vote ─────────────
+
+susu.post('/groups/:id/early-payout/:requestId/vote', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const requestId = c.req.param('requestId');
+
+  const body = await c.req.json();
+  const parsed = earlyPayoutVoteSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request',
+          details: { fieldErrors: parsed.error.flatten().fieldErrors },
+        },
+      },
+      400
+    );
+  }
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Get the request
+  const request = await c.env.DB.prepare(
+    `SELECT * FROM early_payout_requests WHERE id = ? AND group_id = ? AND status = 'pending'`
+  ).bind(requestId, groupId).first<EarlyPayoutRequestRow>();
+
+  if (!request) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'No pending request found' } }, 404);
+  }
+
+  // Can't vote on own request
+  if (request.requester_member_id === myMember.id) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'You cannot vote on your own request' } }, 403);
+  }
+
+  // Cast vote
+  const voteId = generateId();
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO early_payout_votes (id, request_id, member_id, vote)
+       VALUES (?, ?, ?, ?)`
+    ).bind(voteId, requestId, myMember.id, parsed.data.vote).run();
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('UNIQUE')) {
+      return c.json({ error: { code: 'CONFLICT', message: 'You have already voted on this request' } }, 409);
+    }
+    throw err;
+  }
+
+  // Update vote counts
+  const voteColumn = parsed.data.vote === 'for' ? 'votes_for' : 'votes_against';
+  await c.env.DB.prepare(
+    `UPDATE early_payout_requests SET ${voteColumn} = ${voteColumn} + 1 WHERE id = ?`
+  ).bind(requestId).run();
+
+  // Re-fetch updated request
+  const updated = await c.env.DB.prepare(
+    `SELECT * FROM early_payout_requests WHERE id = ?`
+  ).bind(requestId).first<EarlyPayoutRequestRow>();
+
+  if (!updated) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Request not found' } }, 404);
+  }
+
+  // Get total members for auto-deny calculation
+  const countRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS cnt FROM susu_members WHERE group_id = ?`
+  ).bind(groupId).first<{ cnt: number }>();
+  const totalMembers = countRow?.cnt ?? 0;
+
+  // Auto-approve if votes_for >= votes_needed
+  if (updated.votes_for >= updated.votes_needed) {
+    await c.env.DB.prepare(
+      `UPDATE early_payout_requests SET status = 'approved', resolved_at = datetime('now') WHERE id = ?`
+    ).bind(requestId).run();
+  }
+  // Auto-deny if it's impossible to reach majority
+  else if (updated.votes_against > totalMembers - updated.votes_needed) {
+    await c.env.DB.prepare(
+      `UPDATE early_payout_requests SET status = 'denied', resolved_at = datetime('now') WHERE id = ?`
+    ).bind(requestId).run();
+  }
+
+  // Return final state
+  const final = await c.env.DB.prepare(
+    `SELECT epr.*, sm.display_name AS requester_name
+     FROM early_payout_requests epr
+     INNER JOIN susu_members sm ON sm.id = epr.requester_member_id
+     WHERE epr.id = ?`
+  ).bind(requestId).first<EarlyPayoutRequestRow & { requester_name: string }>();
+
+  return c.json({
+    data: {
+      ...final!,
+      premium_pesewas: Math.round(final!.amount_pesewas * final!.premium_percent / 100),
+      my_vote: parsed.data.vote,
+    },
+  });
+});
+
+// ─── POST /groups/:id/early-payout/:requestId/pay — pay out approved request ─
+
+susu.post('/groups/:id/early-payout/:requestId/pay', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const requestId = c.req.param('requestId');
+
+  // Only creator can pay out
+  const group = await c.env.DB.prepare(
+    `SELECT id, creator_id, current_round FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; creator_id: string; current_round: number }>();
+
+  if (!group) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  if (group.creator_id !== userId) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only the creator can process payouts' } }, 403);
+  }
+
+  // Get the approved request
+  const request = await c.env.DB.prepare(
+    `SELECT * FROM early_payout_requests WHERE id = ? AND group_id = ? AND status = 'approved'`
+  ).bind(requestId, groupId).first<EarlyPayoutRequestRow>();
+
+  if (!request) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'No approved request found' } }, 404);
+  }
+
+  const premium = Math.round(request.amount_pesewas * request.premium_percent / 100);
+  const totalPayout = request.amount_pesewas + premium;
+
+  // Record as a susu_payout
+  const payoutId = generateId();
+  await c.env.DB.prepare(
+    `INSERT INTO susu_payouts (id, group_id, member_id, round, amount_pesewas)
+     VALUES (?, ?, ?, ?, ?)`
+  ).bind(payoutId, groupId, request.requester_member_id, group.current_round, totalPayout).run();
+
+  // Mark request as paid
+  await c.env.DB.prepare(
+    `UPDATE early_payout_requests SET status = 'paid', resolved_at = datetime('now') WHERE id = ?`
+  ).bind(requestId).run();
+
+  const final = await c.env.DB.prepare(
+    `SELECT epr.*, sm.display_name AS requester_name
+     FROM early_payout_requests epr
+     INNER JOIN susu_members sm ON sm.id = epr.requester_member_id
+     WHERE epr.id = ?`
+  ).bind(requestId).first<EarlyPayoutRequestRow & { requester_name: string }>();
+
+  return c.json({
+    data: {
+      ...final!,
+      premium_pesewas: premium,
+      payout_amount_pesewas: totalPayout,
     },
   });
 });

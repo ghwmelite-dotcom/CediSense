@@ -307,3 +307,16 @@ export type CreateSusuGroupInput = z.infer<typeof createSusuGroupSchema>;
 export type JoinSusuGroupInput = z.infer<typeof joinSusuGroupSchema>;
 export type RecordContributionInput = z.infer<typeof recordContributionSchema>;
 export type UpdateSusuGroupInput = z.infer<typeof updateSusuGroupSchema>;
+
+// ─── Early Payout schemas ─────────────────────────────────────────────────────
+
+export const earlyPayoutRequestSchema = z.object({
+  reason: z.string().max(200).optional(),
+});
+
+export const earlyPayoutVoteSchema = z.object({
+  vote: z.enum(['for', 'against']),
+});
+
+export type EarlyPayoutRequestInput = z.infer<typeof earlyPayoutRequestSchema>;
+export type EarlyPayoutVoteInput = z.infer<typeof earlyPayoutVoteSchema>;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { SusuGroup, SusuGroupWithDetails, SusuFrequency, ContributionReceipt } from '@cedisense/shared';
+import type { SusuGroup, SusuGroupWithDetails, SusuFrequency, ContributionReceipt, EarlyPayoutRequest } from '@cedisense/shared';
 import { api } from '@/lib/api';
 import { GroupCard } from '@/components/susu/GroupCard';
 import { GroupDetail } from '@/components/susu/GroupDetail';
@@ -82,6 +82,11 @@ export function SusuPage() {
   // Receipt state
   const [activeReceipt, setActiveReceipt] = useState<ContributionReceipt | null>(null);
 
+  // Early payout state
+  const [earlyPayoutRequest, setEarlyPayoutRequest] = useState<EarlyPayoutRequest | null>(null);
+  const [earlyPayoutVoting, setEarlyPayoutVoting] = useState(false);
+  const [earlyPayoutPaying, setEarlyPayoutPaying] = useState(false);
+
   const fetchGroups = useCallback(async () => {
     try {
       const data = await api.get<SusuGroupWithCount[]>('/susu/groups');
@@ -100,11 +105,21 @@ export function SusuPage() {
     void init();
   }, [fetchGroups]);
 
+  async function fetchEarlyPayout(groupId: string) {
+    try {
+      const data = await api.get<EarlyPayoutRequest | null>(`/susu/groups/${groupId}/early-payout`);
+      setEarlyPayoutRequest(data);
+    } catch {
+      setEarlyPayoutRequest(null);
+    }
+  }
+
   async function handleGroupClick(id: string) {
     setDetailLoading(true);
     try {
       const data = await api.get<SusuGroupWithDetails>(`/susu/groups/${id}`);
       setSelectedGroup(data);
+      await fetchEarlyPayout(id);
     } catch {
       // Stay on list view
     } finally {
@@ -114,6 +129,7 @@ export function SusuPage() {
 
   function handleBack() {
     setSelectedGroup(null);
+    setEarlyPayoutRequest(null);
   }
 
   // ── Create ──────────────────────────────────────────────────────────────────
@@ -226,6 +242,56 @@ export function SusuPage() {
     await fetchGroups();
   }
 
+  // ── Early Payout ──────────────────────────────────────────────────────────
+
+  async function handleRequestEarlyPayout() {
+    if (!selectedGroup) return;
+    const reason = prompt('Why do you need an early payout? (optional)');
+    try {
+      await api.post(`/susu/groups/${selectedGroup.id}/early-payout`, {
+        reason: reason || undefined,
+      });
+      await fetchEarlyPayout(selectedGroup.id);
+    } catch {
+      // Non-fatal
+    }
+  }
+
+  async function handleVoteEarlyPayout(vote: 'for' | 'against') {
+    if (!selectedGroup || !earlyPayoutRequest) return;
+    setEarlyPayoutVoting(true);
+    try {
+      await api.post(
+        `/susu/groups/${selectedGroup.id}/early-payout/${earlyPayoutRequest.id}/vote`,
+        { vote }
+      );
+      await fetchEarlyPayout(selectedGroup.id);
+    } catch {
+      // Non-fatal
+    } finally {
+      setEarlyPayoutVoting(false);
+    }
+  }
+
+  async function handlePayEarlyPayout() {
+    if (!selectedGroup || !earlyPayoutRequest) return;
+    setEarlyPayoutPaying(true);
+    try {
+      await api.post(
+        `/susu/groups/${selectedGroup.id}/early-payout/${earlyPayoutRequest.id}/pay`
+      );
+      await fetchEarlyPayout(selectedGroup.id);
+      // Refresh group detail
+      const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
+      setSelectedGroup(updated);
+      await fetchGroups();
+    } catch {
+      // Non-fatal
+    } finally {
+      setEarlyPayoutPaying(false);
+    }
+  }
+
   const isEmpty = !loading && groups.length === 0;
 
   // ── Detail view ─────────────────────────────────────────────────────────────
@@ -262,10 +328,16 @@ export function SusuPage() {
           <div className="px-4 pt-4 max-w-screen-lg mx-auto">
             <GroupDetail
               group={selectedGroup}
+              earlyPayoutRequest={earlyPayoutRequest}
               onContribute={handleContribute}
               onPayout={handlePayout}
               onAdvanceRound={handleAdvanceRound}
               onLeave={handleLeave}
+              onRequestEarlyPayout={handleRequestEarlyPayout}
+              onVoteEarlyPayout={handleVoteEarlyPayout}
+              onPayEarlyPayout={handlePayEarlyPayout}
+              earlyPayoutVoting={earlyPayoutVoting}
+              earlyPayoutPaying={earlyPayoutPaying}
               onViewReceipt={handleViewReceipt}
             />
           </div>

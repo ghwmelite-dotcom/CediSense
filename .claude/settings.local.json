@@ -113,7 +113,20 @@
       "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\" && pnpm --filter @cedisense/shared run typecheck 2>&1 | tail -5)",
       "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\" && pnpm --filter @cedisense/web run typecheck 2>&1 | tail -20)",
       "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\" && pnpm --filter @cedisense/api run typecheck 2>&1 | tail -5)",
-      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\" && pnpm --filter @cedisense/web run test 2>&1 | tail -20)"
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\" && pnpm --filter @cedisense/web run test 2>&1 | tail -20)",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && npx tsc -p packages/shared/tsconfig.json --noEmit 2>&1)",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && node node_modules/typescript/bin/tsc -p packages/shared/tsconfig.json --noEmit 2>&1; echo \"EXIT:$?\")",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense/packages/shared\" && node ../../node_modules/.bin/tsc --noEmit 2>&1; echo \"EXIT:$?\")",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense/packages/shared\" && node_modules/.bin/tsc --noEmit 2>&1; echo \"EXIT:$?\")",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense/apps/api\" && node_modules/.bin/tsc --noEmit 2>&1; echo \"EXIT:$?\")",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense/apps/web\" && node_modules/.bin/tsc --noEmit 2>&1; echo \"EXIT:$?\")",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && npm test --workspaces 2>&1; echo \"EXIT:$?\")",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && pnpm test 2>&1; echo \"EXIT:$?\")",
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx vite build 2>&1 | tail -2 && npx wrangler pages deploy dist --project-name cedisense --branch master --commit-dirty=true 2>&1 | tail -5)",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense/packages/shared\" && npx tsc --noEmit 2>&1 | head -30)",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense/apps/api\" && npx tsc --noEmit 2>&1 | head -30)",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense/apps/web\" && npx tsc --noEmit 2>&1 | head -30)",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && npm test 2>&1 | tail -30)"
     ]
   }
 }
