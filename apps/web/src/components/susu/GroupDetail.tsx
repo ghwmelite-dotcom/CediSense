@@ -9,6 +9,8 @@ interface GroupDetailProps {
   onPayout: () => void;
   onAdvanceRound: () => void;
   onLeave: () => void;
+  /** Called when the user taps "View Receipt" for a member who has contributed */
+  onViewReceipt?: (memberId: string) => void;
 }
 
 export function GroupDetail({
@@ -17,6 +19,7 @@ export function GroupDetail({
   onPayout,
   onAdvanceRound,
   onLeave,
+  onViewReceipt,
 }: GroupDetailProps) {
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
@@ -187,19 +190,42 @@ export function GroupDetail({
                 <div className="flex items-center gap-2 shrink-0">
                   {/* Contribution status */}
                   {member.has_contributed_this_round ? (
-                    <span className="flex items-center gap-1 text-xs text-income font-medium">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2.5}
-                        aria-hidden="true"
+                    onViewReceipt ? (
+                      <button
+                        type="button"
+                        onClick={() => onViewReceipt(member.id)}
+                        className="flex items-center gap-1 text-xs text-income font-medium
+                          hover:underline active:scale-95 transition-all min-h-[36px] px-1"
+                        aria-label={`View receipt for ${member.display_name}`}
+                        title="View receipt"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      Paid
-                    </span>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
+                          aria-hidden="true"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Paid
+                      </button>
+                    ) : (
+                      <span className="flex items-center gap-1 text-xs text-income font-medium">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
+                          aria-hidden="true"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Paid
+                      </span>
+                    )
                   ) : (
                     <span className="text-xs text-muted font-medium">Pending</span>
                   )}

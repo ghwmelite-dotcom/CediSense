@@ -481,3 +481,13 @@ export interface SusuGroupWithDetails extends SusuGroup {
   my_member_id: string | null;
   is_creator: boolean;
 }
+
+export interface ContributionReceipt {
+  receipt_number: string;
+  group_name: string;
+  member_name: string;
+  round: number;
+  total_rounds: number;
+  amount_pesewas: number;
+  contributed_at: string;
+}

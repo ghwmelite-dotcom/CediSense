@@ -523,7 +523,25 @@ susu.post('/groups/:id/contributions', async (c) => {
      FROM susu_contributions WHERE id = ?`
   ).bind(contribId).first<SusuContributionRow>();
 
-  return c.json({ data: contribution! }, 201);
+  // Fetch enriched receipt fields
+  const groupRow = await c.env.DB.prepare(
+    `SELECT name, max_members FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ name: string; max_members: number }>();
+
+  const memberRow = await c.env.DB.prepare(
+    `SELECT display_name FROM susu_members WHERE id = ?`
+  ).bind(member_id).first<{ display_name: string }>();
+
+  return c.json({
+    data: {
+      ...contribution!,
+      receipt_number: `CS-${contribId.slice(0, 8).toUpperCase()}`,
+      group_name: groupRow?.name ?? '',
+      member_name: memberRow?.display_name ?? '',
+      round: group.current_round,
+      total_rounds: groupRow?.max_members ?? 0,
+    },
+  }, 201);
 });
 
 // ─── POST /groups/:id/payouts — record payout for current round (creator only)
@@ -726,6 +744,52 @@ susu.get('/groups/:id/history', async (c) => {
   ).bind(groupId).all<SusuPayoutRow & { member_display_name: string }>();
 
   return c.json({ data: { contributions, payouts } });
+});
+
+// ─── GET /groups/:groupId/contributions/:id/receipt — fetch receipt data ──────
+
+susu.get('/groups/:groupId/contributions/:id/receipt', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('groupId');
+  const contribId = c.req.param('id');
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  const contribution = await c.env.DB.prepare(
+    `SELECT id, group_id, member_id, round, amount_pesewas, contributed_at
+     FROM susu_contributions WHERE id = ? AND group_id = ?`
+  ).bind(contribId, groupId).first<SusuContributionRow>();
+
+  if (!contribution) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Contribution not found' } }, 404);
+  }
+
+  const groupRow = await c.env.DB.prepare(
+    `SELECT name, max_members FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ name: string; max_members: number }>();
+
+  const memberRow = await c.env.DB.prepare(
+    `SELECT display_name FROM susu_members WHERE id = ?`
+  ).bind(contribution.member_id).first<{ display_name: string }>();
+
+  return c.json({
+    data: {
+      receipt_number: `CS-${contribution.id.slice(0, 8).toUpperCase()}`,
+      group_name: groupRow?.name ?? '',
+      member_name: memberRow?.display_name ?? '',
+      round: contribution.round,
+      total_rounds: groupRow?.max_members ?? 0,
+      amount_pesewas: contribution.amount_pesewas,
+      contributed_at: contribution.contributed_at,
+    },
+  });
 });
 
 export { susu };

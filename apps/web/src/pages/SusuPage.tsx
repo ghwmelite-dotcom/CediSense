@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { SusuGroup, SusuGroupWithDetails, SusuFrequency } from '@cedisense/shared';
+import type { SusuGroup, SusuGroupWithDetails, SusuFrequency, ContributionReceipt } from '@cedisense/shared';
 import { api } from '@/lib/api';
 import { GroupCard } from '@/components/susu/GroupCard';
 import { GroupDetail } from '@/components/susu/GroupDetail';
 import { CreateGroupModal } from '@/components/susu/CreateGroupModal';
 import { JoinGroupModal } from '@/components/susu/JoinGroupModal';
+import { ContributionReceipt as ContributionReceiptModal } from '@/components/susu/ContributionReceipt';
 
 type SusuGroupWithCount = SusuGroup & { member_count: number };
 
@@ -78,6 +79,9 @@ export function SusuPage() {
   const [joinOpen, setJoinOpen] = useState(false);
   const [joinError, setJoinError] = useState<JoinError>(null);
 
+  // Receipt state
+  const [activeReceipt, setActiveReceipt] = useState<ContributionReceipt | null>(null);
+
   const fetchGroups = useCallback(async () => {
     try {
       const data = await api.get<SusuGroupWithCount[]>('/susu/groups');
@@ -150,11 +154,47 @@ export function SusuPage() {
 
   async function handleContribute(memberId: string) {
     if (!selectedGroup) return;
-    await api.post(`/susu/groups/${selectedGroup.id}/contribute`, { member_id: memberId });
+    const contribution = await api.post<ContributionReceipt & { id: string; group_id: string; member_id: string; round: number }>(
+      `/susu/groups/${selectedGroup.id}/contributions`,
+      { member_id: memberId, amount_pesewas: selectedGroup.contribution_pesewas }
+    );
+    // Show the receipt immediately
+    setActiveReceipt({
+      receipt_number: contribution.receipt_number,
+      group_name: contribution.group_name,
+      member_name: contribution.member_name,
+      round: contribution.round,
+      total_rounds: contribution.total_rounds,
+      amount_pesewas: contribution.amount_pesewas,
+      contributed_at: contribution.contributed_at,
+    });
     // Refresh detail view
     const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
     setSelectedGroup(updated);
     await fetchGroups();
+  }
+
+  // ── View receipt for an already-contributed member ───────────────────────
+
+  async function handleViewReceipt(memberId: string) {
+    if (!selectedGroup) return;
+    // Find the contribution id from the history endpoint
+    try {
+      const history = await api.get<{
+        contributions: Array<{ id: string; member_id: string; round: number; amount_pesewas: number; contributed_at: string }>;
+        payouts: unknown[];
+      }>(`/susu/groups/${selectedGroup.id}/history`);
+      const contrib = history.contributions.find(
+        (c) => c.member_id === memberId && c.round === selectedGroup.current_round
+      );
+      if (!contrib) return;
+      const receiptData = await api.get<ContributionReceipt>(
+        `/susu/groups/${selectedGroup.id}/contributions/${contrib.id}/receipt`
+      );
+      setActiveReceipt(receiptData);
+    } catch {
+      // Non-fatal: receipt view is convenience only
+    }
   }
 
   // ── Payout ──────────────────────────────────────────────────────────────────
@@ -192,42 +232,54 @@ export function SusuPage() {
 
   if (selectedGroup) {
     return (
-      <div className="pb-24">
-        {/* Sticky header */}
-        <div className="sticky top-0 z-30 bg-ghana-dark/95 backdrop-blur-md border-b border-white/10 px-4 py-4">
-          <div className="flex items-center gap-3 max-w-screen-lg mx-auto">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="flex items-center justify-center w-9 h-9 rounded-xl border border-white/20
-                text-white hover:bg-white/10 active:scale-95 transition-all min-h-[44px] min-w-[44px]"
-              aria-label="Back to susu groups"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-                aria-hidden="true"
+      <>
+        <div className="pb-24">
+          {/* Sticky header */}
+          <div className="sticky top-0 z-30 bg-ghana-dark/95 backdrop-blur-md border-b border-white/10 px-4 py-4">
+            <div className="flex items-center gap-3 max-w-screen-lg mx-auto">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="flex items-center justify-center w-9 h-9 rounded-xl border border-white/20
+                  text-white hover:bg-white/10 active:scale-95 transition-all min-h-[44px] min-w-[44px]"
+                aria-label="Back to susu groups"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </button>
-            <h1 className="text-white text-xl font-bold flex-1 truncate">Group Detail</h1>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+              </button>
+              <h1 className="text-white text-xl font-bold flex-1 truncate">Group Detail</h1>
+            </div>
+          </div>
+
+          <div className="px-4 pt-4 max-w-screen-lg mx-auto">
+            <GroupDetail
+              group={selectedGroup}
+              onContribute={handleContribute}
+              onPayout={handlePayout}
+              onAdvanceRound={handleAdvanceRound}
+              onLeave={handleLeave}
+              onViewReceipt={handleViewReceipt}
+            />
           </div>
         </div>
 
-        <div className="px-4 pt-4 max-w-screen-lg mx-auto">
-          <GroupDetail
-            group={selectedGroup}
-            onContribute={handleContribute}
-            onPayout={handlePayout}
-            onAdvanceRound={handleAdvanceRound}
-            onLeave={handleLeave}
+        {/* Receipt modal — rendered above the page so it sits at z-50 */}
+        {activeReceipt && (
+          <ContributionReceiptModal
+            receipt={activeReceipt}
+            open={true}
+            onClose={() => setActiveReceipt(null)}
           />
-        </div>
-      </div>
+        )}
+      </>
     );
   }
 
