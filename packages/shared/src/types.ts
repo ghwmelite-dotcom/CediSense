@@ -579,6 +579,16 @@ export interface SusuAnalytics {
   }>;
 }
 
+// ─── Susu Chat types ──────────────────────────────────────────────────────────
+
+export interface SusuMessage {
+  id: string;
+  content: string;
+  sender_name: string;
+  sender_user_id: string;
+  created_at: string;
+}
+
 // ─── Gamification types ───────────────────────────────────────────────────────
 
 export type BadgeType =

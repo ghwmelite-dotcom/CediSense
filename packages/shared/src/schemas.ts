@@ -327,3 +327,11 @@ export const earlyPayoutVoteSchema = z.object({
 
 export type EarlyPayoutRequestInput = z.infer<typeof earlyPayoutRequestSchema>;
 export type EarlyPayoutVoteInput = z.infer<typeof earlyPayoutVoteSchema>;
+
+// ─── Susu Chat schemas ────────────────────────────────────────────────────────
+
+export const susuMessageSchema = z.object({
+  content: z.string().min(1).max(500),
+});
+
+export type SusuMessageInput = z.infer<typeof susuMessageSchema>;

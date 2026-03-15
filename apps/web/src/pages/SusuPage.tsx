@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { SusuGroup, SusuGroupWithDetails, SusuFrequency, ContributionReceipt, EarlyPayoutRequest, SusuAnalytics, SusuBadge, LeaderboardEntry } from '@cedisense/shared';
 import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { GroupCard } from '@/components/susu/GroupCard';
 import { GroupDetail } from '@/components/susu/GroupDetail';
 import { CreateGroupModal } from '@/components/susu/CreateGroupModal';
@@ -70,6 +71,7 @@ function EmptyState({ onCreate, onJoin }: EmptyStateProps) {
 // ─── SusuPage ──────────────────────────────────────────────────────────────────
 
 export function SusuPage() {
+  const { user } = useAuth();
   const [groups, setGroups] = useState<SusuGroupWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<SusuGroupWithDetails | null>(null);
@@ -376,6 +378,7 @@ export function SusuPage() {
           <div className="px-4 pt-4 max-w-screen-lg mx-auto">
             <GroupDetail
               group={selectedGroup}
+              currentUserId={user?.id ?? ''}
               earlyPayoutRequest={earlyPayoutRequest}
               onContribute={handleContribute}
               onPayout={handlePayout}

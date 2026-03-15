@@ -6,11 +6,13 @@ import { EarlyPayoutCard } from './EarlyPayoutCard';
 import { GroupAnalytics } from './GroupAnalytics';
 import { BadgeDisplay } from './BadgeDisplay';
 import { Leaderboard } from './Leaderboard';
+import { GroupChat } from './GroupChat';
 
-type GroupDetailTab = 'overview' | 'analytics' | 'leaderboard';
+type GroupDetailTab = 'overview' | 'analytics' | 'leaderboard' | 'chat';
 
 interface GroupDetailProps {
   group: SusuGroupWithDetails;
+  currentUserId: string;
   earlyPayoutRequest: EarlyPayoutRequest | null;
   onContribute: (memberId: string, isLate: boolean) => void;
   onPayout: () => void;
@@ -44,6 +46,7 @@ const VARIANT_LABEL: Record<SusuVariant, string> = {
 
 export function GroupDetail({
   group,
+  currentUserId,
   earlyPayoutRequest,
   onContribute,
   onPayout,
@@ -136,6 +139,17 @@ export function GroupDetail({
         >
           Analytics
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('chat')}
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all min-h-[40px]
+            ${activeTab === 'chat'
+              ? 'bg-gold text-ghana-dark shadow-sm'
+              : 'text-muted hover:text-white'
+            }`}
+        >
+          Chat
+        </button>
       </div>
 
       {/* Leaderboard tab content */}
@@ -190,6 +204,11 @@ export function GroupDetail({
             </div>
           )}
         </>
+      )}
+
+      {/* Chat tab content */}
+      {activeTab === 'chat' && (
+        <GroupChat groupId={group.id} currentUserId={currentUserId} />
       )}
 
       {/* Overview tab content */}

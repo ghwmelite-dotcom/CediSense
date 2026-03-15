@@ -7,6 +7,7 @@ import {
   updateSusuGroupSchema,
   earlyPayoutRequestSchema,
   earlyPayoutVoteSchema,
+  susuMessageSchema,
 } from '@cedisense/shared';
 import type { SusuFrequency, SusuVariant } from '@cedisense/shared';
 import { generateId } from '../lib/db.js';
@@ -1695,6 +1696,126 @@ susu.get('/groups/:id/badges', async (c) => {
   }>();
 
   return c.json({ data: results });
+});
+
+// ─── GET /groups/:id/messages — fetch chat messages (cursor pagination) ───────
+
+susu.get('/groups/:id/messages', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  const limitRaw = c.req.query('limit');
+  const before = c.req.query('before');
+  const limit = Math.min(Math.max(parseInt(limitRaw ?? '50', 10) || 50, 1), 100);
+
+  interface MessageRow {
+    id: string;
+    content: string;
+    created_at: string;
+    sender_name: string;
+    sender_user_id: string;
+  }
+
+  let query: string;
+  let bindings: unknown[];
+
+  if (before) {
+    // Get the rowid of the cursor message
+    const cursorRow = await c.env.DB.prepare(
+      `SELECT rowid FROM susu_messages WHERE id = ? AND group_id = ?`
+    ).bind(before, groupId).first<{ rowid: number }>();
+
+    if (!cursorRow) {
+      return c.json({ data: [] });
+    }
+
+    query = `
+      SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id
+      FROM susu_messages m
+      JOIN susu_members sm ON m.member_id = sm.id
+      WHERE m.group_id = ? AND m.rowid < ?
+      ORDER BY m.rowid DESC
+      LIMIT ?
+    `;
+    bindings = [groupId, cursorRow.rowid, limit];
+  } else {
+    query = `
+      SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id
+      FROM susu_messages m
+      JOIN susu_members sm ON m.member_id = sm.id
+      WHERE m.group_id = ?
+      ORDER BY m.rowid DESC
+      LIMIT ?
+    `;
+    bindings = [groupId, limit];
+  }
+
+  const { results } = await c.env.DB.prepare(query)
+    .bind(...bindings)
+    .all<MessageRow>();
+
+  // Reverse so oldest-first
+  const messages = [...results].reverse();
+
+  return c.json({ data: messages });
+});
+
+// ─── POST /groups/:id/messages — send a chat message ─────────────────────────
+
+susu.post('/groups/:id/messages', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  // Verify membership and get member_id
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: { code: 'INVALID_JSON', message: 'Invalid JSON body' } }, 400);
+  }
+
+  const parsed = susuMessageSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid input' } }, 422);
+  }
+
+  const messageId = generateId();
+
+  await c.env.DB.prepare(
+    `INSERT INTO susu_messages (id, group_id, member_id, content) VALUES (?, ?, ?, ?)`
+  ).bind(messageId, groupId, myMember.id, parsed.data.content).run();
+
+  const message = await c.env.DB.prepare(
+    `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id
+     FROM susu_messages m
+     JOIN susu_members sm ON m.member_id = sm.id
+     WHERE m.id = ?`
+  ).bind(messageId).first<{
+    id: string;
+    content: string;
+    created_at: string;
+    sender_name: string;
+    sender_user_id: string;
+  }>();
+
+  return c.json({ data: message }, 201);
 });
 
 export { susu };
