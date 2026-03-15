@@ -73,24 +73,43 @@ function useCountUp(target: number, duration = 1200) {
 /*  PHONE MOCKUP COMPONENT                                           */
 /* ================================================================ */
 function PhoneMockup() {
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoaded(true), 300);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div className="relative" aria-hidden="true">
-      {/* Gold glow behind phone */}
+      {/* Animated gold glow behind phone — pulses gently */}
       <div
-        className="absolute inset-0 -m-8"
+        className="absolute inset-0 -m-12"
         style={{
-          background: 'radial-gradient(ellipse at center, rgba(212,168,67,0.15) 0%, rgba(212,168,67,0.05) 40%, transparent 70%)',
-          filter: 'blur(30px)',
+          background: 'radial-gradient(ellipse at center, rgba(212,168,67,0.18) 0%, rgba(212,168,67,0.06) 40%, transparent 70%)',
+          filter: 'blur(40px)',
+          animation: 'glowPulse 4s ease-in-out infinite',
         }}
       />
 
-      {/* Phone frame */}
+      {/* Orbiting ring */}
       <div
-        className="relative w-64 sm:w-72 h-[460px] sm:h-[520px] rounded-[2.5rem] border-4 border-white/10 overflow-hidden"
+        className="absolute inset-0 -m-16 rounded-full border border-gold/[0.06]"
+        style={{ animation: 'slowSpin 30s linear infinite' }}
+      />
+      <div
+        className="absolute inset-0 -m-24 rounded-full border border-gold/[0.03]"
+        style={{ animation: 'slowSpin 45s linear infinite reverse' }}
+      />
+
+      {/* Phone frame — entrance animation */}
+      <div
+        className="relative w-64 sm:w-72 h-[460px] sm:h-[520px] rounded-[2.5rem] border-4 border-white/[0.08] overflow-hidden transition-all duration-1000 ease-out"
         style={{
           background: '#14142A',
           boxShadow: '0 0 60px rgba(212,168,67,0.15), 0 0 120px rgba(212,168,67,0.05), 0 25px 50px rgba(0,0,0,0.5)',
-          transform: 'rotate(-3deg)',
+          transform: loaded ? 'rotate(-3deg) translateY(0)' : 'rotate(-3deg) translateY(40px)',
+          opacity: loaded ? 1 : 0,
         }}
       >
         {/* Status bar */}
@@ -108,21 +127,42 @@ function PhoneMockup() {
         {/* Notch */}
         <div className="mx-auto w-24 h-5 bg-black rounded-b-2xl -mt-0.5 mb-2" />
 
-        {/* Content area */}
+        {/* Content area — staggered entrance animations */}
         <div className="px-4 space-y-3">
           {/* Greeting */}
-          <p className="text-white/50 text-xs font-medium">Good evening, Kofi</p>
+          <p
+            className="text-white/50 text-xs font-medium transition-all duration-700 ease-out"
+            style={{
+              opacity: loaded ? 1 : 0,
+              transform: loaded ? 'translateY(0)' : 'translateY(10px)',
+              transitionDelay: '600ms',
+            }}
+          >Good evening, Kofi</p>
 
-          {/* Balance */}
-          <div className="text-center py-2">
+          {/* Balance — the star of the show */}
+          <div
+            className="text-center py-2 transition-all duration-700 ease-out"
+            style={{
+              opacity: loaded ? 1 : 0,
+              transform: loaded ? 'translateY(0) scale(1)' : 'translateY(15px) scale(0.95)',
+              transitionDelay: '800ms',
+            }}
+          >
             <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Total Balance</p>
             <p className="text-2xl sm:text-3xl font-extrabold text-gold tracking-tight">
               &#x20B5;12,450<span className="text-lg">.00</span>
             </p>
           </div>
 
-          {/* Income / Expense mini cards */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Income / Expense mini cards — staggered entrance */}
+          <div
+            className="grid grid-cols-2 gap-2 transition-all duration-700 ease-out"
+            style={{
+              opacity: loaded ? 1 : 0,
+              transform: loaded ? 'translateY(0)' : 'translateY(12px)',
+              transitionDelay: '1000ms',
+            }}
+          >
             <div className="rounded-xl bg-income/10 p-2.5">
               <div className="flex items-center gap-1 mb-1">
                 <svg className="w-3 h-3 text-income" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -143,8 +183,15 @@ function PhoneMockup() {
             </div>
           </div>
 
-          {/* Mini bar chart */}
-          <div className="rounded-xl bg-white/[0.03] p-3">
+          {/* Mini bar chart — bars grow on load */}
+          <div
+            className="rounded-xl bg-white/[0.03] p-3 transition-all duration-700 ease-out"
+            style={{
+              opacity: loaded ? 1 : 0,
+              transform: loaded ? 'translateY(0)' : 'translateY(12px)',
+              transitionDelay: '1200ms',
+            }}
+          >
             <p className="text-white/40 text-[9px] uppercase tracking-wider mb-2">This Week</p>
             <div className="flex items-end gap-1.5 h-12">
               {[40, 65, 35, 80, 55, 70, 45].map((h, i) => (
@@ -168,8 +215,15 @@ function PhoneMockup() {
             </div>
           </div>
 
-          {/* Transaction rows */}
-          <div className="space-y-2">
+          {/* Transaction rows — slide in last */}
+          <div
+            className="space-y-2 transition-all duration-700 ease-out"
+            style={{
+              opacity: loaded ? 1 : 0,
+              transform: loaded ? 'translateY(0)' : 'translateY(12px)',
+              transitionDelay: '1400ms',
+            }}
+          >
             <div className="flex items-center gap-2.5 p-2 rounded-lg bg-white/[0.02]">
               <div className="w-7 h-7 rounded-lg bg-[#FFCC00]/15 flex items-center justify-center">
                 <span className="text-[10px] font-bold text-[#FFCC00]">M</span>
