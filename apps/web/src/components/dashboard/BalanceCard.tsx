@@ -17,26 +17,24 @@ interface BalanceCardProps {
 export function BalanceCard({ totalBalance, accounts }: BalanceCardProps) {
   return (
     <div className="relative premium-card rounded-2xl p-6 overflow-hidden motion-safe:animate-fade-in">
-      {/* Ambient gold glow behind the balance */}
-      <div className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 w-64 h-32 bg-gold/[0.06] rounded-full blur-3xl" />
-      {/* Subtle top edge shimmer */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" />
+      {/* Ambient gold glow — subtle */}
+      <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-72 h-36 bg-gold/[0.04] rounded-full blur-3xl" />
 
-      <p className="text-xs text-muted uppercase tracking-widest font-medium relative">Total Balance</p>
-      <p className="text-4xl md:text-5xl font-bold text-text-primary mt-3 tracking-tight tabular-nums relative">
-        <span className="text-gold/80 text-3xl md:text-4xl mr-0.5">GH₵</span>
+      <p className="section-label relative">Total Balance</p>
+      <p className="text-4xl md:text-5xl font-extrabold text-text-primary mt-3 tracking-tight relative" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        <span className="text-gold/70 text-3xl md:text-4xl mr-0.5">GH₵</span>
         {formatPesewas(totalBalance).replace(/^GH₵\s*/, '').replace(/^₵\s*/, '')}
       </p>
 
       {accounts.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-5 relative">
+        <div className="flex flex-wrap gap-2 mt-6 relative">
           {accounts.map((acc) => (
             <span
               key={acc.id}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] text-xs text-muted hover:bg-white/[0.05] hover:text-text-primary transition-all duration-200 cursor-default"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] text-xs hover:bg-white/[0.05] transition-all duration-200 cursor-default"
             >
               <span className="text-text-primary font-medium">{acc.name}</span>
-              <span className="text-muted-dim">{formatPesewas(acc.balance_pesewas)}</span>
+              <span className="text-muted-dim" style={{ fontVariantNumeric: 'tabular-nums' }}>{formatPesewas(acc.balance_pesewas)}</span>
             </span>
           ))}
         </div>

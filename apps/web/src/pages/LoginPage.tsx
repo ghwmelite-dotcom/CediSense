@@ -31,42 +31,34 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-ghana-dark relative overflow-hidden">
-      {/* Ambient gradient mesh background */}
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-ghana-dark relative overflow-hidden">
+      {/* Subtle ambient gradient */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 70% 50% at 50% -20%, rgba(212,168,67,0.08) 0%, transparent 70%)',
-        }}
-      />
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse 50% 40% at 80% 100%, rgba(0,107,63,0.05) 0%, transparent 70%)',
+            'radial-gradient(ellipse 60% 40% at 50% -10%, rgba(212,168,67,0.06) 0%, transparent 60%)',
         }}
       />
 
       <div className="w-full max-w-sm relative z-10 motion-safe:animate-slide-up">
         {/* Logo / Brand Mark */}
         <div className="text-center mb-12">
-          <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5">
-            {/* Glow behind logo */}
-            <div className="absolute inset-0 rounded-2xl bg-gold/10 blur-xl scale-150 motion-safe:animate-glow-pulse" />
-            <div className="relative w-full h-full rounded-2xl bg-gradient-to-br from-gold/15 to-gold/5 border border-gold/20 flex items-center justify-center shadow-gold-glow">
+          <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6">
+            <div className="absolute inset-0 rounded-2xl bg-gold/8 blur-xl scale-150 motion-safe:animate-glow-pulse" />
+            <div className="relative w-full h-full rounded-2xl bg-ghana-surface flex items-center justify-center shadow-card">
               <span className="text-gold font-extrabold text-3xl leading-none">₵</span>
             </div>
           </div>
-          <h1 className="text-white text-2xl font-bold tracking-tight">Welcome back</h1>
-          <p className="text-muted text-sm mt-2 leading-relaxed">Sign in to your CediSense account</p>
+          <h1 className="text-text-primary text-2xl font-extrabold tracking-[-0.02em]">Welcome back</h1>
+          <p className="text-muted text-sm mt-2.5 leading-relaxed">Sign in to your CediSense account</p>
         </div>
 
-        {/* Form card — glass panel */}
+        {/* Form card */}
         <div className="glass-card rounded-2xl px-6 py-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-expense/8 border border-expense/15 text-expense text-sm px-4 py-3 rounded-xl motion-safe:animate-fade-in flex items-start gap-2.5">
+              <div className="bg-expense/[0.06] text-expense text-sm px-4 py-3 rounded-xl motion-safe:animate-fade-in flex items-start gap-2.5">
                 <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                 </svg>
@@ -75,7 +67,7 @@ export function LoginPage() {
             )}
 
             <div>
-              <label className="text-xs font-medium text-muted/80 uppercase tracking-wider block mb-2.5">
+              <label className="section-label block mb-3">
                 Phone Number
               </label>
               <input
@@ -89,7 +81,7 @@ export function LoginPage() {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted/80 uppercase tracking-wider block mb-2.5">
+              <label className="section-label block mb-3">
                 PIN
               </label>
               <input
@@ -123,19 +115,19 @@ export function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-muted text-sm mt-8">
+        <p className="text-center text-muted text-sm mt-10">
           Don&apos;t have an account?{' '}
           <Link
             to="/register"
-            className="text-gold hover:text-gold/80 font-medium transition-colors duration-200"
+            className="text-gold hover:text-gold-light font-medium transition-colors duration-200"
           >
             Create one
           </Link>
         </p>
       </div>
 
-      {/* Footer — positioned safely */}
-      <p className="mt-auto pt-8 pb-6 text-white/15 text-xs tracking-wider">
+      {/* Footer */}
+      <p className="mt-auto pt-10 pb-6 text-muted-dim/25 text-xs tracking-wider">
         Built by Hodges &amp; Co.
       </p>
     </div>

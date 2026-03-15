@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
-/* ─── Scroll-reveal hook ─────────────────────────────────── */
+/* --- Scroll-reveal hook --- */
 function useScrollReveal() {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -30,11 +30,11 @@ function useScrollReveal() {
   return ref;
 }
 
-/* ─── Feature data ───────────────────────────────────────── */
+/* --- Feature data --- */
 const features = [
   {
     icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9l3-1.5L12 12m0 0l3-1.5M12 12l-3-1.5" />
       </svg>
     ),
@@ -43,7 +43,7 @@ const features = [
   },
   {
     icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
       </svg>
     ),
@@ -52,7 +52,7 @@ const features = [
   },
   {
     icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
       </svg>
     ),
@@ -61,7 +61,7 @@ const features = [
   },
   {
     icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
       </svg>
     ),
@@ -70,7 +70,7 @@ const features = [
   },
   {
     icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
       </svg>
     ),
@@ -79,7 +79,7 @@ const features = [
   },
   {
     icon: (
-      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
       </svg>
     ),
@@ -88,7 +88,7 @@ const features = [
   },
 ];
 
-/* ─── Provider data ──────────────────────────────────────── */
+/* --- Provider data --- */
 const providers = [
   'MTN MoMo',
   'Vodafone Cash',
@@ -100,7 +100,7 @@ const providers = [
   'Absa Bank',
 ];
 
-/* ─── Steps data ─────────────────────────────────────────── */
+/* --- Steps data --- */
 const steps = [
   {
     number: '1',
@@ -119,7 +119,7 @@ const steps = [
   },
 ];
 
-/* ─── Pricing features ───────────────────────────────────── */
+/* --- Pricing features --- */
 const pricingFeatures = [
   'Unlimited transactions',
   'AI chat advisor (40/day)',
@@ -129,9 +129,9 @@ const pricingFeatures = [
   'Bill reminders',
 ];
 
-/* ═══════════════════════════════════════════════════════════ */
-/*  LANDING PAGE COMPONENT                                    */
-/* ═══════════════════════════════════════════════════════════ */
+/* ================================================================ */
+/*  LANDING PAGE COMPONENT                                          */
+/* ================================================================ */
 export function LandingPage() {
   const featuresRef = useScrollReveal();
   const providersRef = useScrollReveal();
@@ -143,50 +143,43 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-ghana-dark text-white overflow-x-hidden">
-      {/* ─── Background gradients (fixed) ───────────────── */}
+    <div className="min-h-screen bg-ghana-dark text-text-primary overflow-x-hidden">
+      {/* --- Background gradients (fixed) --- */}
       <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
         <div
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse 80% 60% at 20% 10%, rgba(212,168,67,0.07) 0%, transparent 60%)',
+              'radial-gradient(ellipse 70% 50% at 20% 10%, rgba(212,168,67,0.05) 0%, transparent 60%)',
           }}
         />
         <div
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse 70% 50% at 85% 90%, rgba(0,107,63,0.06) 0%, transparent 55%)',
-          }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse 40% 30% at 50% 50%, rgba(212,168,67,0.02) 0%, transparent 70%)',
+              'radial-gradient(ellipse 60% 40% at 85% 90%, rgba(0,107,63,0.04) 0%, transparent 55%)',
           }}
         />
       </div>
 
-      {/* ─── Sticky nav ─────────────────────────────────── */}
+      {/* --- Sticky nav --- */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.04]"
+        className="fixed top-0 left-0 right-0 z-50"
         style={{
           backdropFilter: 'blur(16px) saturate(150%)',
           WebkitBackdropFilter: 'blur(16px) saturate(150%)',
-          background: 'rgba(13,13,18,0.75)',
+          background: 'rgba(12,12,20,0.8)',
         }}
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="text-gold font-extrabold text-2xl leading-none">₵</span>
-            <span className="text-white font-semibold text-lg tracking-tight">CediSense</span>
+            <span className="text-text-primary font-semibold text-lg tracking-[-0.02em]">CediSense</span>
           </div>
           <div className="flex items-center gap-3">
             <Link
               to="/login"
-              className="text-sm font-medium text-white/70 hover:text-white transition-colors duration-200 px-4 py-2"
+              className="text-sm font-medium text-muted hover:text-text-primary transition-colors duration-200 px-4 py-2"
             >
               Sign In
             </Link>
@@ -200,32 +193,32 @@ export function LandingPage() {
         </div>
       </header>
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/*  HERO SECTION                                      */}
-      {/* ═══════════════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-16">
+      {/* ================================================================ */}
+      {/*  HERO SECTION                                                    */}
+      {/* ================================================================ */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-16">
         <div className="text-center max-w-3xl mx-auto motion-safe:animate-slide-up">
-          {/* Brand mark with glow */}
-          <div className="relative inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-3xl mb-8">
-            <div className="absolute inset-0 rounded-3xl bg-gold/10 blur-2xl scale-[2] motion-safe:animate-glow-pulse" />
-            <div className="relative w-full h-full rounded-3xl bg-gradient-to-br from-gold/20 to-gold/5 border border-gold/20 flex items-center justify-center shadow-gold-glow-lg">
+          {/* Brand mark */}
+          <div className="relative inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-3xl mb-10">
+            <div className="absolute inset-0 rounded-3xl bg-gold/8 blur-2xl scale-[2] motion-safe:animate-glow-pulse" />
+            <div className="relative w-full h-full rounded-3xl bg-ghana-surface flex items-center justify-center shadow-gold-glow-lg">
               <span className="text-gold font-extrabold text-5xl sm:text-6xl leading-none">₵</span>
             </div>
           </div>
 
-          {/* Headline */}
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
-            <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
+          {/* Headline — generous sizing, clean */}
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.08] mb-8">
+            <span className="bg-gradient-to-r from-text-primary via-text-primary to-text-primary/60 bg-clip-text text-transparent">
               Smart Money
             </span>
             <br />
-            <span className="bg-gradient-to-r from-gold via-gold to-gold/70 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-gold via-gold to-gold/60 bg-clip-text text-transparent">
               for Ghana
             </span>
           </h1>
 
           {/* Subheadline */}
-          <p className="text-lg md:text-xl text-muted max-w-xl mx-auto leading-relaxed mb-10">
+          <p className="text-lg md:text-xl text-muted max-w-xl mx-auto leading-relaxed mb-12">
             AI-powered personal finance. Track Mobile Money, budget smarter, grow your savings.
           </p>
 
@@ -239,7 +232,7 @@ export function LandingPage() {
             </Link>
             <Link
               to="/login"
-              className="relative w-full sm:w-auto text-center px-8 py-3.5 rounded-xl text-base font-semibold text-white/80 border border-white/[0.08] hover:border-white/[0.15] hover:text-white hover:bg-white/[0.04] transition-all duration-200 active:scale-[0.98]"
+              className="relative w-full sm:w-auto text-center px-8 py-3.5 rounded-xl text-base font-semibold text-muted hover:text-text-primary bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-200 active:scale-[0.98]"
             >
               Sign In
             </Link>
@@ -249,7 +242,7 @@ export function LandingPage() {
         {/* Scroll indicator */}
         <button
           onClick={scrollToFeatures}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-muted/50 hover:text-muted transition-colors duration-300 group"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-muted-dim hover:text-muted transition-colors duration-300 group"
           aria-label="Scroll to features"
         >
           <span className="text-xs tracking-wider uppercase">Explore</span>
@@ -265,32 +258,33 @@ export function LandingPage() {
         </button>
       </section>
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/*  FEATURES SECTION                                  */}
-      {/* ═══════════════════════════════════════════════════ */}
-      <section id="features" className="relative py-24 sm:py-32 px-4 sm:px-6" ref={featuresRef}>
+      {/* ================================================================ */}
+      {/*  FEATURES SECTION                                                */}
+      {/* ================================================================ */}
+      <section id="features" className="relative py-28 sm:py-36 px-6" ref={featuresRef}>
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16 reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+          <div className="text-center mb-20 reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0">
+            <p className="section-label mb-4">Features</p>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-5">
               Everything you need
             </h2>
-            <p className="text-muted text-lg max-w-md mx-auto">
+            <p className="text-muted text-lg max-w-md mx-auto leading-relaxed">
               Built for how Ghanaians actually manage money.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, i) => (
               <div
                 key={feature.title}
                 className="reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0"
                 style={{ transitionDelay: `${i * 80}ms` }}
               >
-                <div className="glass-card rounded-2xl p-6 sm:p-7 h-full card-interactive group">
-                  <div className="w-12 h-12 rounded-xl bg-gold/10 border border-gold/10 flex items-center justify-center text-gold mb-5 group-hover:bg-gold/15 group-hover:border-gold/20 transition-all duration-300">
+                <div className="premium-card rounded-2xl p-7 h-full card-interactive group">
+                  <div className="w-11 h-11 rounded-xl bg-gold/[0.08] flex items-center justify-center text-gold mb-5 group-hover:bg-gold/[0.12] transition-all duration-200">
                     {feature.icon}
                   </div>
-                  <h3 className="text-white font-semibold text-lg mb-2">{feature.title}</h3>
+                  <h3 className="text-text-primary font-semibold text-lg mb-2">{feature.title}</h3>
                   <p className="text-muted text-sm leading-relaxed">{feature.description}</p>
                 </div>
               </div>
@@ -299,28 +293,29 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/*  PROVIDERS SECTION                                 */}
-      {/* ═══════════════════════════════════════════════════ */}
-      <section className="relative py-20 sm:py-24 px-4 sm:px-6" ref={providersRef}>
+      {/* ================================================================ */}
+      {/*  PROVIDERS SECTION                                               */}
+      {/* ================================================================ */}
+      <section className="relative py-24 sm:py-28 px-6" ref={providersRef}>
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12 reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-3">
+          <div className="text-center mb-14 reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0">
+            <p className="section-label mb-4">Integrations</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-3">
               Connects with your providers
             </h2>
-            <p className="text-muted text-base">
+            <p className="text-muted text-base leading-relaxed">
               Mobile Money and bank transaction parsing built in.
             </p>
           </div>
 
           <div className="reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0 delay-100">
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-5 sm:gap-x-12 sm:gap-y-6">
+            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6 sm:gap-x-14 sm:gap-y-7">
               {providers.map((provider) => (
                 <div
                   key={provider}
-                  className="flex items-center gap-2.5 text-white/30 hover:text-white/50 transition-colors duration-300"
+                  className="flex items-center gap-2.5 text-muted-dim hover:text-muted transition-colors duration-300"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-white/[0.03] flex items-center justify-center">
                     <span className="text-xs font-bold">{provider.charAt(0)}</span>
                   </div>
                   <span className="text-sm font-medium whitespace-nowrap">{provider}</span>
@@ -331,25 +326,26 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/*  HOW IT WORKS SECTION                              */}
-      {/* ═══════════════════════════════════════════════════ */}
-      <section className="relative py-24 sm:py-32 px-4 sm:px-6" ref={stepsRef}>
+      {/* ================================================================ */}
+      {/*  HOW IT WORKS SECTION                                            */}
+      {/* ================================================================ */}
+      <section className="relative py-28 sm:py-36 px-6" ref={stepsRef}>
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16 reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+          <div className="text-center mb-20 reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0">
+            <p className="section-label mb-4">How it works</p>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-5">
               Get started in 3 steps
             </h2>
-            <p className="text-muted text-lg max-w-md mx-auto">
+            <p className="text-muted text-lg max-w-md mx-auto leading-relaxed">
               From download to insights in under two minutes.
             </p>
           </div>
 
           <div className="relative">
             {/* Connecting line (desktop) */}
-            <div className="hidden md:block absolute top-10 left-[calc(16.67%+24px)] right-[calc(16.67%+24px)] h-px bg-gradient-to-r from-gold/30 via-ghana-green/30 to-gold/30" aria-hidden="true" />
+            <div className="hidden md:block absolute top-10 left-[calc(16.67%+24px)] right-[calc(16.67%+24px)] h-px bg-gradient-to-r from-gold/20 via-ghana-green/20 to-gold/20" aria-hidden="true" />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6">
               {steps.map((step, i) => (
                 <div
                   key={step.number}
@@ -357,13 +353,13 @@ export function LandingPage() {
                   style={{ transitionDelay: `${i * 120}ms` }}
                 >
                   {/* Number circle */}
-                  <div className="relative inline-flex items-center justify-center w-12 h-12 rounded-full mb-5">
-                    <div className="absolute inset-0 rounded-full bg-gold/10 blur-lg scale-150" />
-                    <div className="relative w-full h-full rounded-full bg-gradient-to-br from-gold/20 to-gold/5 border border-gold/20 flex items-center justify-center">
+                  <div className="relative inline-flex items-center justify-center w-12 h-12 rounded-full mb-6">
+                    <div className="absolute inset-0 rounded-full bg-gold/8 blur-lg scale-150" />
+                    <div className="relative w-full h-full rounded-full bg-ghana-surface flex items-center justify-center">
                       <span className="text-gold font-bold text-lg">{step.number}</span>
                     </div>
                   </div>
-                  <h3 className="text-white font-semibold text-lg mb-2">{step.title}</h3>
+                  <h3 className="text-text-primary font-semibold text-lg mb-2.5">{step.title}</h3>
                   <p className="text-muted text-sm leading-relaxed max-w-xs mx-auto">{step.description}</p>
                 </div>
               ))}
@@ -372,35 +368,36 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/*  PRICING SECTION                                   */}
-      {/* ═══════════════════════════════════════════════════ */}
-      <section className="relative py-24 sm:py-32 px-4 sm:px-6" ref={pricingRef}>
+      {/* ================================================================ */}
+      {/*  PRICING SECTION                                                 */}
+      {/* ================================================================ */}
+      <section className="relative py-28 sm:py-36 px-6" ref={pricingRef}>
         <div className="max-w-lg mx-auto text-center">
           <div className="reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+            <p className="section-label mb-4">Pricing</p>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-5">
               Free to start
             </h2>
-            <p className="text-muted text-lg mb-12">
+            <p className="text-muted text-lg mb-14 leading-relaxed">
               No credit card. No hidden fees. Just smarter money.
             </p>
           </div>
 
           <div className="reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0 delay-100">
-            <div className="glass-card rounded-2xl p-8 sm:p-10 text-left">
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-3xl font-extrabold text-white">Free</span>
+            <div className="premium-card rounded-2xl p-8 sm:p-10 text-left">
+              <div className="flex items-baseline gap-2 mb-1.5">
+                <span className="text-3xl font-extrabold text-text-primary tracking-tight">Free</span>
                 <span className="text-muted text-sm">forever</span>
               </div>
-              <p className="text-muted text-sm mb-8">Everything you need to take control.</p>
+              <p className="text-muted text-sm mb-10 leading-relaxed">Everything you need to take control.</p>
 
-              <ul className="space-y-4 mb-10">
+              <ul className="space-y-5 mb-12">
                 {pricingFeatures.map((feature) => (
                   <li key={feature} className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-gold shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-5 h-5 text-income shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-white/90 text-sm">{feature}</span>
+                    <span className="text-text-primary/90 text-sm">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -413,28 +410,28 @@ export function LandingPage() {
               </Link>
             </div>
 
-            <p className="text-muted/50 text-sm mt-6">
+            <p className="text-muted-dim/40 text-sm mt-8">
               Plus and Pro plans coming soon.
             </p>
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/*  FOOTER                                            */}
-      {/* ═══════════════════════════════════════════════════ */}
-      <footer className="relative border-t border-white/[0.04] py-12 px-4 sm:px-6">
+      {/* ================================================================ */}
+      {/*  FOOTER                                                          */}
+      {/* ================================================================ */}
+      <footer className="relative py-14 px-6" style={{ borderTop: '1px solid rgba(136, 136, 168, 0.06)' }}>
         <div className="max-w-6xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-2.5 mb-4">
+          <div className="flex items-center justify-center gap-2.5 mb-5">
             <span className="text-gold font-extrabold text-xl leading-none">₵</span>
-            <span className="text-white font-semibold tracking-tight">CediSense</span>
+            <span className="text-text-primary font-semibold tracking-[-0.02em]">CediSense</span>
           </div>
-          <p className="text-muted/50 text-sm mb-4">Built by Hodges &amp; Co.</p>
-          <div className="flex items-center justify-center gap-6 mb-6">
-            <a href="#" className="text-muted/40 hover:text-muted text-sm transition-colors duration-200">Privacy</a>
-            <a href="#" className="text-muted/40 hover:text-muted text-sm transition-colors duration-200">Terms</a>
+          <p className="text-muted-dim/40 text-sm mb-5">Built by Hodges &amp; Co.</p>
+          <div className="flex items-center justify-center gap-8 mb-8">
+            <a href="#" className="text-muted-dim/30 hover:text-muted text-sm transition-colors duration-200">Privacy</a>
+            <a href="#" className="text-muted-dim/30 hover:text-muted text-sm transition-colors duration-200">Terms</a>
           </div>
-          <p className="text-muted/30 text-xs tracking-wider">
+          <p className="text-muted-dim/20 text-xs tracking-wider">
             Made with care in Ghana
           </p>
         </div>

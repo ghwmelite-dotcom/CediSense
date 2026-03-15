@@ -18,6 +18,7 @@ body {
 @layer base {
   body {
     @apply bg-ghana-dark text-text-primary font-sans antialiased;
+    line-height: 1.6;
   }
 }
 
@@ -30,16 +31,16 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 /* ---- Selection color ---- */
 ::selection {
-  background: rgba(212, 168, 67, 0.3);
+  background: rgba(212, 168, 67, 0.25);
   color: white;
 }
 
@@ -54,53 +55,53 @@ body {
   }
 }
 
-/* ---- Premium card — floating, no borders ---- */
+/* ---- Premium card — YNAB-style: no borders, background contrast only ---- */
 .premium-card {
-  background: #171727;
+  background: #14142A;
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(31, 31, 53, 0.6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  border: none;
 }
 .premium-card-hover {
-  transition: background-color 0.2s ease-out, box-shadow 0.25s ease-out, transform 0.2s ease-out;
+  transition: background-color 0.2s ease-out, box-shadow 0.2s ease-out, transform 0.2s ease-out;
 }
 .premium-card-hover:hover {
-  background: #1D1D30;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 8px 32px rgba(0, 0, 0, 0.25);
-  transform: translateY(-2px);
+  background: #1A1A35;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transform: translateY(-1px);
 }
 .premium-card-hover:active {
   transform: translateY(0);
 }
 
-/* ---- Glass card (for legacy compat, updated styling) ---- */
+/* ---- Glass card (updated — borderless YNAB style) ---- */
 .glass-card {
-  background: #171727;
+  background: #14142A;
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(31, 31, 53, 0.6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  border: none;
 }
 
 /* ---- Interactive card micro-interaction ---- */
 .card-interactive {
-  transition: transform 0.2s ease-out, box-shadow 0.25s ease-out, background-color 0.2s ease-out;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, background-color 0.2s ease-out;
 }
 .card-interactive:hover {
-  transform: translateY(-2px);
-  background: #1D1D30;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 8px 32px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px);
+  background: #1A1A35;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 .card-interactive:active {
   transform: translateY(0);
 }
 
-/* ---- Shimmer skeleton loader ---- */
+/* ---- Shimmer skeleton loader — gentle, not harsh ---- */
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.03) 0%,
-    rgba(255, 255, 255, 0.06) 50%,
-    rgba(255, 255, 255, 0.03) 100%
+    rgba(136, 136, 168, 0.04) 0%,
+    rgba(136, 136, 168, 0.08) 50%,
+    rgba(136, 136, 168, 0.04) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
@@ -112,19 +113,22 @@ body {
   outline-offset: 2px;
 }
 
-/* ---- Premium input styling ---- */
+/* ---- Premium input styling — borderless ---- */
 .input-premium {
   @apply w-full rounded-xl px-4 py-3.5 text-sm text-text-primary
-    placeholder:text-muted-dim/60
-    hover:border-white/[0.08]
-    focus:outline-none focus:border-gold/40
-    focus:shadow-[0_0_0_3px_rgba(212,168,67,0.1)]
+    placeholder:text-muted-dim/50
+    focus:outline-none
+    focus:shadow-[0_0_0_2px_rgba(212,168,67,0.2)]
     transition-all duration-200;
-  background: rgba(19, 19, 34, 0.6);
-  border: 1px solid rgba(31, 31, 53, 0.6);
+  background: rgba(16, 16, 32, 0.5);
+  border: 1px solid transparent;
+}
+.input-premium:hover {
+  background: rgba(20, 20, 40, 0.6);
 }
 .input-premium:focus {
-  background: rgba(23, 23, 39, 0.8);
+  background: rgba(20, 20, 42, 0.8);
+  border-color: rgba(212, 168, 67, 0.25);
 }
 
 /* ---- Premium button — gold with depth ---- */
@@ -134,17 +138,15 @@ body {
     disabled:opacity-40 disabled:cursor-not-allowed
     active:scale-[0.98];
   background: linear-gradient(135deg, #006B3F 0%, #005a34 50%, #004d2c 100%);
-  box-shadow: 0 2px 8px rgba(0, 107, 63, 0.25), 0 1px 2px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 107, 63, 0.25), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 .btn-primary:hover:not(:disabled) {
-  box-shadow: 0 4px 16px rgba(0, 107, 63, 0.35), 0 2px 4px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 107, 63, 0.35), 0 2px 4px rgba(0, 0, 0, 0.3);
   transform: translateY(-1px);
 }
 .btn-primary:active:not(:disabled) {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), inset 0 1px 3px rgba(0, 0, 0, 0.2);
-  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transform: translateY(0) scale(0.98);
 }
 
 .btn-gold {
@@ -153,19 +155,28 @@ body {
     disabled:opacity-40 disabled:cursor-not-allowed
     active:scale-[0.98];
   background: linear-gradient(135deg, #E8C873 0%, #D4A843 50%, #C49A3C 100%);
-  color: #0E0E18;
-  box-shadow: 0 2px 8px rgba(212, 168, 67, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  color: #0C0C14;
+  box-shadow: 0 2px 8px rgba(212, 168, 67, 0.3);
 }
 .btn-gold:hover:not(:disabled) {
-  box-shadow: 0 4px 16px rgba(212, 168, 67, 0.4), 0 2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 16px rgba(212, 168, 67, 0.4);
   transform: translateY(-1px);
   filter: brightness(1.05);
 }
 .btn-gold:active:not(:disabled) {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), inset 0 1px 3px rgba(0, 0, 0, 0.1);
-  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transform: translateY(0) scale(0.98);
+}
+
+/* ---- Section label — YNAB clean uppercase ---- */
+.section-label {
+  @apply text-xs font-semibold uppercase tracking-label text-muted;
+}
+
+/* ---- Financial number — tabular, confident ---- */
+.financial-number {
+  font-variant-numeric: tabular-nums;
+  @apply font-extrabold tracking-tight;
 }
 
 /* ---- Prose styling for chat markdown ---- */
@@ -185,8 +196,8 @@ body {
   @apply pl-4 mb-2 space-y-1;
 }
 .prose-chat li {
-  @apply text-white/90;
+  @apply text-text-primary/90;
 }
 .prose-chat strong {
-  @apply text-white font-semibold;
+  @apply text-text-primary font-semibold;
 }

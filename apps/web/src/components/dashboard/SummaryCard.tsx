@@ -11,46 +11,45 @@ export function SummaryCard({ income, expenses, fees }: SummaryCardProps) {
 
   return (
     <div className="premium-card rounded-2xl p-6 card-interactive motion-safe:animate-fade-in">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         {/* Income column */}
-        <div className="relative rounded-xl p-4 overflow-hidden bg-income/[0.05]">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-income/15 to-transparent" />
-          <p className="text-xs text-muted uppercase tracking-widest font-medium">Income</p>
-          <div className="flex items-center gap-1.5 mt-2.5">
+        <div className="rounded-xl p-4 bg-income/[0.05]">
+          <p className="section-label">Income</p>
+          <div className="flex items-center gap-1.5 mt-3">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-income/15 text-income text-xs font-bold flex-shrink-0">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
               </svg>
             </span>
-            <span className="text-lg font-bold text-income tabular-nums">{formatPesewas(income)}</span>
+            <span className="text-lg font-extrabold text-income tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>{formatPesewas(income)}</span>
           </div>
         </div>
 
         {/* Expenses column */}
-        <div className="relative rounded-xl p-4 overflow-hidden bg-expense/[0.05]">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-expense/15 to-transparent" />
-          <p className="text-xs text-muted uppercase tracking-widest font-medium">Expenses</p>
-          <div className="flex items-center gap-1.5 mt-2.5">
+        <div className="rounded-xl p-4 bg-expense/[0.05]">
+          <p className="section-label">Expenses</p>
+          <div className="flex items-center gap-1.5 mt-3">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-expense/15 text-expense text-xs font-bold flex-shrink-0">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
             </span>
-            <span className="text-lg font-bold text-expense tabular-nums">{formatPesewas(expenses)}</span>
+            <span className="text-lg font-extrabold text-expense tracking-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>{formatPesewas(expenses)}</span>
           </div>
           {fees > 0 && (
-            <p className="text-muted-dim text-xs mt-2 pl-6.5">Fees: {formatPesewas(fees)}</p>
+            <p className="text-muted-dim text-xs mt-2 pl-6.5" style={{ fontVariantNumeric: 'tabular-nums' }}>Fees: {formatPesewas(fees)}</p>
           )}
         </div>
       </div>
 
-      {/* Net row */}
-      <div className="mt-4 pt-4 border-t border-[#1F1F35]/60 flex items-center justify-between">
-        <span className="text-xs text-muted uppercase tracking-widest font-medium">Net</span>
+      {/* Net row — clean separator via background contrast */}
+      <div className="mt-5 pt-4 flex items-center justify-between" style={{ borderTop: '1px solid rgba(136, 136, 168, 0.08)' }}>
+        <span className="section-label">Net</span>
         <span
-          className={`text-base font-bold tabular-nums motion-safe:animate-fade-in ${
+          className={`text-base font-extrabold tracking-tight motion-safe:animate-fade-in ${
             net >= 0 ? 'text-income' : 'text-expense'
           }`}
+          style={{ fontVariantNumeric: 'tabular-nums' }}
         >
           {net >= 0 ? '+' : '-'}{formatPesewas(Math.abs(net))}
         </span>

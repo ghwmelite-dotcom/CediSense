@@ -22,31 +22,16 @@ const bottomNav = [
 
 export function SideNav() {
   return (
-    <aside className="hidden md:flex flex-col w-52 lg:w-56 bg-[#111120] min-h-screen flex-shrink-0 relative border-r border-[#1F1F35]/60">
-      {/* Subtle ambient glow at top */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'linear-gradient(to bottom, rgba(212,168,67,0.03) 0%, transparent 25%)',
-        }}
-        aria-hidden="true"
-      />
-
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 py-5 relative">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-lg bg-gold/10 blur-lg scale-150" />
-          <span className="relative text-gold font-extrabold text-2xl leading-none drop-shadow-sm">₵</span>
-        </div>
-        <span className="text-text-primary font-semibold text-lg tracking-tight">CediSense</span>
+    <aside className="hidden md:flex flex-col w-56 lg:w-60 bg-[#0E0E1A] min-h-screen flex-shrink-0 relative">
+      {/* Logo area — brand-confident */}
+      <div className="flex items-center gap-3 px-6 py-6 relative">
+        <span className="text-gold font-extrabold text-2xl leading-none">₵</span>
+        <span className="text-text-primary font-semibold text-lg tracking-[-0.02em]">CediSense</span>
       </div>
 
-      {/* Divider */}
-      <div className="mx-4 h-px bg-[#1F1F35]/60 mb-2" />
-
       {/* Main nav */}
-      <nav className="flex flex-col gap-0.5 px-3 mt-1 flex-1 overflow-y-auto">
+      <nav className="flex flex-col gap-1 px-3 mt-2 flex-1 overflow-y-auto">
+        <p className="section-label px-3 mb-2">Menu</p>
         {mainNav.map((item) => (
           <NavLink
             key={item.to}
@@ -57,46 +42,46 @@ export function SideNav() {
                 isActive
                   ? 'bg-white/[0.04] text-text-primary'
                   : item.highlight
-                    ? 'text-gold hover:text-gold-light hover:bg-gold/[0.04]'
-                    : 'text-muted hover:text-text-primary hover:bg-white/[0.02]'
+                    ? 'text-gold/80 hover:text-gold hover:bg-gold/[0.04]'
+                    : 'text-muted hover:text-text-primary hover:bg-white/[0.03]'
               }`
             }
           >
             {({ isActive }) => (
               <>
                 {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-gradient-to-b from-gold-light to-gold rounded-r-full shadow-[0_0_8px_rgba(212,168,67,0.3)]" />
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-gold rounded-r-full" />
                 )}
                 <span className="text-base leading-none">{item.icon}</span>
                 <span>{item.label}</span>
                 {item.highlight && !isActive && (
-                  <span className="ml-auto text-[9px] font-bold uppercase tracking-wider bg-gold/15 text-gold px-1.5 py-0.5 rounded-md">New</span>
+                  <span className="ml-auto text-[9px] font-bold uppercase tracking-wider bg-gold/10 text-gold px-1.5 py-0.5 rounded-md">New</span>
                 )}
               </>
             )}
           </NavLink>
         ))}
 
-        {/* Divider */}
-        <div className="mx-2 my-2 h-px bg-[#1F1F35]/60" />
-
         {/* Secondary nav */}
+        <div className="mt-6 mb-2">
+          <p className="section-label px-3 mb-2">More</p>
+        </div>
         {secondaryNav.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `group flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 relative ${
+              `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative ${
                 isActive
                   ? 'bg-white/[0.04] text-text-primary'
-                  : 'text-muted hover:text-text-primary hover:bg-white/[0.02]'
+                  : 'text-muted hover:text-text-primary hover:bg-white/[0.03]'
               }`
             }
           >
             {({ isActive }) => (
               <>
                 {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-gradient-to-b from-gold-light to-gold rounded-r-full" />
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-gold rounded-r-full" />
                 )}
                 <span className="text-sm leading-none">{item.icon}</span>
                 <span>{item.label}</span>
@@ -104,39 +89,38 @@ export function SideNav() {
             )}
           </NavLink>
         ))}
-
-        {/* Divider */}
-        <div className="mx-2 my-2 h-px bg-[#1F1F35]/60" />
 
         {/* Bottom nav */}
-        {bottomNav.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              `group flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 relative ${
-                isActive
-                  ? 'bg-white/[0.04] text-text-primary'
-                  : 'text-muted hover:text-text-primary hover:bg-white/[0.02]'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-gradient-to-b from-gold-light to-gold rounded-r-full" />
-                )}
-                <span className="text-sm leading-none">{item.icon}</span>
-                <span>{item.label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
+        <div className="mt-auto pt-4">
+          {bottomNav.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative ${
+                  isActive
+                    ? 'bg-white/[0.04] text-text-primary'
+                    : 'text-muted hover:text-text-primary hover:bg-white/[0.03]'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-gold rounded-r-full" />
+                  )}
+                  <span className="text-sm leading-none">{item.icon}</span>
+                  <span>{item.label}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
       </nav>
 
-      {/* Bottom version badge */}
-      <div className="px-5 py-4">
-        <p className="text-[11px] text-muted-dim/50 tracking-wide">v0.1.0-beta</p>
+      {/* Version badge */}
+      <div className="px-6 py-5">
+        <p className="text-[11px] text-muted-dim/40 tracking-wide">v0.1.0-beta</p>
       </div>
     </aside>
   );
