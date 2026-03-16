@@ -18,11 +18,12 @@ interface CreateGroupModalProps {
   onSave: (data: CreateGroupData) => void;
 }
 
-const VARIANT_OPTIONS: { value: SusuVariant; label: string; description: string }[] = [
+const VARIANT_OPTIONS: { value: SusuVariant; label: string; description: string; className?: string }[] = [
   { value: 'rotating', label: 'Rotating', description: 'One member gets the pot each round' },
   { value: 'accumulating', label: 'Accumulating', description: 'Everyone saves, split at the end' },
   { value: 'goal_based', label: 'Goal-based', description: 'Save together for a shared goal' },
   { value: 'bidding', label: 'Bidding', description: 'Bid for early payout each round' },
+  { value: 'funeral_fund', label: 'Funeral Fund', description: 'Emergency bereavement support for your family', className: 'col-span-2' },
 ];
 
 export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProps) {
@@ -120,24 +121,37 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
           <div className="space-y-2">
             <p className="text-muted text-sm font-medium">Susu Type</p>
             <div className="grid grid-cols-2 gap-2">
-              {VARIANT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setVariant(opt.value)}
-                  className={`flex flex-col gap-1 p-3 rounded-xl border text-left transition-all
-                    active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/50
-                    ${variant === opt.value
-                      ? 'bg-gold/15 border-gold/60 text-gold'
-                      : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
-                    }`}
-                >
-                  <span className="text-sm font-semibold">{opt.label}</span>
-                  <span className={`text-xs leading-snug ${variant === opt.value ? 'text-gold/80' : 'text-muted'}`}>
-                    {opt.description}
-                  </span>
-                </button>
-              ))}
+              {VARIANT_OPTIONS.map((opt) => {
+                const isFuneral = opt.value === 'funeral_fund';
+                const isSelected = variant === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setVariant(opt.value)}
+                    className={`flex flex-col gap-1 p-3 rounded-xl border text-left transition-all
+                      active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/50
+                      ${opt.className ?? ''}
+                      ${isSelected
+                        ? isFuneral
+                          ? 'bg-neutral-800 border-amber-700/60 text-amber-200'
+                          : 'bg-gold/15 border-gold/60 text-gold'
+                        : isFuneral
+                          ? 'bg-neutral-900/60 border-neutral-700/40 text-neutral-300 hover:bg-neutral-800/60'
+                          : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                      }`}
+                  >
+                    <span className="text-sm font-semibold">{opt.label}</span>
+                    <span className={`text-xs leading-snug ${
+                      isSelected
+                        ? isFuneral ? 'text-amber-300/70' : 'text-gold/80'
+                        : 'text-muted'
+                    }`}>
+                      {opt.description}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

@@ -8,6 +8,8 @@ import {
   earlyPayoutRequestSchema,
   earlyPayoutVoteSchema,
   susuMessageSchema,
+  funeralClaimSchema,
+  funeralClaimVoteSchema,
 } from '@cedisense/shared';
 import type { SusuFrequency, SusuVariant } from '@cedisense/shared';
 import { generateId } from '../lib/db.js';
@@ -299,6 +301,44 @@ susu.get('/groups/:id', async (c) => {
       }
     : null;
 
+  // Compute funeral fund info & active claim
+  let funeral_fund_info = null;
+  let funeral_claim = null;
+
+  if (group.variant === 'funeral_fund') {
+    const totalPaidOutRow = await c.env.DB.prepare(
+      `SELECT COALESCE(SUM(amount_pesewas), 0) AS total FROM funeral_claims WHERE group_id = ? AND status = 'paid'`
+    ).bind(groupId).first<{ total: number }>();
+    const total_paid_out = totalPaidOutRow?.total ?? 0;
+
+    funeral_fund_info = {
+      total_pool_pesewas: total_contributed_pesewas,
+      total_paid_out_pesewas: total_paid_out,
+      available_pool_pesewas: total_contributed_pesewas - total_paid_out,
+    };
+
+    // Get active claim (pending or approved)
+    const claimRow = await c.env.DB.prepare(
+      `SELECT fc.*, sm.display_name AS claimant_name
+       FROM funeral_claims fc
+       INNER JOIN susu_members sm ON sm.id = fc.claimant_member_id
+       WHERE fc.group_id = ? AND fc.status IN ('pending', 'approved')
+       ORDER BY fc.created_at DESC LIMIT 1`
+    ).bind(groupId).first<FuneralClaimRow & { claimant_name: string }>();
+
+    if (claimRow) {
+      // Find my vote
+      const myVoteRow = await c.env.DB.prepare(
+        `SELECT vote FROM funeral_claim_votes WHERE claim_id = ? AND member_id = ?`
+      ).bind(claimRow.id, myMember.id).first<{ vote: string }>();
+
+      funeral_claim = {
+        ...claimRow,
+        my_vote: (myVoteRow?.vote as 'approve' | 'deny') ?? null,
+      };
+    }
+  }
+
   return c.json({
     data: {
       ...mapGroup(group),
@@ -309,6 +349,8 @@ susu.get('/groups/:id', async (c) => {
       is_creator: group.creator_id === userId,
       goal_progress,
       accumulating_info,
+      funeral_fund_info,
+      funeral_claim,
     },
   });
 });
@@ -892,9 +934,10 @@ susu.post('/groups/:id/advance-round', async (c) => {
 
   // ── Variant-specific advance logic ────────────────────────────────────────
 
-  if (group.variant === 'accumulating') {
-    // No per-round payout required. When all rounds complete, flag as complete.
-    // All rounds complete = current_round >= max_members
+  if (group.variant === 'accumulating' || group.variant === 'funeral_fund') {
+    // No per-round payout required. Contributions accumulate in the pool.
+    // For accumulating: when all rounds complete, flag as complete.
+    // For funeral_fund: pool grows indefinitely, payouts triggered by claims.
     await c.env.DB.prepare(
       `UPDATE susu_groups
        SET current_round = current_round + 1, updated_at = datetime('now')
@@ -1158,6 +1201,22 @@ interface EarlyPayoutVoteRow {
   member_id: string;
   vote: string;
   voted_at: string;
+}
+
+interface FuneralClaimRow {
+  id: string;
+  group_id: string;
+  claimant_member_id: string;
+  deceased_name: string;
+  relationship: string;
+  description: string | null;
+  amount_pesewas: number;
+  status: string;
+  approved_by_count: number;
+  denied_by_count: number;
+  approval_threshold: number;
+  created_at: string;
+  resolved_at: string | null;
 }
 
 // ─── POST /groups/:id/early-payout — request an early payout ─────────────────
@@ -1816,6 +1875,352 @@ susu.post('/groups/:id/messages', async (c) => {
   }>();
 
   return c.json({ data: message }, 201);
+});
+
+// ─── POST /groups/:id/funeral-claim — submit a funeral claim ─────────────────
+
+susu.post('/groups/:id/funeral-claim', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  const body = await c.req.json();
+  const parsed = funeralClaimSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request',
+          details: { fieldErrors: parsed.error.flatten().fieldErrors },
+        },
+      },
+      400
+    );
+  }
+
+  // Verify group is funeral_fund variant
+  const group = await c.env.DB.prepare(
+    `SELECT id, variant FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; variant: SusuVariant }>();
+
+  if (!group) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  if (group.variant !== 'funeral_fund') {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'Funeral claims are only for funeral fund groups' } }, 400);
+  }
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'You are not a member of this group' } }, 404);
+  }
+
+  // Check no active claim already exists
+  const existingClaim = await c.env.DB.prepare(
+    `SELECT id FROM funeral_claims WHERE group_id = ? AND status IN ('pending', 'approved')`
+  ).bind(groupId).first();
+
+  if (existingClaim) {
+    return c.json({ error: { code: 'CONFLICT', message: 'There is already an active claim for this group' } }, 409);
+  }
+
+  // Calculate available pool = total contributions - total paid claims
+  const totalContribRow = await c.env.DB.prepare(
+    `SELECT COALESCE(SUM(amount_pesewas), 0) AS total FROM susu_contributions WHERE group_id = ?`
+  ).bind(groupId).first<{ total: number }>();
+  const totalContributed = totalContribRow?.total ?? 0;
+
+  const totalPaidRow = await c.env.DB.prepare(
+    `SELECT COALESCE(SUM(amount_pesewas), 0) AS total FROM funeral_claims WHERE group_id = ? AND status = 'paid'`
+  ).bind(groupId).first<{ total: number }>();
+  const totalPaid = totalPaidRow?.total ?? 0;
+
+  const availablePool = totalContributed - totalPaid;
+
+  if (availablePool <= 0) {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'No funds available in the pool' } }, 400);
+  }
+
+  // Threshold = ceil(members / 2)
+  const countRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS cnt FROM susu_members WHERE group_id = ?`
+  ).bind(groupId).first<{ cnt: number }>();
+  const memberCount = countRow?.cnt ?? 0;
+  const threshold = Math.ceil(memberCount / 2);
+
+  const claimId = generateId();
+
+  await c.env.DB.prepare(
+    `INSERT INTO funeral_claims (id, group_id, claimant_member_id, deceased_name, relationship, description, amount_pesewas, approval_threshold)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    claimId, groupId, myMember.id,
+    parsed.data.deceased_name, parsed.data.relationship, parsed.data.description ?? null,
+    availablePool, threshold
+  ).run();
+
+  const claim = await c.env.DB.prepare(
+    `SELECT fc.*, sm.display_name AS claimant_name
+     FROM funeral_claims fc
+     INNER JOIN susu_members sm ON sm.id = fc.claimant_member_id
+     WHERE fc.id = ?`
+  ).bind(claimId).first<FuneralClaimRow & { claimant_name: string }>();
+
+  return c.json({
+    data: {
+      ...claim!,
+      my_vote: null,
+    },
+  }, 201);
+});
+
+// ─── GET /groups/:id/funeral-claim — get active funeral claim ────────────────
+
+susu.get('/groups/:id/funeral-claim', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Find active claim (pending or approved)
+  const claim = await c.env.DB.prepare(
+    `SELECT fc.*, sm.display_name AS claimant_name
+     FROM funeral_claims fc
+     INNER JOIN susu_members sm ON sm.id = fc.claimant_member_id
+     WHERE fc.group_id = ? AND fc.status IN ('pending', 'approved')
+     ORDER BY fc.created_at DESC LIMIT 1`
+  ).bind(groupId).first<FuneralClaimRow & { claimant_name: string }>();
+
+  if (!claim) {
+    return c.json({ data: null });
+  }
+
+  // Find my vote
+  const myVoteRow = await c.env.DB.prepare(
+    `SELECT vote FROM funeral_claim_votes WHERE claim_id = ? AND member_id = ?`
+  ).bind(claim.id, myMember.id).first<{ vote: string }>();
+
+  return c.json({
+    data: {
+      ...claim,
+      my_vote: myVoteRow?.vote ?? null,
+    },
+  });
+});
+
+// ─── POST /groups/:id/funeral-claim/:claimId/vote — vote on a funeral claim ──
+
+susu.post('/groups/:id/funeral-claim/:claimId/vote', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const claimId = c.req.param('claimId');
+
+  const body = await c.req.json();
+  const parsed = funeralClaimVoteSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request',
+          details: { fieldErrors: parsed.error.flatten().fieldErrors },
+        },
+      },
+      400
+    );
+  }
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Get the pending claim
+  const claim = await c.env.DB.prepare(
+    `SELECT * FROM funeral_claims WHERE id = ? AND group_id = ? AND status = 'pending'`
+  ).bind(claimId, groupId).first<FuneralClaimRow>();
+
+  if (!claim) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'No pending claim found' } }, 404);
+  }
+
+  // Claimant cannot vote on their own claim
+  if (claim.claimant_member_id === myMember.id) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'You cannot vote on your own claim' } }, 403);
+  }
+
+  // Cast vote
+  const voteId = generateId();
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO funeral_claim_votes (id, claim_id, member_id, vote)
+       VALUES (?, ?, ?, ?)`
+    ).bind(voteId, claimId, myMember.id, parsed.data.vote).run();
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('UNIQUE')) {
+      return c.json({ error: { code: 'CONFLICT', message: 'You have already voted on this claim' } }, 409);
+    }
+    throw err;
+  }
+
+  // Update vote counts
+  const voteColumn = parsed.data.vote === 'approve' ? 'approved_by_count' : 'denied_by_count';
+  await c.env.DB.prepare(
+    `UPDATE funeral_claims SET ${voteColumn} = ${voteColumn} + 1 WHERE id = ?`
+  ).bind(claimId).run();
+
+  // Re-fetch updated claim
+  const updated = await c.env.DB.prepare(
+    `SELECT * FROM funeral_claims WHERE id = ?`
+  ).bind(claimId).first<FuneralClaimRow>();
+
+  if (!updated) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Claim not found' } }, 404);
+  }
+
+  // Get total members for auto-deny calculation
+  const countRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS cnt FROM susu_members WHERE group_id = ?`
+  ).bind(groupId).first<{ cnt: number }>();
+  const totalMembers = countRow?.cnt ?? 0;
+
+  // Auto-approve if approved_by_count >= threshold
+  if (updated.approved_by_count >= updated.approval_threshold) {
+    await c.env.DB.prepare(
+      `UPDATE funeral_claims SET status = 'approved', resolved_at = datetime('now') WHERE id = ?`
+    ).bind(claimId).run();
+  }
+  // Auto-deny if it's impossible to reach threshold
+  else if (updated.denied_by_count > totalMembers - updated.approval_threshold) {
+    await c.env.DB.prepare(
+      `UPDATE funeral_claims SET status = 'denied', resolved_at = datetime('now') WHERE id = ?`
+    ).bind(claimId).run();
+  }
+
+  // Return final state
+  const final = await c.env.DB.prepare(
+    `SELECT fc.*, sm.display_name AS claimant_name
+     FROM funeral_claims fc
+     INNER JOIN susu_members sm ON sm.id = fc.claimant_member_id
+     WHERE fc.id = ?`
+  ).bind(claimId).first<FuneralClaimRow & { claimant_name: string }>();
+
+  return c.json({
+    data: {
+      ...final!,
+      my_vote: parsed.data.vote,
+    },
+  });
+});
+
+// ─── POST /groups/:id/funeral-claim/:claimId/pay — pay out approved claim ────
+
+susu.post('/groups/:id/funeral-claim/:claimId/pay', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const claimId = c.req.param('claimId');
+
+  // Only creator can pay out
+  const group = await c.env.DB.prepare(
+    `SELECT id, creator_id, current_round FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; creator_id: string; current_round: number }>();
+
+  if (!group) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  if (group.creator_id !== userId) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only the creator can process payouts' } }, 403);
+  }
+
+  // Get the approved claim
+  const claim = await c.env.DB.prepare(
+    `SELECT * FROM funeral_claims WHERE id = ? AND group_id = ? AND status = 'approved'`
+  ).bind(claimId, groupId).first<FuneralClaimRow>();
+
+  if (!claim) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'No approved claim found' } }, 404);
+  }
+
+  // Record as a susu_payout
+  const payoutId = generateId();
+  await c.env.DB.prepare(
+    `INSERT INTO susu_payouts (id, group_id, member_id, round, amount_pesewas)
+     VALUES (?, ?, ?, ?, ?)`
+  ).bind(payoutId, groupId, claim.claimant_member_id, group.current_round, claim.amount_pesewas).run();
+
+  // Mark claim as paid
+  await c.env.DB.prepare(
+    `UPDATE funeral_claims SET status = 'paid', resolved_at = datetime('now') WHERE id = ?`
+  ).bind(claimId).run();
+
+  const final = await c.env.DB.prepare(
+    `SELECT fc.*, sm.display_name AS claimant_name
+     FROM funeral_claims fc
+     INNER JOIN susu_members sm ON sm.id = fc.claimant_member_id
+     WHERE fc.id = ?`
+  ).bind(claimId).first<FuneralClaimRow & { claimant_name: string }>();
+
+  return c.json({
+    data: {
+      ...final!,
+      payout_amount_pesewas: claim.amount_pesewas,
+    },
+  });
+});
+
+// ─── GET /groups/:id/funeral-claims/history — past funeral claims ────────────
+
+susu.get('/groups/:id/funeral-claims/history', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT fc.*, sm.display_name AS claimant_name
+     FROM funeral_claims fc
+     INNER JOIN susu_members sm ON sm.id = fc.claimant_member_id
+     WHERE fc.group_id = ?
+     ORDER BY fc.created_at DESC`
+  ).bind(groupId).all<FuneralClaimRow & { claimant_name: string }>();
+
+  // Attach my_vote to each claim
+  const data = [];
+  for (const claim of results) {
+    const myVoteRow = await c.env.DB.prepare(
+      `SELECT vote FROM funeral_claim_votes WHERE claim_id = ? AND member_id = ?`
+    ).bind(claim.id, myMember.id).first<{ vote: string }>();
+    data.push({ ...claim, my_vote: myVoteRow?.vote ?? null });
+  }
+
+  return c.json({ data });
 });
 
 export { susu };

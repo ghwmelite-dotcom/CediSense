@@ -284,7 +284,7 @@ export const createSusuGroupSchema = z.object({
   contribution_pesewas: z.number().int().positive(),
   frequency: z.enum(['daily', 'weekly', 'monthly']),
   max_members: z.number().int().min(2).max(50).default(12),
-  variant: z.enum(['rotating', 'accumulating', 'goal_based', 'bidding']).default('rotating'),
+  variant: z.enum(['rotating', 'accumulating', 'goal_based', 'bidding', 'funeral_fund']).default('rotating'),
   goal_amount_pesewas: z.number().int().positive().optional(),
   goal_description: z.string().max(200).optional(),
 }).refine(
@@ -335,3 +335,18 @@ export const susuMessageSchema = z.object({
 });
 
 export type SusuMessageInput = z.infer<typeof susuMessageSchema>;
+
+// ─── Funeral Fund schemas ────────────────────────────────────────────────────
+
+export const funeralClaimSchema = z.object({
+  deceased_name: z.string().min(1).max(100),
+  relationship: z.string().min(1).max(50),
+  description: z.string().max(500).optional(),
+});
+
+export const funeralClaimVoteSchema = z.object({
+  vote: z.enum(['approve', 'deny']),
+});
+
+export type FuneralClaimInput = z.infer<typeof funeralClaimSchema>;
+export type FuneralClaimVoteInput = z.infer<typeof funeralClaimVoteSchema>;

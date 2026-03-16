@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import type { SusuGroupWithDetails, EarlyPayoutRequest, SusuVariant, SusuAnalytics, SusuBadge, LeaderboardEntry } from '@cedisense/shared';
+import type { SusuGroupWithDetails, EarlyPayoutRequest, FuneralClaim, SusuVariant, SusuAnalytics, SusuBadge, LeaderboardEntry } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 import { InviteQRModal } from './InviteQRModal';
 import { EarlyPayoutCard } from './EarlyPayoutCard';
+import { FuneralClaimCard } from './FuneralClaimCard';
 import { GroupAnalytics } from './GroupAnalytics';
 import { BadgeDisplay } from './BadgeDisplay';
 import { Leaderboard } from './Leaderboard';
@@ -22,6 +23,12 @@ interface GroupDetailProps {
   onVoteEarlyPayout: (vote: 'for' | 'against') => void;
   onPayEarlyPayout: () => void;
   onPlaceBid?: () => void;
+  /** Funeral fund claim handlers */
+  onSubmitFuneralClaim?: () => void;
+  onVoteFuneralClaim?: (vote: 'approve' | 'deny') => void;
+  onPayFuneralClaim?: () => void;
+  funeralClaimVoting?: boolean;
+  funeralClaimPaying?: boolean;
   earlyPayoutVoting?: boolean;
   earlyPayoutPaying?: boolean;
   /** Called when the user taps "View Receipt" for a member who has contributed */
@@ -42,6 +49,7 @@ const VARIANT_LABEL: Record<SusuVariant, string> = {
   accumulating: 'Accumulating',
   goal_based: 'Goal-based',
   bidding: 'Bidding',
+  funeral_fund: 'Funeral Fund',
 };
 
 export function GroupDetail({
@@ -56,6 +64,11 @@ export function GroupDetail({
   onVoteEarlyPayout,
   onPayEarlyPayout,
   onPlaceBid,
+  onSubmitFuneralClaim,
+  onVoteFuneralClaim,
+  onPayFuneralClaim,
+  funeralClaimVoting = false,
+  funeralClaimPaying = false,
   earlyPayoutVoting = false,
   earlyPayoutPaying = false,
   onViewReceipt,
@@ -262,7 +275,8 @@ export function GroupDetail({
         />
       </div>
 
-      {/* Round indicator */}
+      {/* Round indicator (not for funeral_fund) */}
+      {group.variant !== 'funeral_fund' && (
       <div className="bg-ghana-surface border border-white/10 rounded-xl p-4 flex items-center justify-between">
         <div className="space-y-0.5">
           <p className="text-muted text-xs">Current Round</p>
@@ -277,6 +291,7 @@ export function GroupDetail({
           </p>
         </div>
       </div>
+      )}
 
       {/* Penalty pool display */}
       {group.penalty_pool_pesewas > 0 && (
@@ -362,6 +377,82 @@ export function GroupDetail({
         </div>
       )}
 
+      {/* Funeral Fund: pool display + claim UI */}
+      {group.variant === 'funeral_fund' && group.funeral_fund_info && (
+        <div className="bg-neutral-900/60 border border-neutral-700/40 rounded-xl p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <svg
+              className="w-5 h-5 text-amber-400 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 2C12 2 9 6 9 8.5C9 10.433 10.343 12 12 12C13.657 12 15 10.433 15 8.5C15 6 12 2 12 2Z"
+              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 12V22" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 22H15" />
+            </svg>
+            <p className="text-amber-300/80 text-xs font-semibold uppercase tracking-wide">
+              {VARIANT_LABEL.funeral_fund} — Emergency Pool
+            </p>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <p className="text-neutral-500 text-xs">Available Fund</p>
+              <p className="text-amber-200 font-bold text-xl">
+                {formatPesewas(group.funeral_fund_info.available_pool_pesewas)}
+              </p>
+            </div>
+            <div className="text-right space-y-0.5">
+              <p className="text-neutral-500 text-xs">Total Contributed</p>
+              <p className="text-neutral-300 font-semibold text-sm">
+                {formatPesewas(group.funeral_fund_info.total_pool_pesewas)}
+              </p>
+            </div>
+          </div>
+          {group.funeral_fund_info.total_paid_out_pesewas > 0 && (
+            <p className="text-neutral-500 text-xs">
+              Previously paid out: {formatPesewas(group.funeral_fund_info.total_paid_out_pesewas)}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Funeral Fund: active claim */}
+      {group.variant === 'funeral_fund' && group.funeral_claim && onVoteFuneralClaim && onPayFuneralClaim && (
+        <FuneralClaimCard
+          claim={group.funeral_claim}
+          isCreator={group.is_creator}
+          isClaimant={group.funeral_claim.claimant_member_id === group.my_member_id}
+          onVote={onVoteFuneralClaim}
+          onPay={onPayFuneralClaim}
+          voting={funeralClaimVoting}
+          paying={funeralClaimPaying}
+        />
+      )}
+
+      {/* Funeral Fund: submit claim button (members only, no active claim) */}
+      {group.variant === 'funeral_fund' && group.my_member_id && !group.funeral_claim && onSubmitFuneralClaim && (
+        <button
+          type="button"
+          onClick={onSubmitFuneralClaim}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
+            bg-neutral-800/80 border border-amber-800/40 text-amber-300 font-semibold text-sm
+            hover:bg-neutral-800 active:scale-95 transition-all min-h-[44px]"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round"
+              d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Submit Bereavement Claim
+        </button>
+      )}
+
       {/* Bidding: Place Bid button (members only) */}
       {group.variant === 'bidding' && group.my_member_id && onPlaceBid && (
         <button
@@ -379,8 +470,8 @@ export function GroupDetail({
         </button>
       )}
 
-      {/* Payout recipient */}
-      {hasPayoutRecipient && (
+      {/* Payout recipient (not for funeral_fund) */}
+      {hasPayoutRecipient && group.variant !== 'funeral_fund' && (
         <div className="bg-gold/10 border border-gold/30 rounded-xl p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-gold/20 flex items-center justify-center shrink-0">
             <svg
@@ -420,8 +511,8 @@ export function GroupDetail({
         />
       )}
 
-      {/* Request Early Payout button (members only, no pending request) */}
-      {group.my_member_id && !earlyPayoutRequest && (
+      {/* Request Early Payout button (members only, no pending request, not funeral_fund) */}
+      {group.variant !== 'funeral_fund' && group.my_member_id && !earlyPayoutRequest && (
         <button
           type="button"
           onClick={onRequestEarlyPayout}
@@ -584,8 +675,8 @@ export function GroupDetail({
         </div>
       </div>
 
-      {/* Creator actions */}
-      {group.is_creator && (
+      {/* Creator actions (not for funeral_fund — payouts handled via claims) */}
+      {group.is_creator && group.variant !== 'funeral_fund' && (
         <div className="space-y-3 pt-2">
           <h3 className="text-muted text-xs font-semibold uppercase tracking-wide px-1">
             Creator Actions

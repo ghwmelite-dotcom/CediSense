@@ -423,7 +423,7 @@ export interface InvestmentSummary {
 
 export type SusuFrequency = 'daily' | 'weekly' | 'monthly';
 
-export type SusuVariant = 'rotating' | 'accumulating' | 'goal_based' | 'bidding';
+export type SusuVariant = 'rotating' | 'accumulating' | 'goal_based' | 'bidding' | 'funeral_fund';
 
 export interface SusuGroup {
   id: string;
@@ -505,6 +505,33 @@ export interface SusuAccumulatingInfo {
   your_share_pesewas: number;
 }
 
+// ─── Funeral Fund types ──────────────────────────────────────────────────────
+
+export type FuneralClaimStatus = 'pending' | 'approved' | 'paid' | 'denied';
+
+export interface FuneralClaim {
+  id: string;
+  group_id: string;
+  claimant_member_id: string;
+  claimant_name: string;
+  deceased_name: string;
+  relationship: string;
+  description: string | null;
+  amount_pesewas: number;
+  status: FuneralClaimStatus;
+  approved_by_count: number;
+  denied_by_count: number;
+  approval_threshold: number;
+  my_vote: 'approve' | 'deny' | null;
+  created_at: string;
+}
+
+export interface FuneralFundInfo {
+  total_pool_pesewas: number;
+  total_paid_out_pesewas: number;
+  available_pool_pesewas: number;
+}
+
 export interface SusuGroupWithDetails extends SusuGroup {
   member_count: number;
   members: Array<SusuMember & { has_contributed_this_round: boolean; trust_score: number; trust_label: string }>;
@@ -513,6 +540,8 @@ export interface SusuGroupWithDetails extends SusuGroup {
   is_creator: boolean;
   goal_progress: SusuGoalProgress | null;
   accumulating_info: SusuAccumulatingInfo | null;
+  funeral_fund_info: FuneralFundInfo | null;
+  funeral_claim: FuneralClaim | null;
 }
 
 export interface ContributionReceipt {

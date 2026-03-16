@@ -30,6 +30,8 @@ function variantBadge(variant: SusuVariant): VariantBadgeConfig {
       return { label: 'Goal-based', className: 'bg-gold/15 text-gold border-gold/30' };
     case 'bidding':
       return { label: 'Bidding', className: 'bg-purple-500/15 text-purple-300 border-purple-500/30' };
+    case 'funeral_fund':
+      return { label: 'Funeral Fund', className: 'bg-neutral-700/30 text-amber-300 border-amber-700/40' };
   }
 }
 
