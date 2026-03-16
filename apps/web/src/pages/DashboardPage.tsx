@@ -10,6 +10,7 @@ import { SpendingTrendChart } from '@/components/dashboard/SpendingTrendChart';
 import { CategoryBreakdownCard } from '@/components/dashboard/CategoryBreakdownCard';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { UpcomingBillsCard } from '@/components/recurring/UpcomingBillsCard';
+import { NewUserWelcome, isWelcomeDismissed } from '@/components/dashboard/NewUserWelcome';
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -38,6 +39,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [transitioning, setTransitioning] = useState(false);
+  const [welcomeDismissed, setWelcomeDismissed] = useState(isWelcomeDismissed);
 
   // Cache: month -> DashboardData
   const cache = useRef<Map<string, DashboardData>>(new Map());
@@ -94,6 +96,20 @@ export function DashboardPage() {
   })();
 
   const firstName = user?.name?.split(' ')[0] ?? '';
+
+  // Show new user welcome if no transactions and not dismissed
+  const isNewUser = !loading && data !== null && data.summary.transaction_count === 0 && !welcomeDismissed;
+
+  if (isNewUser) {
+    return (
+      <div className="pb-24 ambient-glow">
+        <NewUserWelcome
+          userName={user?.name ?? ''}
+          onDismiss={() => setWelcomeDismissed(true)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="pb-24 ambient-glow">

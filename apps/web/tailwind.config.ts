@@ -119,6 +119,24 @@ export default {
           '50%': { backgroundPosition: '100% 50%' },
           '100%': { backgroundPosition: '0% 50%' },
         },
+        slideLeft: {
+          '0%': { opacity: '0', transform: 'translateX(40px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        slideRight: {
+          '0%': { opacity: '0', transform: 'translateX(-40px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        goldFloat: {
+          '0%': { transform: 'translateY(0) scale(1)', opacity: '0.6' },
+          '50%': { transform: 'translateY(-20px) scale(1.1)', opacity: '1' },
+          '100%': { transform: 'translateY(-40px) scale(0.8)', opacity: '0' },
+        },
+        logoReveal: {
+          '0%': { opacity: '0', transform: 'scale(0.6)' },
+          '60%': { opacity: '1', transform: 'scale(1.05)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
@@ -140,6 +158,10 @@ export default {
         'gold-pulse': 'goldPulse 2.5s ease-in-out infinite',
         'red-pulse': 'redPulse 2.5s ease-in-out infinite',
         'gradient-sweep': 'gradientSweep 6s ease infinite',
+        'slide-left': 'slideLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        'slide-right': 'slideRight 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        'gold-float': 'goldFloat 3s ease-out infinite',
+        'logo-reveal': 'logoReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
       },
       boxShadow: {
         card: '0 1px 3px rgba(0, 0, 0, 0.4)',
