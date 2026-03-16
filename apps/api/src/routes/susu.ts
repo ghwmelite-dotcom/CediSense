@@ -254,15 +254,44 @@ susu.get('/groups', async (c) => {
             g.guarantee_percent, g.guarantee_pool_pesewas, g.supplier_name, g.supplier_contact, g.item_description, g.estimated_savings_percent,
             g.crop_type, g.planting_month, g.harvest_month, g.organization_name, g.organization_type,
             g.created_at, g.updated_at,
-            (SELECT COUNT(*) FROM susu_members m2 WHERE m2.group_id = g.id) AS member_count
+            (SELECT COUNT(*) FROM susu_members m2 WHERE m2.group_id = g.id) AS member_count,
+            sm.id AS _my_member_id
      FROM susu_groups g
      INNER JOIN susu_members sm ON sm.group_id = g.id AND sm.user_id = ?
      ORDER BY g.created_at DESC`
-  ).bind(userId).all<SusuGroupRow & { member_count: number }>();
+  ).bind(userId).all<SusuGroupRow & { member_count: number; _my_member_id: string }>();
+
+  // Batch-fetch unread counts for all groups
+  const unreadCounts = new Map<string, number>();
+  for (const row of results) {
+    const receipt = await c.env.DB.prepare(
+      `SELECT last_read_message_id FROM chat_read_receipts WHERE member_id = ? AND group_id = ?`
+    ).bind(row._my_member_id, row.id).first<{ last_read_message_id: string | null }>();
+
+    let unreadCount = 0;
+    if (receipt?.last_read_message_id) {
+      const cursorRow = await c.env.DB.prepare(
+        `SELECT rowid FROM susu_messages WHERE id = ?`
+      ).bind(receipt.last_read_message_id).first<{ rowid: number }>();
+      if (cursorRow) {
+        const countRow = await c.env.DB.prepare(
+          `SELECT COUNT(*) AS cnt FROM susu_messages WHERE group_id = ? AND rowid > ? AND deleted_at IS NULL`
+        ).bind(row.id, cursorRow.rowid).first<{ cnt: number }>();
+        unreadCount = countRow?.cnt ?? 0;
+      }
+    } else {
+      const countRow = await c.env.DB.prepare(
+        `SELECT COUNT(*) AS cnt FROM susu_messages WHERE group_id = ? AND deleted_at IS NULL`
+      ).bind(row.id).first<{ cnt: number }>();
+      unreadCount = countRow?.cnt ?? 0;
+    }
+    unreadCounts.set(row.id, unreadCount);
+  }
 
   const data = results.map((row) => ({
     ...mapGroup(row),
     member_count: row.member_count,
+    unread_count: unreadCounts.get(row.id) ?? 0,
   }));
 
   return c.json({ data });
@@ -649,6 +678,29 @@ susu.get('/groups/:id', async (c) => {
     };
   }
 
+  // Compute unread message count
+  const receipt = await c.env.DB.prepare(
+    `SELECT last_read_message_id FROM chat_read_receipts WHERE member_id = ? AND group_id = ?`
+  ).bind(myMember.id, groupId).first<{ last_read_message_id: string | null }>();
+
+  let unread_count = 0;
+  if (receipt?.last_read_message_id) {
+    const cursorRow = await c.env.DB.prepare(
+      `SELECT rowid FROM susu_messages WHERE id = ?`
+    ).bind(receipt.last_read_message_id).first<{ rowid: number }>();
+    if (cursorRow) {
+      const countRow = await c.env.DB.prepare(
+        `SELECT COUNT(*) AS cnt FROM susu_messages WHERE group_id = ? AND rowid > ? AND deleted_at IS NULL`
+      ).bind(groupId, cursorRow.rowid).first<{ cnt: number }>();
+      unread_count = countRow?.cnt ?? 0;
+    }
+  } else {
+    const countRow = await c.env.DB.prepare(
+      `SELECT COUNT(*) AS cnt FROM susu_messages WHERE group_id = ? AND deleted_at IS NULL`
+    ).bind(groupId).first<{ cnt: number }>();
+    unread_count = countRow?.cnt ?? 0;
+  }
+
   return c.json({
     data: {
       ...mapGroup(group),
@@ -668,6 +720,7 @@ susu.get('/groups/:id', async (c) => {
       bulk_purchase_info,
       agricultural_info,
       welfare_info,
+      unread_count,
     },
   });
 });
@@ -2183,13 +2236,17 @@ susu.get('/groups/:id/messages', async (c) => {
     created_at: string;
     sender_name: string;
     sender_user_id: string;
+    reply_to_id: string | null;
+    reply_to_content: string | null;
+    reply_to_sender: string | null;
+    edited_at: string | null;
+    deleted_at: string | null;
   }
 
   let query: string;
   let bindings: unknown[];
 
   if (before) {
-    // Get the rowid of the cursor message
     const cursorRow = await c.env.DB.prepare(
       `SELECT rowid FROM susu_messages WHERE id = ? AND group_id = ?`
     ).bind(before, groupId).first<{ rowid: number }>();
@@ -2199,9 +2256,13 @@ susu.get('/groups/:id/messages', async (c) => {
     }
 
     query = `
-      SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id
+      SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+             m.reply_to_id, m.edited_at, m.deleted_at,
+             rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
       FROM susu_messages m
       JOIN susu_members sm ON m.member_id = sm.id
+      LEFT JOIN susu_messages rm ON m.reply_to_id = rm.id
+      LEFT JOIN susu_members rsm ON rm.member_id = rsm.id
       WHERE m.group_id = ? AND m.rowid < ?
       ORDER BY m.rowid DESC
       LIMIT ?
@@ -2209,9 +2270,13 @@ susu.get('/groups/:id/messages', async (c) => {
     bindings = [groupId, cursorRow.rowid, limit];
   } else {
     query = `
-      SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id
+      SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+             m.reply_to_id, m.edited_at, m.deleted_at,
+             rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
       FROM susu_messages m
       JOIN susu_members sm ON m.member_id = sm.id
+      LEFT JOIN susu_messages rm ON m.reply_to_id = rm.id
+      LEFT JOIN susu_members rsm ON rm.member_id = rsm.id
       WHERE m.group_id = ?
       ORDER BY m.rowid DESC
       LIMIT ?
@@ -2224,9 +2289,274 @@ susu.get('/groups/:id/messages', async (c) => {
     .all<MessageRow>();
 
   // Reverse so oldest-first
-  const messages = [...results].reverse();
+  const rawMessages = [...results].reverse();
+
+  // Enrich with reactions and read_by_count
+  const messageIds = rawMessages.map((m) => m.id);
+  const messages = [];
+
+  // Get total member count for read receipt calculation
+  const memberCountRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS cnt FROM susu_members WHERE group_id = ?`
+  ).bind(groupId).first<{ cnt: number }>();
+  const totalMembers = memberCountRow?.cnt ?? 0;
+
+  for (const msg of rawMessages) {
+    // Get reactions for this message
+    const { results: reactionRows } = await c.env.DB.prepare(
+      `SELECT emoji, COUNT(*) AS count,
+              MAX(CASE WHEN member_id = ? THEN 1 ELSE 0 END) AS reacted_by_me
+       FROM message_reactions
+       WHERE message_id = ?
+       GROUP BY emoji`
+    ).bind(myMember.id, msg.id).all<{ emoji: string; count: number; reacted_by_me: number }>();
+
+    // Count how many members have read up to or past this message
+    const readCountRow = await c.env.DB.prepare(
+      `SELECT COUNT(*) AS cnt FROM chat_read_receipts crr
+       WHERE crr.group_id = ? AND crr.last_read_message_id IS NOT NULL
+       AND (SELECT rowid FROM susu_messages WHERE id = crr.last_read_message_id) >= (SELECT rowid FROM susu_messages WHERE id = ?)`
+    ).bind(groupId, msg.id).first<{ cnt: number }>();
+
+    messages.push({
+      id: msg.id,
+      content: msg.deleted_at ? '' : msg.content,
+      sender_name: msg.sender_name,
+      sender_user_id: msg.sender_user_id,
+      created_at: msg.created_at,
+      reply_to_id: msg.reply_to_id,
+      reply_to_content: msg.reply_to_content ? (msg.reply_to_content.length > 100 ? msg.reply_to_content.slice(0, 100) + '...' : msg.reply_to_content) : null,
+      reply_to_sender: msg.reply_to_sender,
+      edited_at: msg.edited_at,
+      is_deleted: msg.deleted_at !== null,
+      reactions: reactionRows.map((r) => ({
+        emoji: r.emoji,
+        count: r.count,
+        reacted_by_me: r.reacted_by_me === 1,
+      })),
+      read_by_count: readCountRow?.cnt ?? 0,
+    });
+  }
 
   return c.json({ data: messages });
+});
+
+// ─── GET /groups/:id/messages/poll — long-poll for new messages ──────────────
+
+susu.get('/groups/:id/messages/poll', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  const afterId = c.req.query('after');
+  const timeoutSec = Math.min(parseInt(c.req.query('timeout') ?? '25', 10) || 25, 25);
+
+  interface MessageRow {
+    id: string;
+    content: string;
+    created_at: string;
+    sender_name: string;
+    sender_user_id: string;
+    reply_to_id: string | null;
+    reply_to_content: string | null;
+    reply_to_sender: string | null;
+    edited_at: string | null;
+    deleted_at: string | null;
+  }
+
+  const checkForNew = async (): Promise<MessageRow[]> => {
+    if (!afterId) return [];
+
+    const cursorRow = await c.env.DB.prepare(
+      `SELECT rowid FROM susu_messages WHERE id = ? AND group_id = ?`
+    ).bind(afterId, groupId).first<{ rowid: number }>();
+
+    if (!cursorRow) return [];
+
+    const { results } = await c.env.DB.prepare(
+      `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+              m.reply_to_id, m.edited_at, m.deleted_at,
+              rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
+       FROM susu_messages m
+       JOIN susu_members sm ON m.member_id = sm.id
+       LEFT JOIN susu_messages rm ON m.reply_to_id = rm.id
+       LEFT JOIN susu_members rsm ON rm.member_id = rsm.id
+       WHERE m.group_id = ? AND m.rowid > ?
+       ORDER BY m.rowid ASC
+       LIMIT 50`
+    ).bind(groupId, cursorRow.rowid).all<MessageRow>();
+
+    return results;
+  };
+
+  // Try up to timeoutSec/2 iterations (check every 2 seconds)
+  const maxChecks = Math.ceil(timeoutSec / 2);
+  for (let i = 0; i < maxChecks; i++) {
+    const newMsgs = await checkForNew();
+    if (newMsgs.length > 0) {
+      // Enrich with reactions and read_by_count
+      const enriched = [];
+      for (const msg of newMsgs) {
+        const { results: reactionRows } = await c.env.DB.prepare(
+          `SELECT emoji, COUNT(*) AS count,
+                  MAX(CASE WHEN member_id = ? THEN 1 ELSE 0 END) AS reacted_by_me
+           FROM message_reactions
+           WHERE message_id = ?
+           GROUP BY emoji`
+        ).bind(myMember.id, msg.id).all<{ emoji: string; count: number; reacted_by_me: number }>();
+
+        const readCountRow = await c.env.DB.prepare(
+          `SELECT COUNT(*) AS cnt FROM chat_read_receipts crr
+           WHERE crr.group_id = ? AND crr.last_read_message_id IS NOT NULL
+           AND (SELECT rowid FROM susu_messages WHERE id = crr.last_read_message_id) >= (SELECT rowid FROM susu_messages WHERE id = ?)`
+        ).bind(groupId, msg.id).first<{ cnt: number }>();
+
+        enriched.push({
+          id: msg.id,
+          content: msg.deleted_at ? '' : msg.content,
+          sender_name: msg.sender_name,
+          sender_user_id: msg.sender_user_id,
+          created_at: msg.created_at,
+          reply_to_id: msg.reply_to_id,
+          reply_to_content: msg.reply_to_content ? (msg.reply_to_content.length > 100 ? msg.reply_to_content.slice(0, 100) + '...' : msg.reply_to_content) : null,
+          reply_to_sender: msg.reply_to_sender,
+          edited_at: msg.edited_at,
+          is_deleted: msg.deleted_at !== null,
+          reactions: reactionRows.map((r) => ({
+            emoji: r.emoji,
+            count: r.count,
+            reacted_by_me: r.reacted_by_me === 1,
+          })),
+          read_by_count: readCountRow?.cnt ?? 0,
+        });
+      }
+
+      return c.json({ data: enriched, has_more: newMsgs.length === 50 });
+    }
+
+    // Wait 2 seconds before next check (except on last iteration)
+    if (i < maxChecks - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+  }
+
+  // Timeout — return empty
+  return c.json({ data: [], has_more: false });
+});
+
+// ─── POST /groups/:id/typing — set typing indicator ─────────────────────────
+
+susu.post('/groups/:id/typing', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  const myMember = await c.env.DB.prepare(
+    `SELECT id, display_name FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string; display_name: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Store typing state in KV as JSON object: { [memberId]: { name, timestamp } }
+  const kvKey = `typing:${groupId}`;
+  const existing = await c.env.KV.get<Record<string, { name: string; ts: number }>>(kvKey, 'json');
+  const typingMap = existing ?? {};
+
+  typingMap[myMember.id] = { name: myMember.display_name, ts: Date.now() };
+
+  // Clean up entries older than 5 seconds
+  const cutoff = Date.now() - 5000;
+  for (const [key, val] of Object.entries(typingMap)) {
+    if (val.ts < cutoff) delete typingMap[key];
+  }
+
+  await c.env.KV.put(kvKey, JSON.stringify(typingMap), { expirationTtl: 10 });
+
+  return c.body(null, 204);
+});
+
+// ─── GET /groups/:id/typing — get typing indicators ─────────────────────────
+
+susu.get('/groups/:id/typing', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  const kvKey = `typing:${groupId}`;
+  const typingMap = await c.env.KV.get<Record<string, { name: string; ts: number }>>(kvKey, 'json');
+
+  if (!typingMap) {
+    return c.json({ data: [] });
+  }
+
+  const cutoff = Date.now() - 5000;
+  const typingUsers = Object.entries(typingMap)
+    .filter(([memberId, val]) => val.ts >= cutoff && memberId !== myMember.id)
+    .map(([memberId, val]) => ({
+      member_id: memberId,
+      display_name: val.name,
+    }));
+
+  return c.json({ data: typingUsers });
+});
+
+// ─── POST /groups/:id/messages/read — mark messages as read ─────────────────
+
+susu.post('/groups/:id/messages/read', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  let body: { last_message_id: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: { code: 'INVALID_JSON', message: 'Invalid JSON body' } }, 400);
+  }
+
+  if (!body.last_message_id || typeof body.last_message_id !== 'string') {
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: 'last_message_id is required' } }, 422);
+  }
+
+  // Verify message exists in this group
+  const msgExists = await c.env.DB.prepare(
+    `SELECT id FROM susu_messages WHERE id = ? AND group_id = ?`
+  ).bind(body.last_message_id, groupId).first<{ id: string }>();
+
+  if (!msgExists) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Message not found' } }, 404);
+  }
+
+  await c.env.DB.prepare(
+    `INSERT INTO chat_read_receipts (member_id, group_id, last_read_message_id, last_read_at)
+     VALUES (?, ?, ?, datetime('now'))
+     ON CONFLICT(member_id, group_id)
+     DO UPDATE SET last_read_message_id = excluded.last_read_message_id, last_read_at = excluded.last_read_at`
+  ).bind(myMember.id, groupId, body.last_message_id).run();
+
+  return c.body(null, 204);
 });
 
 // ─── POST /groups/:id/messages — send a chat message ─────────────────────────
@@ -2262,8 +2592,9 @@ susu.post('/groups/:id/messages', async (c) => {
     `INSERT INTO susu_messages (id, group_id, member_id, content) VALUES (?, ?, ?, ?)`
   ).bind(messageId, groupId, myMember.id, parsed.data.content).run();
 
-  const message = await c.env.DB.prepare(
-    `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id
+  const row = await c.env.DB.prepare(
+    `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+            m.reply_to_id, m.edited_at, m.deleted_at
      FROM susu_messages m
      JOIN susu_members sm ON m.member_id = sm.id
      WHERE m.id = ?`
@@ -2273,7 +2604,25 @@ susu.post('/groups/:id/messages', async (c) => {
     created_at: string;
     sender_name: string;
     sender_user_id: string;
+    reply_to_id: string | null;
+    edited_at: string | null;
+    deleted_at: string | null;
   }>();
+
+  const message = row ? {
+    id: row.id,
+    content: row.content,
+    sender_name: row.sender_name,
+    sender_user_id: row.sender_user_id,
+    created_at: row.created_at,
+    reply_to_id: row.reply_to_id,
+    reply_to_content: null,
+    reply_to_sender: null,
+    edited_at: row.edited_at,
+    is_deleted: false,
+    reactions: [] as Array<{ emoji: string; count: number; reacted_by_me: boolean }>,
+    read_by_count: 0,
+  } : null;
 
   return c.json({ data: message }, 201);
 });

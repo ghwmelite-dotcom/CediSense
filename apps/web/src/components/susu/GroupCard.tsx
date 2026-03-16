@@ -2,7 +2,7 @@ import type { SusuGroup, SusuFrequency, SusuVariant } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 
 interface GroupCardProps {
-  group: SusuGroup & { member_count: number };
+  group: SusuGroup & { member_count: number; unread_count?: number };
   isCreator: boolean;
   onClick: () => void;
 }
@@ -56,18 +56,25 @@ export function GroupCard({ group, isCreator, onClick }: GroupCardProps) {
         hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5 active:scale-[0.99]
         transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
     >
-      {/* Row 1: group name + role badge */}
+      {/* Row 1: group name + role badge + unread badge */}
       <div className="flex items-center justify-between gap-3">
         <p className="text-white font-semibold text-base truncate flex-1">{group.name}</p>
-        {isCreator ? (
-          <span className="shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gold/20 text-gold">
-            Creator
-          </span>
-        ) : (
-          <span className="shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/10 text-muted">
-            Member
-          </span>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {(group.unread_count ?? 0) > 0 && (
+            <span className="min-w-[20px] h-5 flex items-center justify-center rounded-full bg-expense text-white text-[10px] font-bold px-1.5">
+              {(group.unread_count ?? 0) > 99 ? '99+' : group.unread_count}
+            </span>
+          )}
+          {isCreator ? (
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gold/20 text-gold">
+              Creator
+            </span>
+          ) : (
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/10 text-muted">
+              Member
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Row 2: contribution amount + member count + round */}

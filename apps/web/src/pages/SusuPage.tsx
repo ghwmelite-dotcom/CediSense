@@ -9,7 +9,7 @@ import { JoinGroupModal } from '@/components/susu/JoinGroupModal';
 import { ContributionReceipt as ContributionReceiptModal } from '@/components/susu/ContributionReceipt';
 import { CreditCertificateView } from '@/components/susu/CreditCertificateView';
 
-type SusuGroupWithCount = SusuGroup & { member_count: number };
+type SusuGroupWithCount = SusuGroup & { member_count: number; unread_count?: number };
 
 type JoinError = 'invalid' | 'full' | 'already_member' | null;
 

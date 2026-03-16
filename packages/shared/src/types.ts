@@ -678,6 +678,7 @@ export interface SusuGroupWithDetails extends SusuGroup {
   bulk_purchase_info: BulkPurchaseInfo | null;
   agricultural_info: AgriculturalInfo | null;
   welfare_info: WelfareInfo | null;
+  unread_count: number;
 }
 
 export interface ContributionReceipt {
@@ -752,6 +753,18 @@ export interface SusuMessage {
   sender_name: string;
   sender_user_id: string;
   created_at: string;
+  reply_to_id: string | null;
+  reply_to_content: string | null;
+  reply_to_sender: string | null;
+  edited_at: string | null;
+  is_deleted: boolean;
+  reactions: Array<{ emoji: string; count: number; reacted_by_me: boolean }>;
+  read_by_count: number;
+}
+
+export interface TypingUser {
+  member_id: string;
+  display_name: string;
 }
 
 // ─── Gamification types ───────────────────────────────────────────────────────

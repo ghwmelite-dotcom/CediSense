@@ -189,13 +189,18 @@ export function GroupDetail({
         <button
           type="button"
           onClick={() => setActiveTab('chat')}
-          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all min-h-[40px]
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all min-h-[40px] relative
             ${activeTab === 'chat'
               ? 'bg-gold text-ghana-dark shadow-sm'
               : 'text-muted hover:text-white'
             }`}
         >
           Chat
+          {(group.unread_count ?? 0) > 0 && activeTab !== 'chat' && (
+            <span className="absolute top-1.5 right-2 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-expense text-white text-[9px] font-bold px-1">
+              {(group.unread_count ?? 0) > 99 ? '99+' : group.unread_count}
+            </span>
+          )}
         </button>
       </div>
 
