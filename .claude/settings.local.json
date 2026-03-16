@@ -174,7 +174,8 @@
       "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx vitest run src/lib/susu-helpers.test.ts 2>&1)",
       "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx vitest run 2>&1)",
       "WebFetch(domain:www.ynab.com)",
-      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx vitest run 2>&1 | tail -30)"
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx vitest run 2>&1 | tail -30)",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense/apps/web\" && npx vitest run 2>&1)"
     ]
   }
 }
