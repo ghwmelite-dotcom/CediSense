@@ -1,6 +1,10 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
+interface BottomNavProps {
+  susuUnreadCount?: number;
+}
+
 const primaryItems = [
   { to: '/dashboard', label: 'Home', icon: '🏠' },
   { to: '/transactions', label: 'Txns', icon: '📋' },
@@ -8,7 +12,7 @@ const primaryItems = [
 ];
 
 const moreItems = [
-  { to: '/susu', label: 'Susu Groups', icon: '🤝', highlight: true },
+  { to: '/susu', label: 'Susu Groups', icon: '🤝', highlight: true, badge: 'susu' as const },
   { to: '/budgets', label: 'Budgets', icon: '📊' },
   { to: '/goals', label: 'Goals', icon: '🎯' },
   { to: '/investments', label: 'Investments', icon: '📈' },
@@ -18,7 +22,7 @@ const moreItems = [
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
-export function BottomNav() {
+export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -33,28 +37,38 @@ export function BottomNav() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="grid grid-cols-4 gap-1">
-              {moreItems.map((item) => (
-                <button
-                  key={item.to}
-                  type="button"
-                  onClick={() => { navigate(item.to); setMoreOpen(false); }}
-                  className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl transition-colors duration-150 ${
-                    item.highlight
-                      ? 'bg-gold/[0.06] hover:bg-gold/[0.1]'
-                      : 'hover:bg-white/[0.03]'
-                  }`}
-                >
-                  <span className="text-xl">{item.icon}</span>
-                  <span className={`text-[10px] font-medium leading-tight text-center ${
-                    item.highlight ? 'text-gold' : 'text-muted'
-                  }`}>
-                    {item.label}
-                  </span>
-                  {item.highlight && (
-                    <span className="text-[8px] font-bold uppercase tracking-wider bg-gold/10 text-gold px-1 py-px rounded">New</span>
-                  )}
-                </button>
-              ))}
+              {moreItems.map((item) => {
+                const badgeCount = 'badge' in item && item.badge === 'susu' ? susuUnreadCount : 0;
+                return (
+                  <button
+                    key={item.to}
+                    type="button"
+                    onClick={() => { navigate(item.to); setMoreOpen(false); }}
+                    className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl transition-colors duration-150 relative ${
+                      item.highlight
+                        ? 'bg-gold/[0.06] hover:bg-gold/[0.1]'
+                        : 'hover:bg-white/[0.03]'
+                    }`}
+                  >
+                    <span className="text-xl relative">
+                      {item.icon}
+                      {badgeCount > 0 && (
+                        <span className="absolute -top-1 -right-2 min-w-[16px] h-[16px] flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold leading-none px-0.5">
+                          {badgeCount > 99 ? '99+' : badgeCount}
+                        </span>
+                      )}
+                    </span>
+                    <span className={`text-[10px] font-medium leading-tight text-center ${
+                      item.highlight ? 'text-gold' : 'text-muted'
+                    }`}>
+                      {item.label}
+                    </span>
+                    {item.highlight && badgeCount === 0 && (
+                      <span className="text-[8px] font-bold uppercase tracking-wider bg-gold/10 text-gold px-1 py-px rounded">New</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -118,7 +132,12 @@ export function BottomNav() {
             moreOpen ? 'text-gold' : 'text-muted hover:text-text-primary/70'
           }`}
         >
-          <span className="text-xl leading-none">☰</span>
+          <span className="text-xl leading-none relative">
+            ☰
+            {susuUnreadCount > 0 && !moreOpen && (
+              <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-[#0C0C14]" />
+            )}
+          </span>
           <span className="text-[10px] font-medium leading-none">More</span>
           {moreOpen && (
             <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold" />

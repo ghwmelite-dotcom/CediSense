@@ -760,6 +760,10 @@ export interface SusuMessage {
   is_deleted: boolean;
   reactions: Array<{ emoji: string; count: number; reacted_by_me: boolean }>;
   read_by_count: number;
+  attachment_url: string | null;
+  attachment_type: string | null;
+  attachment_name: string | null;
+  attachment_size: number | null;
 }
 
 export interface TypingUser {

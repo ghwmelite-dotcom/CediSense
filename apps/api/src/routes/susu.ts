@@ -2243,6 +2243,10 @@ susu.get('/groups/:id/messages', async (c) => {
     reply_to_sender: string | null;
     edited_at: string | null;
     deleted_at: string | null;
+    attachment_key: string | null;
+    attachment_type: string | null;
+    attachment_name: string | null;
+    attachment_size: number | null;
   }
 
   let query: string;
@@ -2260,6 +2264,7 @@ susu.get('/groups/:id/messages', async (c) => {
     query = `
       SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
              m.reply_to_id, m.edited_at, m.deleted_at,
+             m.attachment_key, m.attachment_type, m.attachment_name, m.attachment_size,
              rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
       FROM susu_messages m
       JOIN susu_members sm ON m.member_id = sm.id
@@ -2274,6 +2279,7 @@ susu.get('/groups/:id/messages', async (c) => {
     query = `
       SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
              m.reply_to_id, m.edited_at, m.deleted_at,
+             m.attachment_key, m.attachment_type, m.attachment_name, m.attachment_size,
              rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
       FROM susu_messages m
       JOIN susu_members sm ON m.member_id = sm.id
@@ -2294,7 +2300,6 @@ susu.get('/groups/:id/messages', async (c) => {
   const rawMessages = [...results].reverse();
 
   // Enrich with reactions and read_by_count
-  const messageIds = rawMessages.map((m) => m.id);
   const messages = [];
 
   // Get total member count for read receipt calculation
@@ -2337,6 +2342,10 @@ susu.get('/groups/:id/messages', async (c) => {
         reacted_by_me: r.reacted_by_me === 1,
       })),
       read_by_count: readCountRow?.cnt ?? 0,
+      attachment_url: msg.attachment_key ? `/susu/groups/${groupId}/messages/${msg.id}/attachment` : null,
+      attachment_type: msg.attachment_type,
+      attachment_name: msg.attachment_name,
+      attachment_size: msg.attachment_size,
     });
   }
 
@@ -2371,6 +2380,10 @@ susu.get('/groups/:id/messages/poll', async (c) => {
     reply_to_sender: string | null;
     edited_at: string | null;
     deleted_at: string | null;
+    attachment_key: string | null;
+    attachment_type: string | null;
+    attachment_name: string | null;
+    attachment_size: number | null;
   }
 
   const checkForNew = async (): Promise<MessageRow[]> => {
@@ -2385,6 +2398,7 @@ susu.get('/groups/:id/messages/poll', async (c) => {
     const { results } = await c.env.DB.prepare(
       `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
               m.reply_to_id, m.edited_at, m.deleted_at,
+              m.attachment_key, m.attachment_type, m.attachment_name, m.attachment_size,
               rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
        FROM susu_messages m
        JOIN susu_members sm ON m.member_id = sm.id
@@ -2437,6 +2451,10 @@ susu.get('/groups/:id/messages/poll', async (c) => {
             reacted_by_me: r.reacted_by_me === 1,
           })),
           read_by_count: readCountRow?.cnt ?? 0,
+          attachment_url: msg.attachment_key ? `/susu/groups/${groupId}/messages/${msg.id}/attachment` : null,
+          attachment_type: msg.attachment_type,
+          attachment_name: msg.attachment_name,
+          attachment_size: msg.attachment_size,
         });
       }
 
@@ -2640,6 +2658,10 @@ susu.post('/groups/:id/messages', async (c) => {
     is_deleted: false,
     reactions: [] as Array<{ emoji: string; count: number; reacted_by_me: boolean }>,
     read_by_count: 0,
+    attachment_url: null,
+    attachment_type: null,
+    attachment_name: null,
+    attachment_size: null,
   } : null;
 
   return c.json({ data: message }, 201);
@@ -2774,6 +2796,7 @@ susu.put('/groups/:id/messages/:messageId', async (c) => {
   const row = await c.env.DB.prepare(
     `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
             m.reply_to_id, m.edited_at, m.deleted_at,
+            m.attachment_key, m.attachment_type, m.attachment_name, m.attachment_size,
             rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
      FROM susu_messages m
      JOIN susu_members sm ON m.member_id = sm.id
@@ -2784,6 +2807,7 @@ susu.put('/groups/:id/messages/:messageId', async (c) => {
     id: string; content: string; created_at: string; sender_name: string; sender_user_id: string;
     reply_to_id: string | null; reply_to_content: string | null; reply_to_sender: string | null;
     edited_at: string | null; deleted_at: string | null;
+    attachment_key: string | null; attachment_type: string | null; attachment_name: string | null; attachment_size: number | null;
   }>();
 
   if (!row) {
@@ -2811,6 +2835,10 @@ susu.put('/groups/:id/messages/:messageId', async (c) => {
       is_deleted: false,
       reactions: reactionRows.map((r) => ({ emoji: r.emoji, count: r.count, reacted_by_me: r.reacted_by_me === 1 })),
       read_by_count: 0,
+      attachment_url: row.attachment_key ? `/susu/groups/${groupId}/messages/${row.id}/attachment` : null,
+      attachment_type: row.attachment_type,
+      attachment_name: row.attachment_name,
+      attachment_size: row.attachment_size,
     },
   });
 });
@@ -2877,6 +2905,7 @@ susu.get('/groups/:id/messages/search', async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
             m.reply_to_id, m.edited_at, m.deleted_at,
+            m.attachment_key, m.attachment_type, m.attachment_name, m.attachment_size,
             rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
      FROM susu_messages m
      JOIN susu_members sm ON m.member_id = sm.id
@@ -2889,6 +2918,7 @@ susu.get('/groups/:id/messages/search', async (c) => {
     id: string; content: string; created_at: string; sender_name: string; sender_user_id: string;
     reply_to_id: string | null; reply_to_content: string | null; reply_to_sender: string | null;
     edited_at: string | null; deleted_at: string | null;
+    attachment_key: string | null; attachment_type: string | null; attachment_name: string | null; attachment_size: number | null;
   }>();
 
   const messages = [];
@@ -2912,6 +2942,10 @@ susu.get('/groups/:id/messages/search', async (c) => {
       is_deleted: false,
       reactions: reactionRows.map((r) => ({ emoji: r.emoji, count: r.count, reacted_by_me: r.reacted_by_me === 1 })),
       read_by_count: 0,
+      attachment_url: msg.attachment_key ? `/susu/groups/${groupId}/messages/${msg.id}/attachment` : null,
+      attachment_type: msg.attachment_type,
+      attachment_name: msg.attachment_name,
+      attachment_size: msg.attachment_size,
     });
   }
 
@@ -3707,6 +3741,192 @@ susu.post('/groups/:id/welfare-claim/:claimId/pay', async (c) => {
   ).bind(claimId).first<WelfareClaimRow & { claimant_name: string }>();
 
   return c.json({ data: updated });
+});
+
+// ─── POST /groups/:id/messages/upload — upload file and create message ────────
+
+const ALLOWED_ATTACHMENT_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'application/pdf',
+]);
+const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5 MB
+
+susu.post('/groups/:id/messages/upload', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  let formData: FormData;
+  try {
+    formData = await c.req.formData();
+  } catch {
+    return c.json({ error: { code: 'INVALID_BODY', message: 'Expected multipart/form-data' } }, 400);
+  }
+
+  const file = formData.get('file');
+  const contentText = (formData.get('content') as string | null) ?? '';
+
+  if (!file || !(file instanceof File)) {
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: 'No file provided' } }, 400);
+  }
+
+  if (!ALLOWED_ATTACHMENT_TYPES.has(file.type)) {
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: 'File type not allowed. Accepted: JPEG, PNG, GIF, PDF' } }, 400);
+  }
+
+  if (file.size > MAX_ATTACHMENT_SIZE) {
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: 'File too large. Maximum size is 5 MB' } }, 400);
+  }
+
+  const messageId = generateId();
+  const safeFilename = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const r2Key = `chat/${groupId}/${messageId}/${safeFilename}`;
+
+  // Upload to R2
+  await c.env.R2.put(r2Key, file.stream(), {
+    httpMetadata: {
+      contentType: file.type,
+    },
+  });
+
+  // Insert message with attachment fields
+  const messageContent = contentText.trim().slice(0, 500);
+  await c.env.DB.prepare(
+    `INSERT INTO susu_messages (id, group_id, member_id, content, attachment_key, attachment_type, attachment_name, attachment_size)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(messageId, groupId, myMember.id, messageContent, r2Key, file.type, file.name, file.size).run();
+
+  // Fetch the created message
+  const row = await c.env.DB.prepare(
+    `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+            m.reply_to_id, m.edited_at, m.deleted_at,
+            m.attachment_key, m.attachment_type, m.attachment_name, m.attachment_size,
+            rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
+     FROM susu_messages m
+     JOIN susu_members sm ON m.member_id = sm.id
+     LEFT JOIN susu_messages rm ON m.reply_to_id = rm.id
+     LEFT JOIN susu_members rsm ON rm.member_id = rsm.id
+     WHERE m.id = ?`
+  ).bind(messageId).first<{
+    id: string; content: string; created_at: string; sender_name: string; sender_user_id: string;
+    reply_to_id: string | null; reply_to_content: string | null; reply_to_sender: string | null;
+    edited_at: string | null; deleted_at: string | null;
+    attachment_key: string | null; attachment_type: string | null; attachment_name: string | null; attachment_size: number | null;
+  }>();
+
+  const message = row ? {
+    id: row.id,
+    content: row.content,
+    sender_name: row.sender_name,
+    sender_user_id: row.sender_user_id,
+    created_at: row.created_at,
+    reply_to_id: row.reply_to_id,
+    reply_to_content: null,
+    reply_to_sender: null,
+    edited_at: null,
+    is_deleted: false,
+    reactions: [] as Array<{ emoji: string; count: number; reacted_by_me: boolean }>,
+    read_by_count: 0,
+    attachment_url: `/susu/groups/${groupId}/messages/${row.id}/attachment`,
+    attachment_type: row.attachment_type,
+    attachment_name: row.attachment_name,
+    attachment_size: row.attachment_size,
+  } : null;
+
+  return c.json({ data: message }, 201);
+});
+
+// ─── GET /groups/:id/messages/:messageId/attachment — stream attachment from R2 ──
+
+susu.get('/groups/:id/messages/:messageId/attachment', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const messageId = c.req.param('messageId');
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Get attachment info
+  const msg = await c.env.DB.prepare(
+    `SELECT attachment_key, attachment_type, attachment_name FROM susu_messages WHERE id = ? AND group_id = ? AND deleted_at IS NULL`
+  ).bind(messageId, groupId).first<{ attachment_key: string | null; attachment_type: string | null; attachment_name: string | null }>();
+
+  if (!msg?.attachment_key) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Attachment not found' } }, 404);
+  }
+
+  const object = await c.env.R2.get(msg.attachment_key);
+  if (!object) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'File not found in storage' } }, 404);
+  }
+
+  const headers = new Headers();
+  headers.set('Content-Type', msg.attachment_type ?? 'application/octet-stream');
+  headers.set('Content-Disposition', `inline; filename="${msg.attachment_name ?? 'attachment'}"`);
+  headers.set('Cache-Control', 'private, max-age=3600');
+
+  return new Response(object.body, { headers });
+});
+
+// ─── GET /unread-total — total unread messages across all groups ─────────────
+
+susu.get('/unread-total', async (c) => {
+  const userId = c.get('userId');
+
+  // Get all groups the user is a member of
+  const { results: memberships } = await c.env.DB.prepare(
+    `SELECT sm.id AS member_id, sm.group_id
+     FROM susu_members sm
+     WHERE sm.user_id = ?`
+  ).bind(userId).all<{ member_id: string; group_id: string }>();
+
+  if (memberships.length === 0) {
+    return c.json({ data: { total: 0 } });
+  }
+
+  let total = 0;
+
+  for (const mem of memberships) {
+    const receipt = await c.env.DB.prepare(
+      `SELECT last_read_message_id FROM chat_read_receipts WHERE member_id = ? AND group_id = ?`
+    ).bind(mem.member_id, mem.group_id).first<{ last_read_message_id: string | null }>();
+
+    if (receipt?.last_read_message_id) {
+      const cursorRow = await c.env.DB.prepare(
+        `SELECT rowid FROM susu_messages WHERE id = ?`
+      ).bind(receipt.last_read_message_id).first<{ rowid: number }>();
+
+      if (cursorRow) {
+        const countRow = await c.env.DB.prepare(
+          `SELECT COUNT(*) AS cnt FROM susu_messages WHERE group_id = ? AND rowid > ? AND deleted_at IS NULL`
+        ).bind(mem.group_id, cursorRow.rowid).first<{ cnt: number }>();
+        total += countRow?.cnt ?? 0;
+      }
+    } else {
+      // No read receipt — all messages are unread
+      const countRow = await c.env.DB.prepare(
+        `SELECT COUNT(*) AS cnt FROM susu_messages WHERE group_id = ? AND deleted_at IS NULL`
+      ).bind(mem.group_id).first<{ cnt: number }>();
+      total += countRow?.cnt ?? 0;
+    }
+  }
+
+  return c.json({ data: { total } });
 });
 
 export { susu };

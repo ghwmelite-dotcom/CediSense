@@ -118,6 +118,74 @@ export class ApiRequestError extends Error {
   }
 }
 
+/**
+ * Upload a file via multipart/form-data (no JSON Content-Type header).
+ */
+async function uploadFile<T>(
+  path: string,
+  formData: FormData,
+  onProgress?: (percent: number) => void,
+): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+
+  // Use XMLHttpRequest for progress tracking if callback provided
+  if (onProgress) {
+    return new Promise<T>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API_BASE}${path}`);
+
+      for (const [k, v] of Object.entries(headers)) {
+        xhr.setRequestHeader(k, v);
+      }
+      xhr.withCredentials = true;
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        try {
+          const json = JSON.parse(xhr.responseText);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve((json as ApiSuccess<T>).data);
+          } else {
+            const error = json as ApiError;
+            reject(new ApiRequestError(error.error.message, error.error.code, xhr.status, error.error.details));
+          }
+        } catch {
+          reject(new ApiRequestError('Invalid response', 'PARSE_ERROR', xhr.status));
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        reject(new ApiRequestError('Network error', 'NETWORK_ERROR', 0));
+      });
+
+      xhr.send(formData);
+    });
+  }
+
+  // Simple fetch for no-progress case
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers,
+    body: formData,
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+  if (!response.ok) {
+    const error = json as ApiError;
+    throw new ApiRequestError(error.error.message, error.error.code, response.status, error.error.details);
+  }
+  return (json as ApiSuccess<T>).data;
+}
+
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) =>
@@ -125,4 +193,6 @@ export const api = {
   put: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'PUT', body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  upload: <T>(path: string, formData: FormData, onProgress?: (percent: number) => void) =>
+    uploadFile<T>(path, formData, onProgress),
 };

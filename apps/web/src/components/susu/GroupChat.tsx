@@ -1,6 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type ChangeEvent } from 'react';
 import type { SusuMessage, TypingUser } from '@cedisense/shared';
 import { api } from '../../lib/api';
+
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 interface GroupChatProps {
   groupId: string;
@@ -61,6 +70,14 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SusuMessage[]>([]);
   const [searching, setSearching] = useState(false);
+
+  // Upload state
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Lightbox state
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -205,6 +222,56 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
       setSending(false);
     }
   }, [content, groupId, sending, markAsRead, replyTo]);
+
+  // ─── Upload file ─────────────────────────────────────────────────────────
+  const handleFileSelect = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      setError('Only JPEG, PNG, GIF, and PDF files are allowed.');
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setError('File too large. Maximum size is 5 MB.');
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (content.trim()) {
+        formData.append('content', content.trim());
+      }
+
+      const msg = await api.upload<SusuMessage>(
+        `/susu/groups/${groupId}/messages/upload`,
+        formData,
+        (percent) => setUploadProgress(percent),
+      );
+
+      setMessages((prev) => {
+        const merged = [...prev, msg];
+        newestIdRef.current = msg.id;
+        if (prev.length === 0) oldestIdRef.current = msg.id;
+        return merged;
+      });
+      setContent('');
+      void markAsRead(msg.id);
+    } catch {
+      setError('Failed to upload file.');
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  }, [content, groupId, markAsRead]);
 
   // ─── React to message ────────────────────────────────────────────────────
   const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
@@ -612,15 +679,62 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
                     </div>
                   ) : (
                     <div
-                      className={`text-sm py-2 px-3 leading-relaxed break-words
+                      className={`text-sm leading-relaxed break-words overflow-hidden
                         ${msg.is_deleted
-                          ? 'bg-white/5 text-muted italic rounded-2xl border border-white/[0.06]'
+                          ? 'bg-white/5 text-muted italic rounded-2xl border border-white/[0.06] py-2 px-3'
                           : isOwn
-                            ? 'bg-gold/15 text-white rounded-2xl rounded-br-md'
-                            : 'bg-[#1D1D30] text-white rounded-2xl rounded-bl-md border border-white/[0.08]'
+                            ? `bg-gold/15 text-white rounded-2xl rounded-br-md ${msg.attachment_url ? 'p-1' : 'py-2 px-3'}`
+                            : `bg-[#1D1D30] text-white rounded-2xl rounded-bl-md border border-white/[0.08] ${msg.attachment_url ? 'p-1' : 'py-2 px-3'}`
                         }`}
                     >
-                      {msg.is_deleted ? 'This message was deleted' : msg.content}
+                      {msg.is_deleted ? (
+                        'This message was deleted'
+                      ) : (
+                        <>
+                          {/* Image attachment */}
+                          {msg.attachment_url && msg.attachment_type?.startsWith('image/') && (
+                            <button
+                              type="button"
+                              onClick={() => setLightboxUrl(`/api/v1${msg.attachment_url}`)}
+                              className="block w-full cursor-pointer"
+                              aria-label={`View image: ${msg.attachment_name}`}
+                            >
+                              <img
+                                src={`/api/v1${msg.attachment_url}`}
+                                alt={msg.attachment_name ?? 'Attached image'}
+                                className="max-w-[300px] w-full rounded-xl border border-white/[0.06] object-cover"
+                                loading="lazy"
+                              />
+                            </button>
+                          )}
+                          {/* PDF attachment */}
+                          {msg.attachment_url && msg.attachment_type === 'application/pdf' && (
+                            <a
+                              href={`/api/v1${msg.attachment_url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 bg-[#1D1D30] rounded-xl p-3 border border-white/[0.06] hover:bg-white/5 transition-colors min-w-[200px]"
+                            >
+                              <svg className="w-8 h-8 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                              </svg>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-medium text-white truncate">{msg.attachment_name ?? 'Document.pdf'}</p>
+                                <p className="text-[10px] text-muted">{msg.attachment_size ? formatFileSize(msg.attachment_size) : 'PDF'}</p>
+                              </div>
+                              <svg className="w-4 h-4 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                            </a>
+                          )}
+                          {/* Text content (caption for attachments, or standalone message) */}
+                          {msg.content && (
+                            <span className={msg.attachment_url ? 'block px-2 py-1.5 text-sm' : ''}>
+                              {msg.content}
+                            </span>
+                          )}
+                        </>
+                      )}
                       {msg.edited_at && !msg.is_deleted && (
                         <span className="text-[10px] text-muted/60 ml-1.5">(edited)</span>
                       )}
@@ -823,8 +937,26 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
         </div>
       )}
 
+      {/* Upload progress bar */}
+      {uploading && (
+        <div className="h-1 bg-white/5">
+          <div
+            className="h-full bg-gold transition-all duration-300 ease-out"
+            style={{ width: `${uploadProgress}%` }}
+          />
+        </div>
+      )}
+
       {/* Input bar */}
       <div className="sticky bottom-0 border-t border-white/10 bg-ghana-surface/80 backdrop-blur-md px-4 py-3">
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/gif,application/pdf"
+          className="hidden"
+          onChange={(e) => void handleFileSelect(e)}
+        />
         <div className="flex items-end gap-2">
           {/* Search icon */}
           <button
@@ -851,6 +983,27 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
               placeholder:text-muted text-sm px-3 py-2.5 focus:outline-none focus:border-gold/50
               focus:ring-1 focus:ring-gold/30 transition-all min-h-[44px] max-h-[120px]"
           />
+          {/* Paperclip / attach file button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            aria-label="Attach file"
+            title="Attach image or PDF"
+            className="w-11 h-11 flex items-center justify-center rounded-xl text-muted hover:text-gold
+              hover:bg-white/5 active:scale-95 transition-all disabled:opacity-40 shrink-0"
+          >
+            {uploading ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+              </svg>
+            )}
+          </button>
           <button
             type="button"
             onClick={() => void sendMessage()}
@@ -903,6 +1056,31 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
           {content.length}/500 {'\u00B7'} Enter to send
         </p>
       </div>
+
+      {/* Image lightbox overlay */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxUrl(null)}
+            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-10"
+            aria-label="Close image"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Full-size attachment"
+            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

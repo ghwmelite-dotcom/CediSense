@@ -3,6 +3,7 @@ import { TopBar } from './TopBar';
 import { BottomNav } from './BottomNav';
 import { SideNav } from './SideNav';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useSusuUnread } from '@/hooks/useSusuUnread';
 import { OfflineBanner } from './OfflineBanner';
 import { SyncIndicator } from './SyncIndicator';
 import { InstallBanner } from './InstallBanner';
@@ -10,6 +11,7 @@ import { UpdateBanner } from './UpdateBanner';
 
 export function AppShell() {
   const { isOnline, syncCount, isSyncing, triggerSync } = useOnlineStatus();
+  const susuUnreadCount = useSusuUnread();
   const location = useLocation();
 
   return (
@@ -24,7 +26,7 @@ export function AppShell() {
         aria-hidden="true"
       />
 
-      <SideNav />
+      <SideNav susuUnreadCount={susuUnreadCount} />
 
       <div className="flex-1 flex flex-col relative z-10 min-w-0">
         <TopBar />
@@ -40,7 +42,7 @@ export function AppShell() {
           </div>
         </main>
 
-        <BottomNav />
+        <BottomNav susuUnreadCount={susuUnreadCount} />
       </div>
 
       {/* Sync indicator — now a floating pill in the corner */}
