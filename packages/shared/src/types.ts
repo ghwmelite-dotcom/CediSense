@@ -425,7 +425,7 @@ export interface InvestmentSummary {
 
 export type SusuFrequency = 'daily' | 'weekly' | 'monthly';
 
-export type SusuVariant = 'rotating' | 'accumulating' | 'goal_based' | 'bidding' | 'funeral_fund' | 'school_fees' | 'diaspora' | 'event_fund' | 'bulk_purchase';
+export type SusuVariant = 'rotating' | 'accumulating' | 'goal_based' | 'bidding' | 'funeral_fund' | 'school_fees' | 'diaspora' | 'event_fund' | 'bulk_purchase' | 'agricultural' | 'welfare';
 
 export type DiasporaCurrency = 'GHS' | 'GBP' | 'USD' | 'EUR' | 'CAD';
 
@@ -460,6 +460,13 @@ export interface SusuGroup {
   supplier_contact: string | null;
   item_description: string | null;
   estimated_savings_percent: number | null;
+  // Agricultural fields
+  crop_type: string | null;
+  planting_month: number | null;
+  harvest_month: number | null;
+  // Welfare fields
+  organization_name: string | null;
+  organization_type: 'church' | 'mosque' | 'community' | 'other' | null;
   created_at: string;
   updated_at: string;
 }
@@ -610,6 +617,50 @@ export interface BulkPurchaseInfo {
   estimated_savings_percent: number | null;
 }
 
+// ─── Agricultural types ──────────────────────────────────────────────────────
+
+export type AgriculturalPhase = 'planting' | 'growing' | 'harvest';
+
+export interface AgriculturalInfo {
+  crop_type: string;
+  planting_month: number;
+  harvest_month: number;
+  current_phase: AgriculturalPhase;
+  days_to_next_phase: number;
+  recommended_contribution_schedule: string;
+}
+
+// ─── Welfare types ───────────────────────────────────────────────────────────
+
+export type WelfareClaimType = 'medical' | 'funeral' | 'education' | 'emergency' | 'other';
+export type WelfareClaimStatus = 'pending' | 'approved' | 'partially_approved' | 'denied' | 'paid';
+export type WelfareOrganizationType = 'church' | 'mosque' | 'community' | 'other';
+
+export interface WelfareClaim {
+  id: string;
+  group_id: string;
+  claimant_member_id: string;
+  claimant_name: string;
+  claim_type: WelfareClaimType;
+  description: string;
+  amount_requested_pesewas: number;
+  amount_approved_pesewas: number | null;
+  status: WelfareClaimStatus;
+  approved_by: string | null;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+export interface WelfareInfo {
+  organization_name: string;
+  organization_type: WelfareOrganizationType;
+  total_pool_pesewas: number;
+  total_paid_out_pesewas: number;
+  available_pool_pesewas: number;
+  pending_claims: WelfareClaim[];
+  resolved_claims: WelfareClaim[];
+}
+
 export interface SusuGroupWithDetails extends SusuGroup {
   member_count: number;
   members: Array<SusuMember & { has_contributed_this_round: boolean; trust_score: number; trust_label: string }>;
@@ -625,6 +676,8 @@ export interface SusuGroupWithDetails extends SusuGroup {
   event_fund_info: EventFundInfo | null;
   guarantee_claims: GuaranteeClaim[];
   bulk_purchase_info: BulkPurchaseInfo | null;
+  agricultural_info: AgriculturalInfo | null;
+  welfare_info: WelfareInfo | null;
 }
 
 export interface ContributionReceipt {

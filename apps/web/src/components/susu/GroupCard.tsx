@@ -40,6 +40,10 @@ function variantBadge(variant: SusuVariant): VariantBadgeConfig {
       return { label: 'Funeral Fund', className: 'bg-neutral-700/30 text-amber-300 border-amber-700/40' };
     case 'bulk_purchase':
       return { label: 'Bulk Purchase', className: 'bg-orange-500/15 text-orange-300 border-orange-500/30' };
+    case 'agricultural':
+      return { label: 'Agricultural', className: 'bg-green-600/15 text-green-300 border-green-600/30' };
+    case 'welfare':
+      return { label: 'Welfare', className: 'bg-violet-500/15 text-violet-300 border-violet-500/30' };
   }
 }
 
@@ -122,6 +126,16 @@ export function GroupCard({ group, isCreator, onClick }: GroupCardProps) {
         {group.variant === 'bulk_purchase' && group.estimated_savings_percent != null && group.estimated_savings_percent > 0 && (
           <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-income/10 text-income border border-income/20">
             Save {group.estimated_savings_percent}%
+          </span>
+        )}
+        {group.variant === 'agricultural' && group.crop_type && (
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-600/10 text-green-300 border border-green-600/20 truncate max-w-[140px]">
+            {group.crop_type}
+          </span>
+        )}
+        {group.variant === 'welfare' && group.organization_type && (
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/20">
+            {group.organization_type === 'church' ? '\u26EA Church' : group.organization_type === 'mosque' ? '\uD83D\uDD4C Mosque' : group.organization_type === 'community' ? '\uD83C\uDFD8\uFE0F Community' : 'Other'}
           </span>
         )}
         {group.guarantee_percent > 0 && (

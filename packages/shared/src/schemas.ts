@@ -285,7 +285,7 @@ export type UpdateInvestmentInput = z.infer<typeof updateInvestmentSchema>;
 
 // ─── Susu schemas ─────────────────────────────────────────────────────────────
 
-export const SUSU_VARIANTS = ['rotating', 'accumulating', 'goal_based', 'bidding', 'funeral_fund', 'school_fees', 'diaspora', 'event_fund', 'bulk_purchase'] as const;
+export const SUSU_VARIANTS = ['rotating', 'accumulating', 'goal_based', 'bidding', 'funeral_fund', 'school_fees', 'diaspora', 'event_fund', 'bulk_purchase', 'agricultural', 'welfare'] as const;
 export const DIASPORA_CURRENCIES = ['GHS', 'GBP', 'USD', 'EUR', 'CAD'] as const;
 
 export const createSusuGroupSchema = z.object({
@@ -311,6 +311,13 @@ export const createSusuGroupSchema = z.object({
   supplier_contact: z.string().max(200).optional(),
   item_description: z.string().max(500).optional(),
   estimated_savings_percent: z.number().int().min(0).max(100).optional(),
+  // Agricultural fields
+  crop_type: z.string().max(100).optional(),
+  planting_month: z.number().int().min(1).max(12).optional(),
+  harvest_month: z.number().int().min(1).max(12).optional(),
+  // Welfare fields
+  organization_name: z.string().max(200).optional(),
+  organization_type: z.enum(['church', 'mosque', 'community', 'other']).optional(),
 }).refine(
   (data) => data.variant !== 'goal_based' || data.goal_amount_pesewas !== undefined,
   { message: 'goal_amount_pesewas is required for goal_based variant', path: ['goal_amount_pesewas'] }
@@ -320,6 +327,12 @@ export const createSusuGroupSchema = z.object({
 ).refine(
   (data) => data.variant !== 'bulk_purchase' || data.supplier_name !== undefined,
   { message: 'supplier_name is required for bulk_purchase variant', path: ['supplier_name'] }
+).refine(
+  (data) => data.variant !== 'agricultural' || (data.crop_type !== undefined && data.planting_month !== undefined && data.harvest_month !== undefined),
+  { message: 'crop_type, planting_month, and harvest_month are required for agricultural variant', path: ['crop_type'] }
+).refine(
+  (data) => data.variant !== 'welfare' || (data.organization_name !== undefined && data.organization_type !== undefined),
+  { message: 'organization_name and organization_type are required for welfare variant', path: ['organization_name'] }
 );
 
 export const joinSusuGroupSchema = z.object({
@@ -394,6 +407,21 @@ export const guaranteeClaimSchema = z.object({
 });
 
 export type GuaranteeClaimInput = z.infer<typeof guaranteeClaimSchema>;
+
+// ─── Welfare Claim schemas ──────────────────────────────────────────────────
+
+export const welfareClaimSchema = z.object({
+  claim_type: z.enum(['medical', 'funeral', 'education', 'emergency', 'other']),
+  description: z.string().min(1).max(500),
+  amount_requested_pesewas: z.number().int().positive(),
+});
+
+export const welfareClaimApproveSchema = z.object({
+  amount_approved_pesewas: z.number().int().positive().optional(),
+});
+
+export type WelfareClaimInput = z.infer<typeof welfareClaimSchema>;
+export type WelfareClaimApproveInput = z.infer<typeof welfareClaimApproveSchema>;
 
 // ─── Collector schemas ──────────────────────────────────────────────────────
 

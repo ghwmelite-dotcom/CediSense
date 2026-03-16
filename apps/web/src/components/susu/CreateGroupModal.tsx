@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { SusuFrequency, SusuVariant, DiasporaCurrency } from '@cedisense/shared';
 import { AmountInput } from '@/components/transactions/AmountInput';
 
+import type { WelfareOrganizationType } from '@cedisense/shared';
+
 interface CreateGroupData {
   name: string;
   contribution_pesewas: number;
@@ -20,6 +22,11 @@ interface CreateGroupData {
   supplier_contact?: string;
   item_description?: string;
   estimated_savings_percent?: number;
+  crop_type?: string;
+  planting_month?: number;
+  harvest_month?: number;
+  organization_name?: string;
+  organization_type?: WelfareOrganizationType;
 }
 
 interface CreateGroupModalProps {
@@ -38,6 +45,8 @@ const VARIANT_OPTIONS: { value: SusuVariant; label: string; description: string;
   { value: 'event_fund', label: 'Event Fund', description: 'Crowdfund a wedding, naming ceremony, or event' },
   { value: 'bulk_purchase', label: 'Bulk Purchase', description: 'Pool money to buy inventory at wholesale prices' },
   { value: 'funeral_fund', label: 'Funeral Fund', description: 'Emergency bereavement support for your family' },
+  { value: 'agricultural', label: 'Agricultural', description: 'Timed to Ghana farming seasons for crop inputs' },
+  { value: 'welfare', label: 'Welfare', description: 'Church/mosque/community welfare collections' },
 ];
 
 const CURRENCY_OPTIONS: { value: DiasporaCurrency; label: string; symbol: string }[] = [
@@ -46,6 +55,21 @@ const CURRENCY_OPTIONS: { value: DiasporaCurrency; label: string; symbol: string
   { value: 'USD', label: 'US Dollar', symbol: '$' },
   { value: 'EUR', label: 'Euro', symbol: '\u20AC' },
   { value: 'CAD', label: 'Canadian Dollar', symbol: 'CA$' },
+];
+
+const CROP_OPTIONS: { value: string; label: string; plantMonth: number; harvestMonth: number }[] = [
+  { value: 'Cocoa', label: 'Cocoa', plantMonth: 4, harvestMonth: 10 },
+  { value: 'Maize', label: 'Maize (Major)', plantMonth: 3, harvestMonth: 7 },
+  { value: 'Rice', label: 'Rice', plantMonth: 5, harvestMonth: 9 },
+  { value: 'Cassava', label: 'Cassava', plantMonth: 3, harvestMonth: 3 },
+  { value: 'Other', label: 'Other', plantMonth: 1, harvestMonth: 6 },
+];
+
+const ORG_TYPE_OPTIONS: { value: WelfareOrganizationType; label: string; icon: string }[] = [
+  { value: 'church', label: 'Church', icon: '\u26EA' },
+  { value: 'mosque', label: 'Mosque', icon: '\uD83D\uDD4C' },
+  { value: 'community', label: 'Community', icon: '\uD83C\uDFD8\uFE0F' },
+  { value: 'other', label: 'Other', icon: '\uD83C\uDFE2' },
 ];
 
 const TERM_OPTIONS = [
@@ -78,6 +102,13 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
   const [supplierContact, setSupplierContact] = useState('');
   const [itemDescription, setItemDescription] = useState('');
   const [estimatedSavingsPercent, setEstimatedSavingsPercent] = useState(0);
+  // Agricultural
+  const [cropType, setCropType] = useState('Cocoa');
+  const [plantingMonth, setPlantingMonth] = useState(4);
+  const [harvestMonth, setHarvestMonth] = useState(10);
+  // Welfare
+  const [organizationName, setOrganizationName] = useState('');
+  const [organizationType, setOrganizationType] = useState<WelfareOrganizationType>('church');
 
   if (!open) return null;
 
@@ -87,6 +118,7 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
     if (variant === 'goal_based' && goalAmountPesewas <= 0) return;
     if (variant === 'event_fund' && !eventName.trim()) return;
     if (variant === 'bulk_purchase' && !supplierName.trim()) return;
+    if (variant === 'welfare' && !organizationName.trim()) return;
 
     onSave({
       name: name.trim(),
@@ -106,6 +138,11 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
       supplier_contact: variant === 'bulk_purchase' && supplierContact.trim() ? supplierContact.trim() : undefined,
       item_description: variant === 'bulk_purchase' && itemDescription.trim() ? itemDescription.trim() : undefined,
       estimated_savings_percent: variant === 'bulk_purchase' && estimatedSavingsPercent > 0 ? estimatedSavingsPercent : undefined,
+      crop_type: variant === 'agricultural' ? cropType : undefined,
+      planting_month: variant === 'agricultural' ? plantingMonth : undefined,
+      harvest_month: variant === 'agricultural' ? harvestMonth : undefined,
+      organization_name: variant === 'welfare' ? organizationName.trim() : undefined,
+      organization_type: variant === 'welfare' ? organizationType : undefined,
     });
 
     resetForm();
@@ -130,6 +167,11 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
     setSupplierContact('');
     setItemDescription('');
     setEstimatedSavingsPercent(0);
+    setCropType('Cocoa');
+    setPlantingMonth(4);
+    setHarvestMonth(10);
+    setOrganizationName('');
+    setOrganizationType('church');
   }
 
   function handleClose() {
@@ -144,7 +186,8 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
     contributionPesewas <= 0 ||
     (variant === 'goal_based' && goalAmountPesewas <= 0) ||
     (variant === 'event_fund' && !eventName.trim()) ||
-    (variant === 'bulk_purchase' && !supplierName.trim());
+    (variant === 'bulk_purchase' && !supplierName.trim()) ||
+    (variant === 'welfare' && !organizationName.trim());
 
   return (
     <div
@@ -453,6 +496,124 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
                   </span>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Agricultural fields */}
+          {variant === 'agricultural' && (
+            <div className="space-y-3 rounded-xl border border-green-600/20 bg-green-600/5 p-4">
+              <p className="text-green-300 text-xs font-semibold uppercase tracking-wide">Agricultural Settings</p>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">Crop Type</label>
+                <div className="space-y-2">
+                  {CROP_OPTIONS.map((crop) => (
+                    <button
+                      key={crop.value}
+                      type="button"
+                      onClick={() => {
+                        setCropType(crop.value);
+                        setPlantingMonth(crop.plantMonth);
+                        setHarvestMonth(crop.harvestMonth);
+                      }}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all
+                        active:scale-95
+                        ${cropType === crop.value
+                          ? 'bg-green-600/15 border-green-500/60 text-green-300'
+                          : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                        }`}
+                    >
+                      <span className="text-sm font-semibold">{crop.label}</span>
+                      <span className={`text-xs ${cropType === crop.value ? 'text-green-300/70' : 'text-muted'}`}>
+                        Plant: {new Date(2024, crop.plantMonth - 1).toLocaleString('en', { month: 'short' })} | Harvest: {new Date(2024, crop.harvestMonth - 1).toLocaleString('en', { month: 'short' })}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {cropType === 'Other' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-muted text-sm font-medium">Planting Month</label>
+                    <select
+                      value={plantingMonth}
+                      onChange={(e) => setPlantingMonth(parseInt(e.target.value, 10))}
+                      className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                        text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50
+                        focus:border-green-500 appearance-none cursor-pointer"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i + 1} value={i + 1} className="bg-ghana-dark">
+                          {new Date(2024, i).toLocaleString('en', { month: 'long' })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-muted text-sm font-medium">Harvest Month</label>
+                    <select
+                      value={harvestMonth}
+                      onChange={(e) => setHarvestMonth(parseInt(e.target.value, 10))}
+                      className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                        text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50
+                        focus:border-green-500 appearance-none cursor-pointer"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i + 1} value={i + 1} className="bg-ghana-dark">
+                          {new Date(2024, i).toLocaleString('en', { month: 'long' })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+              <p className="text-muted text-xs">
+                Contributions collected during harvest season. Payouts during planting when capital is needed.
+              </p>
+            </div>
+          )}
+
+          {/* Welfare fields */}
+          {variant === 'welfare' && (
+            <div className="space-y-3 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4">
+              <p className="text-violet-300 text-xs font-semibold uppercase tracking-wide">Welfare Settings</p>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">Organization Name</label>
+                <input
+                  type="text"
+                  value={organizationName}
+                  onChange={(e) => setOrganizationName(e.target.value)}
+                  placeholder="e.g. Grace Baptist Church"
+                  maxLength={200}
+                  required
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                    placeholder-muted text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50
+                    focus:border-violet-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">Organization Type</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {ORG_TYPE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setOrganizationType(opt.value)}
+                      className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all
+                        active:scale-95
+                        ${organizationType === opt.value
+                          ? 'bg-violet-500/15 border-violet-500/60 text-violet-300'
+                          : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                        }`}
+                    >
+                      <span className="text-lg">{opt.icon}</span>
+                      <span className="text-sm font-semibold">{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="text-muted text-xs">
+                Welfare funds accumulate from contributions. Members submit claims for medical, funeral, education, or emergency needs.
+              </p>
             </div>
           )}
 

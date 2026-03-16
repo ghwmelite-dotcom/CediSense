@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { SusuGroupWithDetails, EarlyPayoutRequest, FuneralClaim, SusuVariant, SusuAnalytics, SusuBadge, LeaderboardEntry, GuaranteeClaim } from '@cedisense/shared';
+import type { SusuGroupWithDetails, EarlyPayoutRequest, FuneralClaim, SusuVariant, SusuAnalytics, SusuBadge, LeaderboardEntry, GuaranteeClaim, WelfareClaim, WelfareClaimType } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 import { InviteQRModal } from './InviteQRModal';
 import { EarlyPayoutCard } from './EarlyPayoutCard';
@@ -35,6 +35,11 @@ interface GroupDetailProps {
   onGuaranteeClaim?: (memberId: string) => void;
   /** Bulk purchase handler */
   onPaySupplier?: () => void;
+  /** Welfare handlers */
+  onSubmitWelfareClaim?: (data: { claim_type: WelfareClaimType; description: string; amount_requested_pesewas: number }) => void;
+  onApproveWelfareClaim?: (claimId: string, amount?: number) => void;
+  onDenyWelfareClaim?: (claimId: string) => void;
+  onPayWelfareClaim?: (claimId: string) => void;
   /** Called when the user taps "View Receipt" for a member who has contributed */
   onViewReceipt?: (memberId: string) => void;
   /** Analytics data — fetched lazily when Analytics tab is opened */
@@ -58,6 +63,8 @@ const VARIANT_LABEL: Record<SusuVariant, string> = {
   diaspora: 'Diaspora',
   event_fund: 'Event Fund',
   bulk_purchase: 'Bulk Purchase',
+  agricultural: 'Agricultural',
+  welfare: 'Welfare',
 };
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -97,11 +104,20 @@ export function GroupDetail({
   onLoadLeaderboard,
   onGuaranteeClaim,
   onPaySupplier,
+  onSubmitWelfareClaim,
+  onApproveWelfareClaim,
+  onDenyWelfareClaim,
+  onPayWelfareClaim,
 }: GroupDetailProps) {
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [lateMembers, setLateMembers] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<GroupDetailTab>('overview');
+  // Welfare claim form state
+  const [welfareFormOpen, setWelfareFormOpen] = useState(false);
+  const [welfareClaimType, setWelfareClaimType] = useState<WelfareClaimType>('medical');
+  const [welfareDescription, setWelfareDescription] = useState('');
+  const [welfareAmount, setWelfareAmount] = useState(0);
 
   async function copyInviteCode() {
     await navigator.clipboard.writeText(group.invite_code);
@@ -735,6 +751,264 @@ export function GroupDetail({
               </svg>
               Pay Supplier
             </button>
+          )}
+        </div>
+      )}
+
+      {/* Agricultural info */}
+      {group.variant === 'agricultural' && group.agricultural_info && (
+        <div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl" aria-hidden="true">
+              {group.agricultural_info.current_phase === 'planting' ? '\uD83C\uDF31' : group.agricultural_info.current_phase === 'growing' ? '\uD83C\uDF3F' : '\uD83C\uDF3E'}
+            </span>
+            <p className="text-green-200 text-xs font-semibold uppercase tracking-wide">
+              {VARIANT_LABEL.agricultural} &mdash; {group.agricultural_info.crop_type}
+            </p>
+          </div>
+
+          {/* Current phase */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <p className="text-green-300/60 text-xs">Current Phase</p>
+              <p className="text-green-100 font-bold text-lg capitalize">
+                {group.agricultural_info.current_phase === 'planting' ? '\uD83C\uDF31 Planting' : group.agricultural_info.current_phase === 'growing' ? '\uD83C\uDF3F Growing' : '\uD83C\uDF3E Harvest'}
+              </p>
+            </div>
+            <div className="text-right space-y-0.5">
+              <p className="text-green-300/60 text-xs">Next Phase In</p>
+              <p className="text-green-100 font-bold text-2xl">{group.agricultural_info.days_to_next_phase}</p>
+              <p className="text-green-300/60 text-xs">days</p>
+            </div>
+          </div>
+
+          {/* Season months */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-green-600/10 rounded-lg px-3 py-2 space-y-0.5">
+              <p className="text-green-300/60 text-xs">Planting</p>
+              <p className="text-green-100 font-semibold text-sm">
+                {new Date(2024, group.agricultural_info.planting_month - 1).toLocaleString('en', { month: 'long' })}
+              </p>
+            </div>
+            <div className="bg-green-600/10 rounded-lg px-3 py-2 space-y-0.5">
+              <p className="text-green-300/60 text-xs">Harvest</p>
+              <p className="text-green-100 font-semibold text-sm">
+                {new Date(2024, group.agricultural_info.harvest_month - 1).toLocaleString('en', { month: 'long' })}
+              </p>
+            </div>
+          </div>
+
+          {/* Contribution schedule recommendation */}
+          <div className="bg-green-600/10 rounded-lg px-3 py-2">
+            <p className="text-green-300/60 text-xs">Schedule</p>
+            <p className="text-green-100 text-sm font-medium">
+              {group.agricultural_info.recommended_contribution_schedule}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Welfare info */}
+      {group.variant === 'welfare' && group.welfare_info && (
+        <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl" aria-hidden="true">
+              {group.welfare_info.organization_type === 'church' ? '\u26EA' : group.welfare_info.organization_type === 'mosque' ? '\uD83D\uDD4C' : group.welfare_info.organization_type === 'community' ? '\uD83C\uDFD8\uFE0F' : '\uD83C\uDFE2'}
+            </span>
+            <p className="text-violet-200 text-xs font-semibold uppercase tracking-wide">
+              {group.welfare_info.organization_name} &mdash; Welfare Fund
+            </p>
+          </div>
+
+          {/* Pool display */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-0.5">
+              <p className="text-violet-300/60 text-xs">Available Fund</p>
+              <p className="text-violet-100 font-bold text-xl">
+                {formatPesewas(group.welfare_info.available_pool_pesewas)}
+              </p>
+            </div>
+            <div className="text-right space-y-0.5">
+              <p className="text-violet-300/60 text-xs">Total Contributed</p>
+              <p className="text-violet-200 font-semibold text-sm">
+                {formatPesewas(group.welfare_info.total_pool_pesewas)}
+              </p>
+            </div>
+          </div>
+          {group.welfare_info.total_paid_out_pesewas > 0 && (
+            <p className="text-violet-300/60 text-xs">
+              Previously paid out: {formatPesewas(group.welfare_info.total_paid_out_pesewas)}
+            </p>
+          )}
+
+          {/* Submit claim button */}
+          {group.my_member_id && onSubmitWelfareClaim && (
+            <button
+              type="button"
+              onClick={() => setWelfareFormOpen(!welfareFormOpen)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
+                bg-violet-500/20 border border-violet-500/40 text-violet-300 font-semibold text-sm
+                hover:bg-violet-500/30 active:scale-95 transition-all min-h-[44px]"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {welfareFormOpen ? 'Cancel' : 'Submit Welfare Claim'}
+            </button>
+          )}
+
+          {/* Claim form */}
+          {welfareFormOpen && onSubmitWelfareClaim && (
+            <div className="space-y-3 bg-violet-500/5 rounded-xl border border-violet-500/20 p-4">
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">Claim Type</label>
+                <select
+                  value={welfareClaimType}
+                  onChange={(e) => setWelfareClaimType(e.target.value as WelfareClaimType)}
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                    text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50
+                    focus:border-violet-500 appearance-none cursor-pointer"
+                >
+                  <option value="medical" className="bg-ghana-dark">Medical</option>
+                  <option value="funeral" className="bg-ghana-dark">Funeral</option>
+                  <option value="education" className="bg-ghana-dark">Education</option>
+                  <option value="emergency" className="bg-ghana-dark">Emergency</option>
+                  <option value="other" className="bg-ghana-dark">Other</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">Description</label>
+                <textarea
+                  value={welfareDescription}
+                  onChange={(e) => setWelfareDescription(e.target.value)}
+                  placeholder="Describe the reason for your claim..."
+                  maxLength={500}
+                  rows={3}
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                    placeholder-muted text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50
+                    focus:border-violet-500 resize-none"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">Amount Requested (GHS)</label>
+                <input
+                  type="number"
+                  min={0.01}
+                  step={0.01}
+                  value={welfareAmount > 0 ? (welfareAmount / 100).toFixed(2) : ''}
+                  onChange={(e) => setWelfareAmount(Math.round(parseFloat(e.target.value || '0') * 100))}
+                  placeholder="0.00"
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                    placeholder-muted text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50
+                    focus:border-violet-500"
+                />
+              </div>
+              <button
+                type="button"
+                disabled={!welfareDescription.trim() || welfareAmount <= 0}
+                onClick={() => {
+                  onSubmitWelfareClaim({
+                    claim_type: welfareClaimType,
+                    description: welfareDescription.trim(),
+                    amount_requested_pesewas: welfareAmount,
+                  });
+                  setWelfareFormOpen(false);
+                  setWelfareClaimType('medical');
+                  setWelfareDescription('');
+                  setWelfareAmount(0);
+                }}
+                className="w-full px-4 py-3 rounded-xl bg-violet-500 text-white font-semibold
+                  text-sm hover:brightness-110 active:scale-95 transition-all min-h-[44px]
+                  disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+              >
+                Submit Claim
+              </button>
+            </div>
+          )}
+
+          {/* Pending claims (creator sees approve/deny) */}
+          {group.welfare_info.pending_claims.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-violet-300/60 text-xs font-medium">Pending Claims</p>
+              <div className="space-y-2">
+                {group.welfare_info.pending_claims.map((claim) => (
+                  <div key={claim.id} className="bg-violet-500/5 rounded-xl border border-violet-500/20 p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300 capitalize">
+                          {claim.claim_type}
+                        </span>
+                        <span className="text-violet-100 text-sm font-medium">{claim.claimant_name}</span>
+                      </div>
+                      <span className="text-violet-200 font-bold text-sm">{formatPesewas(claim.amount_requested_pesewas)}</span>
+                    </div>
+                    <p className="text-violet-200/80 text-xs">{claim.description}</p>
+                    {claim.status === 'approved' || claim.status === 'partially_approved' ? (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-income font-semibold">
+                          Approved: {formatPesewas(claim.amount_approved_pesewas ?? claim.amount_requested_pesewas)}
+                        </span>
+                        {group.is_creator && onPayWelfareClaim && (
+                          <button
+                            type="button"
+                            onClick={() => onPayWelfareClaim(claim.id)}
+                            className="px-3 py-1.5 rounded-lg bg-violet-500 text-white text-xs font-semibold
+                              hover:brightness-110 active:scale-95 transition-all min-h-[36px]"
+                          >
+                            Pay Out
+                          </button>
+                        )}
+                      </div>
+                    ) : group.is_creator && onApproveWelfareClaim && onDenyWelfareClaim ? (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onApproveWelfareClaim(claim.id)}
+                          className="flex-1 px-3 py-1.5 rounded-lg bg-income/20 border border-income/40 text-income
+                            text-xs font-semibold hover:bg-income/30 active:scale-95 transition-all min-h-[36px]"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDenyWelfareClaim(claim.id)}
+                          className="flex-1 px-3 py-1.5 rounded-lg bg-expense/20 border border-expense/40 text-expense
+                            text-xs font-semibold hover:bg-expense/30 active:scale-95 transition-all min-h-[36px]"
+                        >
+                          Deny
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted">Awaiting leader approval</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Resolved claims history */}
+          {group.welfare_info.resolved_claims.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-violet-300/60 text-xs font-medium">Claim History</p>
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {group.welfare_info.resolved_claims.map((claim) => (
+                  <div key={claim.id} className="flex items-center justify-between text-xs bg-violet-500/5 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`font-semibold ${claim.status === 'paid' ? 'text-income' : 'text-expense'}`}>
+                        {claim.status === 'paid' ? 'Paid' : 'Denied'}
+                      </span>
+                      <span className="text-violet-100 truncate">{claim.claimant_name}</span>
+                      <span className="text-violet-300/60 capitalize">{claim.claim_type}</span>
+                    </div>
+                    <span className="text-violet-200 font-bold shrink-0">
+                      {formatPesewas(claim.status === 'paid' ? (claim.amount_approved_pesewas ?? claim.amount_requested_pesewas) : claim.amount_requested_pesewas)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}

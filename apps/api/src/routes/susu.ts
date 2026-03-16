@@ -11,8 +11,10 @@ import {
   funeralClaimSchema,
   funeralClaimVoteSchema,
   guaranteeClaimSchema,
+  welfareClaimSchema,
+  welfareClaimApproveSchema,
 } from '@cedisense/shared';
-import type { SusuFrequency, SusuVariant, CreditCertificate } from '@cedisense/shared';
+import type { SusuFrequency, SusuVariant, CreditCertificate, AgriculturalPhase } from '@cedisense/shared';
 import { generateId } from '../lib/db.js';
 import { computeTrustScore, getTrustLabel } from '../lib/trust-score.js';
 
@@ -48,6 +50,11 @@ interface SusuGroupRow {
   supplier_contact: string | null;
   item_description: string | null;
   estimated_savings_percent: number | null;
+  crop_type: string | null;
+  planting_month: number | null;
+  harvest_month: number | null;
+  organization_name: string | null;
+  organization_type: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -171,6 +178,8 @@ susu.post('/groups', async (c) => {
     target_term, school_name, base_currency, event_name, event_date,
     guarantee_percent,
     supplier_name, supplier_contact, item_description, estimated_savings_percent,
+    crop_type, planting_month, harvest_month,
+    organization_name, organization_type,
   } = parsed.data;
 
   // Fetch creator display_name
@@ -197,15 +206,19 @@ susu.post('/groups', async (c) => {
         variant, goal_amount_pesewas, goal_description,
         target_term, school_name, base_currency, event_name, event_date,
         guarantee_percent,
-        supplier_name, supplier_contact, item_description, estimated_savings_percent)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        supplier_name, supplier_contact, item_description, estimated_savings_percent,
+        crop_type, planting_month, harvest_month,
+        organization_name, organization_type)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     groupId, name, userId, invite_code, contribution_pesewas, frequency, max_members,
     variant, effectiveGoalAmount, goal_description ?? null,
     target_term ?? null, school_name ?? null, base_currency ?? 'GHS',
     event_name ?? null, event_date ?? null,
     guarantee_percent ?? 0,
-    supplier_name ?? null, supplier_contact ?? null, item_description ?? null, estimated_savings_percent ?? null
+    supplier_name ?? null, supplier_contact ?? null, item_description ?? null, estimated_savings_percent ?? null,
+    crop_type ?? null, planting_month ?? null, harvest_month ?? null,
+    organization_name ?? null, organization_type ?? null
   ).run();
 
   // Auto-add creator as first member
@@ -220,7 +233,7 @@ susu.post('/groups', async (c) => {
   const group = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
             max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
-            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, guarantee_percent, guarantee_pool_pesewas, supplier_name, supplier_contact, item_description, estimated_savings_percent, created_at, updated_at
+            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, guarantee_percent, guarantee_pool_pesewas, supplier_name, supplier_contact, item_description, estimated_savings_percent, crop_type, planting_month, harvest_month, organization_name, organization_type, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -239,6 +252,7 @@ susu.get('/groups', async (c) => {
             g.penalty_percent, g.penalty_pool_pesewas,
             g.target_term, g.school_name, g.base_currency, g.event_name, g.event_date,
             g.guarantee_percent, g.guarantee_pool_pesewas, g.supplier_name, g.supplier_contact, g.item_description, g.estimated_savings_percent,
+            g.crop_type, g.planting_month, g.harvest_month, g.organization_name, g.organization_type,
             g.created_at, g.updated_at,
             (SELECT COUNT(*) FROM susu_members m2 WHERE m2.group_id = g.id) AS member_count
      FROM susu_groups g
@@ -272,7 +286,7 @@ susu.get('/groups/:id', async (c) => {
   const group = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
             max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
-            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, guarantee_percent, guarantee_pool_pesewas, supplier_name, supplier_contact, item_description, estimated_savings_percent, created_at, updated_at
+            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, guarantee_percent, guarantee_pool_pesewas, supplier_name, supplier_contact, item_description, estimated_savings_percent, crop_type, planting_month, harvest_month, organization_name, organization_type, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -522,6 +536,119 @@ susu.get('/groups/:id', async (c) => {
     };
   }
 
+  // Compute agricultural info
+  let agricultural_info = null;
+  if (group.variant === 'agricultural' && group.crop_type && group.planting_month && group.harvest_month) {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1; // 1-12
+    const plantMonth = group.planting_month;
+    const harvMonth = group.harvest_month;
+
+    // Determine current phase
+    let current_phase: AgriculturalPhase;
+    if (harvMonth > plantMonth) {
+      // Normal season (e.g., plant Mar, harvest Jul)
+      if (currentMonth >= plantMonth && currentMonth < plantMonth + Math.ceil((harvMonth - plantMonth) / 3)) {
+        current_phase = 'planting';
+      } else if (currentMonth >= harvMonth) {
+        current_phase = 'harvest';
+      } else {
+        current_phase = 'growing';
+      }
+    } else {
+      // Wrapping season (e.g., plant Oct, harvest Mar)
+      if (currentMonth >= plantMonth || currentMonth < plantMonth - 2) {
+        if (currentMonth >= plantMonth && currentMonth <= plantMonth + 1) {
+          current_phase = 'planting';
+        } else if (currentMonth >= harvMonth - 1 && currentMonth <= harvMonth + 1) {
+          current_phase = 'harvest';
+        } else {
+          current_phase = 'growing';
+        }
+      } else {
+        current_phase = 'growing';
+      }
+    }
+
+    // Calculate days to next phase
+    let nextPhaseMonth: number;
+    if (current_phase === 'planting') {
+      // Next phase is growing — midpoint between planting and harvest
+      nextPhaseMonth = plantMonth + Math.ceil((harvMonth > plantMonth ? harvMonth - plantMonth : harvMonth + 12 - plantMonth) / 3);
+      if (nextPhaseMonth > 12) nextPhaseMonth -= 12;
+    } else if (current_phase === 'growing') {
+      nextPhaseMonth = harvMonth;
+    } else {
+      // harvest -> next planting
+      nextPhaseMonth = plantMonth;
+    }
+
+    const currentYear = now.getFullYear();
+    let nextPhaseDate = new Date(currentYear, nextPhaseMonth - 1, 1);
+    if (nextPhaseDate <= now) {
+      nextPhaseDate = new Date(currentYear + 1, nextPhaseMonth - 1, 1);
+    }
+    const days_to_next_phase = Math.max(0, Math.ceil((nextPhaseDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+    // Contribution schedule: collect during harvest, payout during planting
+    const recommended_contribution_schedule = current_phase === 'harvest'
+      ? 'Peak collection period — members have harvest income'
+      : current_phase === 'planting'
+        ? 'Payout period — members need capital for farm inputs'
+        : 'Regular savings period — building up the pool';
+
+    agricultural_info = {
+      crop_type: group.crop_type,
+      planting_month: plantMonth,
+      harvest_month: harvMonth,
+      current_phase,
+      days_to_next_phase,
+      recommended_contribution_schedule,
+    };
+  }
+
+  // Compute welfare info
+  let welfare_info = null;
+  if (group.variant === 'welfare' && group.organization_name && group.organization_type) {
+    const totalPaidOutRow = await c.env.DB.prepare(
+      `SELECT COALESCE(SUM(amount_approved_pesewas), 0) AS total FROM welfare_claims WHERE group_id = ? AND status = 'paid'`
+    ).bind(groupId).first<{ total: number }>();
+    const total_paid_out = totalPaidOutRow?.total ?? 0;
+
+    const { results: pendingClaims } = await c.env.DB.prepare(
+      `SELECT wc.*, sm.display_name AS claimant_name
+       FROM welfare_claims wc
+       INNER JOIN susu_members sm ON sm.id = wc.claimant_member_id
+       WHERE wc.group_id = ? AND wc.status IN ('pending', 'approved', 'partially_approved')
+       ORDER BY wc.created_at DESC`
+    ).bind(groupId).all<WelfareClaimRow & { claimant_name: string }>();
+
+    const { results: resolvedClaims } = await c.env.DB.prepare(
+      `SELECT wc.*, sm.display_name AS claimant_name
+       FROM welfare_claims wc
+       INNER JOIN susu_members sm ON sm.id = wc.claimant_member_id
+       WHERE wc.group_id = ? AND wc.status IN ('paid', 'denied')
+       ORDER BY wc.resolved_at DESC
+       LIMIT 20`
+    ).bind(groupId).all<WelfareClaimRow & { claimant_name: string }>();
+
+    welfare_info = {
+      organization_name: group.organization_name,
+      organization_type: group.organization_type,
+      total_pool_pesewas: total_contributed_pesewas,
+      total_paid_out_pesewas: total_paid_out,
+      available_pool_pesewas: total_contributed_pesewas - total_paid_out,
+      pending_claims: pendingClaims.map((c) => ({
+        ...c,
+        claimant_name: c.claimant_name,
+      })),
+      resolved_claims: resolvedClaims.map((c) => ({
+        ...c,
+        claimant_name: c.claimant_name,
+      })),
+    };
+  }
+
   return c.json({
     data: {
       ...mapGroup(group),
@@ -539,6 +666,8 @@ susu.get('/groups/:id', async (c) => {
       event_fund_info,
       guarantee_claims,
       bulk_purchase_info,
+      agricultural_info,
+      welfare_info,
     },
   });
 });
@@ -597,7 +726,7 @@ susu.put('/groups/:id', async (c) => {
   const updated = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
             max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
-            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, guarantee_percent, guarantee_pool_pesewas, supplier_name, supplier_contact, item_description, estimated_savings_percent, created_at, updated_at
+            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, guarantee_percent, guarantee_pool_pesewas, supplier_name, supplier_contact, item_description, estimated_savings_percent, crop_type, planting_month, harvest_month, organization_name, organization_type, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -1279,7 +1408,7 @@ susu.post('/groups/:id/advance-round', async (c) => {
   const updated = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
             max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
-            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, guarantee_percent, guarantee_pool_pesewas, supplier_name, supplier_contact, item_description, estimated_savings_percent, created_at, updated_at
+            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, guarantee_percent, guarantee_pool_pesewas, supplier_name, supplier_contact, item_description, estimated_savings_percent, crop_type, planting_month, harvest_month, organization_name, organization_type, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -1473,6 +1602,20 @@ interface FuneralClaimRow {
   approved_by_count: number;
   denied_by_count: number;
   approval_threshold: number;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+interface WelfareClaimRow {
+  id: string;
+  group_id: string;
+  claimant_member_id: string;
+  claim_type: string;
+  description: string;
+  amount_requested_pesewas: number;
+  amount_approved_pesewas: number | null;
+  status: string;
+  approved_by: string | null;
   created_at: string;
   resolved_at: string | null;
 }
@@ -2696,6 +2839,234 @@ susu.post('/groups/:id/guarantee-claim', async (c) => {
   ).bind(claimId).first();
 
   return c.json({ data: claim }, 201);
+});
+
+// ─── POST /groups/:id/welfare-claim — submit a welfare claim ──────────────────
+
+susu.post('/groups/:id/welfare-claim', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  const body = await c.req.json();
+  const parsed = welfareClaimSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json(
+      { error: { code: 'VALIDATION_ERROR', message: 'Invalid request', details: { fieldErrors: parsed.error.flatten().fieldErrors } } },
+      400
+    );
+  }
+
+  // Verify group is welfare variant
+  const group = await c.env.DB.prepare(
+    `SELECT id, variant FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; variant: string }>();
+
+  if (!group || group.variant !== 'welfare') {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'This is not a welfare group' } }, 400);
+  }
+
+  // Verify membership
+  const member = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!member) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'You are not a member of this group' } }, 404);
+  }
+
+  const { claim_type, description, amount_requested_pesewas } = parsed.data;
+  const claimId = generateId();
+
+  await c.env.DB.prepare(
+    `INSERT INTO welfare_claims (id, group_id, claimant_member_id, claim_type, description, amount_requested_pesewas)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(claimId, groupId, member.id, claim_type, description, amount_requested_pesewas).run();
+
+  const claim = await c.env.DB.prepare(
+    `SELECT wc.*, sm.display_name AS claimant_name
+     FROM welfare_claims wc
+     INNER JOIN susu_members sm ON sm.id = wc.claimant_member_id
+     WHERE wc.id = ?`
+  ).bind(claimId).first<WelfareClaimRow & { claimant_name: string }>();
+
+  return c.json({ data: claim }, 201);
+});
+
+// ─── GET /groups/:id/welfare-claims — list all welfare claims ────────────────
+
+susu.get('/groups/:id/welfare-claims', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  // Verify membership
+  const member = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!member) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'You are not a member of this group' } }, 404);
+  }
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT wc.*, sm.display_name AS claimant_name
+     FROM welfare_claims wc
+     INNER JOIN susu_members sm ON sm.id = wc.claimant_member_id
+     WHERE wc.group_id = ?
+     ORDER BY wc.created_at DESC
+     LIMIT 50`
+  ).bind(groupId).all<WelfareClaimRow & { claimant_name: string }>();
+
+  return c.json({ data: results });
+});
+
+// ─── POST /groups/:id/welfare-claim/:claimId/approve — approve a welfare claim ─
+
+susu.post('/groups/:id/welfare-claim/:claimId/approve', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const claimId = c.req.param('claimId');
+
+  // Verify creator
+  const group = await c.env.DB.prepare(
+    `SELECT id, creator_id, variant FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; creator_id: string; variant: string }>();
+
+  if (!group || group.variant !== 'welfare') {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'This is not a welfare group' } }, 400);
+  }
+
+  if (group.creator_id !== userId) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only the group leader can approve claims' } }, 403);
+  }
+
+  const creatorMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  const claim = await c.env.DB.prepare(
+    `SELECT * FROM welfare_claims WHERE id = ? AND group_id = ?`
+  ).bind(claimId, groupId).first<WelfareClaimRow>();
+
+  if (!claim) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Claim not found' } }, 404);
+  }
+
+  if (claim.status !== 'pending') {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'Claim is not pending' } }, 400);
+  }
+
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = welfareClaimApproveSchema.safeParse(body);
+  const approvedAmount = parsed.success && parsed.data.amount_approved_pesewas
+    ? parsed.data.amount_approved_pesewas
+    : claim.amount_requested_pesewas;
+
+  const status = approvedAmount < claim.amount_requested_pesewas ? 'partially_approved' : 'approved';
+
+  await c.env.DB.prepare(
+    `UPDATE welfare_claims SET status = ?, amount_approved_pesewas = ?, approved_by = ?, resolved_at = datetime('now')
+     WHERE id = ?`
+  ).bind(status, approvedAmount, creatorMember?.id ?? null, claimId).run();
+
+  const updated = await c.env.DB.prepare(
+    `SELECT wc.*, sm.display_name AS claimant_name
+     FROM welfare_claims wc
+     INNER JOIN susu_members sm ON sm.id = wc.claimant_member_id
+     WHERE wc.id = ?`
+  ).bind(claimId).first<WelfareClaimRow & { claimant_name: string }>();
+
+  return c.json({ data: updated });
+});
+
+// ─── POST /groups/:id/welfare-claim/:claimId/deny — deny a welfare claim ─────
+
+susu.post('/groups/:id/welfare-claim/:claimId/deny', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const claimId = c.req.param('claimId');
+
+  const group = await c.env.DB.prepare(
+    `SELECT id, creator_id, variant FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; creator_id: string; variant: string }>();
+
+  if (!group || group.variant !== 'welfare') {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'This is not a welfare group' } }, 400);
+  }
+
+  if (group.creator_id !== userId) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only the group leader can deny claims' } }, 403);
+  }
+
+  const claim = await c.env.DB.prepare(
+    `SELECT * FROM welfare_claims WHERE id = ? AND group_id = ?`
+  ).bind(claimId, groupId).first<WelfareClaimRow>();
+
+  if (!claim) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Claim not found' } }, 404);
+  }
+
+  if (claim.status !== 'pending') {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'Claim is not pending' } }, 400);
+  }
+
+  await c.env.DB.prepare(
+    `UPDATE welfare_claims SET status = 'denied', resolved_at = datetime('now') WHERE id = ?`
+  ).bind(claimId).run();
+
+  const updated = await c.env.DB.prepare(
+    `SELECT wc.*, sm.display_name AS claimant_name
+     FROM welfare_claims wc
+     INNER JOIN susu_members sm ON sm.id = wc.claimant_member_id
+     WHERE wc.id = ?`
+  ).bind(claimId).first<WelfareClaimRow & { claimant_name: string }>();
+
+  return c.json({ data: updated });
+});
+
+// ─── POST /groups/:id/welfare-claim/:claimId/pay — pay out an approved claim ──
+
+susu.post('/groups/:id/welfare-claim/:claimId/pay', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const claimId = c.req.param('claimId');
+
+  const group = await c.env.DB.prepare(
+    `SELECT id, creator_id, variant FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; creator_id: string; variant: string }>();
+
+  if (!group || group.variant !== 'welfare') {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'This is not a welfare group' } }, 400);
+  }
+
+  if (group.creator_id !== userId) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only the group leader can pay out claims' } }, 403);
+  }
+
+  const claim = await c.env.DB.prepare(
+    `SELECT * FROM welfare_claims WHERE id = ? AND group_id = ?`
+  ).bind(claimId, groupId).first<WelfareClaimRow>();
+
+  if (!claim) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Claim not found' } }, 404);
+  }
+
+  if (claim.status !== 'approved' && claim.status !== 'partially_approved') {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'Claim must be approved before payment' } }, 400);
+  }
+
+  await c.env.DB.prepare(
+    `UPDATE welfare_claims SET status = 'paid', resolved_at = datetime('now') WHERE id = ?`
+  ).bind(claimId).run();
+
+  const updated = await c.env.DB.prepare(
+    `SELECT wc.*, sm.display_name AS claimant_name
+     FROM welfare_claims wc
+     INNER JOIN susu_members sm ON sm.id = wc.claimant_member_id
+     WHERE wc.id = ?`
+  ).bind(claimId).first<WelfareClaimRow & { claimant_name: string }>();
+
+  return c.json({ data: updated });
 });
 
 export { susu };

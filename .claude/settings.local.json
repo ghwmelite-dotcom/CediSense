@@ -192,7 +192,9 @@
       "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\" && pnpm run test 2>&1 | tail -40)",
       "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\" && pnpm run test 2>&1 | tail -30)",
       "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && pnpm run typecheck 2>&1 | tail -50)",
-      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && pnpm run test 2>&1 | tail -50)"
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && pnpm run test 2>&1 | tail -50)",
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\" && npm run typecheck 2>&1 | tail -60)",
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\" && npm test 2>&1 | tail -40)"
     ]
   }
 }
