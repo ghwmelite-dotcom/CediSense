@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head><title>CediSense Icon Generator</title></head>
+<body>
+<h2>CediSense Icon Generator</h2>
+<p>Click each button to download the icon. Save them to <code>apps/web/public/icons/</code></p>
+<div id="buttons"></div>
+<canvas id="canvas" style="border:1px solid #ccc; margin:20px 0;"></canvas>
+<script>
+const sizes = [
+  { name: 'icon-72', size: 72, type: 'icon' },
+  { name: 'icon-96', size: 96, type: 'icon' },
+  { name: 'icon-128', size: 128, type: 'icon' },
+  { name: 'icon-144', size: 144, type: 'icon' },
+  { name: 'icon-152', size: 152, type: 'icon' },
+  { name: 'icon-192', size: 192, type: 'icon' },
+  { name: 'icon-384', size: 384, type: 'icon' },
+  { name: 'icon-512', size: 512, type: 'icon' },
+  { name: 'maskable-512', size: 512, type: 'maskable' },
+  { name: 'apple-touch-icon', size: 180, type: 'icon' },
+  { name: 'favicon-32', size: 32, type: 'favicon' },
+  { name: 'favicon-16', size: 16, type: 'favicon' },
+];
+
+function drawIcon(ctx, size, type) {
+  const s = size;
+  const r = type === 'maskable' ? 0 : s * 0.21; // rounded corners
+
+  // Background
+  ctx.clearRect(0, 0, s, s);
+  const bgGrad = ctx.createLinearGradient(0, 0, s, s);
+  bgGrad.addColorStop(0, '#14142A');
+  bgGrad.addColorStop(1, '#0C0C14');
+
+  if (r > 0) {
+    ctx.beginPath();
+    ctx.roundRect(0, 0, s, s, r);
+    ctx.fillStyle = bgGrad;
+    ctx.fill();
+  } else {
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, s, s);
+  }
+
+  // Border (non-maskable, non-favicon)
+  if (type === 'icon' && s >= 72) {
+    ctx.strokeStyle = 'rgba(212,168,67,0.15)';
+    ctx.lineWidth = Math.max(1, s * 0.004);
+    if (r > 0) {
+      ctx.beginPath();
+      ctx.roundRect(1, 1, s-2, s-2, r-1);
+      ctx.stroke();
+    }
+  }
+
+  // Gold glow
+  if (s >= 96) {
+    const glowGrad = ctx.createRadialGradient(s/2, s*0.45, 0, s/2, s*0.45, s*0.25);
+    glowGrad.addColorStop(0, 'rgba(212,168,67,0.12)');
+    glowGrad.addColorStop(1, 'rgba(212,168,67,0)');
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(0, 0, s, s);
+  }
+
+  // Cedi symbol
+  const goldGrad = ctx.createLinearGradient(s*0.3, 0, s*0.5, s);
+  goldGrad.addColorStop(0, '#E8C873');
+  goldGrad.addColorStop(1, '#D4A843');
+
+  ctx.fillStyle = goldGrad;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  if (type === 'favicon') {
+    ctx.font = `800 ${s * 0.75}px Inter, system-ui, sans-serif`;
+    ctx.fillText('₵', s/2, s/2 + s*0.03);
+  } else if (type === 'maskable') {
+    ctx.font = `800 ${s * 0.45}px Inter, system-ui, sans-serif`;
+    ctx.fillText('₵', s/2, s/2 + s*0.02);
+  } else {
+    ctx.font = `800 ${s * 0.42}px Inter, system-ui, sans-serif`;
+    ctx.fillText('₵', s/2, s*0.47);
+
+    // App name (only on larger icons)
+    if (s >= 192) {
+      ctx.fillStyle = 'rgba(232,232,240,0.5)';
+      ctx.font = `600 ${s * 0.075}px Inter, system-ui, sans-serif`;
+      ctx.letterSpacing = `${s * 0.008}px`;
+      ctx.fillText('CEDISENSE', s/2, s * 0.78);
+    }
+  }
+}
+
+const container = document.getElementById('buttons');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Generate All button
+const allBtn = document.createElement('button');
+allBtn.textContent = '⬇️ Download ALL icons';
+allBtn.style.cssText = 'font-size:18px;padding:12px 24px;margin:10px;background:#D4A843;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:bold;';
+allBtn.onclick = async () => {
+  for (const item of sizes) {
+    canvas.width = item.size;
+    canvas.height = item.size;
+    drawIcon(ctx, item.size, item.type);
+    const link = document.createElement('a');
+    link.download = `${item.name}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    await new Promise(r => setTimeout(r, 300));
+  }
+};
+container.appendChild(allBtn);
+container.appendChild(document.createElement('br'));
+
+sizes.forEach(item => {
+  const btn = document.createElement('button');
+  btn.textContent = `${item.name}.png (${item.size}x${item.size})`;
+  btn.style.cssText = 'margin:4px;padding:8px 16px;background:#222;color:#fff;border:1px solid #444;border-radius:6px;cursor:pointer;';
+  btn.onclick = () => {
+    canvas.width = item.size;
+    canvas.height = item.size;
+    drawIcon(ctx, item.size, item.type);
+    const link = document.createElement('a');
+    link.download = `${item.name}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+  container.appendChild(btn);
+});
+
+// Preview the 512 icon by default
+canvas.width = 512;
+canvas.height = 512;
+drawIcon(ctx, 512, 'icon');
+</script>
+</body>
+</html>
