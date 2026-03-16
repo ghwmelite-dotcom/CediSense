@@ -65,7 +65,7 @@ collector.post('/profile', async (c) => {
   const body = await c.req.json();
   const parsed = createCollectorProfileSchema.safeParse(body);
   if (!parsed.success) {
-    return c.json({ error: { code: 'VALIDATION', message: parsed.error.issues[0].message } }, 400);
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0].message } }, 400);
   }
 
   // Check if profile already exists
@@ -86,7 +86,11 @@ collector.post('/profile', async (c) => {
     'SELECT * FROM collector_profiles WHERE user_id = ?'
   ).bind(userId).first<CollectorProfileRow>();
 
-  return c.json({ data: mapProfile(row!) }, 201);
+  if (!row) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
+  return c.json({ data: mapProfile(row) }, 201);
 });
 
 // ─── GET /dashboard — Full collector dashboard ───────────────────────────────
@@ -200,7 +204,7 @@ collector.post('/clients', async (c) => {
   const body = await c.req.json();
   const parsed = addCollectorClientSchema.safeParse(body);
   if (!parsed.success) {
-    return c.json({ error: { code: 'VALIDATION', message: parsed.error.issues[0].message } }, 400);
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0].message } }, 400);
   }
 
   // Verify collector profile exists
@@ -212,6 +216,17 @@ collector.post('/clients', async (c) => {
   }
 
   const { client_name, client_phone, daily_amount_pesewas, cycle_days } = parsed.data;
+
+  // Check for duplicate phone before INSERT (NULL phones are allowed to coexist)
+  if (client_phone) {
+    const existingPhone = await c.env.DB.prepare(
+      'SELECT id FROM collector_clients WHERE collector_id = ? AND client_phone = ?'
+    ).bind(userId, client_phone).first();
+    if (existingPhone) {
+      return c.json({ error: { code: 'CONFLICT', message: 'A client with this phone number already exists' } }, 409);
+    }
+  }
+
   const id = generateId();
 
   try {
@@ -222,7 +237,7 @@ collector.post('/clients', async (c) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : '';
     if (msg.includes('UNIQUE')) {
-      return c.json({ error: { code: 'DUPLICATE', message: 'A client with this phone number already exists' } }, 409);
+      return c.json({ error: { code: 'CONFLICT', message: 'A client with this phone number already exists' } }, 409);
     }
     throw err;
   }
@@ -238,7 +253,11 @@ collector.post('/clients', async (c) => {
     'SELECT * FROM collector_clients WHERE id = ?'
   ).bind(id).first<CollectorClientRow>();
 
-  return c.json({ data: { ...row!, is_active: true } }, 201);
+  if (!row) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
+  return c.json({ data: { ...row, is_active: true } }, 201);
 });
 
 // ─── PUT /clients/:id — Update client ────────────────────────────────────────
@@ -249,7 +268,7 @@ collector.put('/clients/:id', async (c) => {
   const body = await c.req.json();
   const parsed = updateCollectorClientSchema.safeParse(body);
   if (!parsed.success) {
-    return c.json({ error: { code: 'VALIDATION', message: parsed.error.issues[0].message } }, 400);
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0].message } }, 400);
   }
 
   // Verify ownership
@@ -290,7 +309,11 @@ collector.put('/clients/:id', async (c) => {
     'SELECT * FROM collector_clients WHERE id = ?'
   ).bind(clientId).first<CollectorClientRow>();
 
-  return c.json({ data: { ...updated!, is_active: updated!.is_active === 1 } });
+  if (!updated) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
+  return c.json({ data: { ...updated, is_active: updated.is_active === 1 } });
 });
 
 // ─── DELETE /clients/:id — Remove client ─────────────────────────────────────
@@ -315,7 +338,7 @@ collector.delete('/clients/:id', async (c) => {
      ) WHERE user_id = ?`
   ).bind(userId, userId).run();
 
-  return c.json({ data: { deleted: true } });
+  return c.body(null, 204);
 });
 
 // ─── POST /clients/:id/deposit — Record today's deposit ─────────────────────
@@ -326,7 +349,7 @@ collector.post('/clients/:id/deposit', async (c) => {
   const body = await c.req.json();
   const parsed = recordDepositSchema.safeParse(body);
   if (!parsed.success) {
-    return c.json({ error: { code: 'VALIDATION', message: parsed.error.issues[0].message } }, 400);
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0].message } }, 400);
   }
 
   // Verify ownership
@@ -348,7 +371,7 @@ collector.post('/clients/:id/deposit', async (c) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : '';
     if (msg.includes('UNIQUE')) {
-      return c.json({ error: { code: 'DUPLICATE', message: 'Deposit already recorded for this date' } }, 409);
+      return c.json({ error: { code: 'CONFLICT', message: 'Deposit already recorded for this date' } }, 409);
     }
     throw err;
   }

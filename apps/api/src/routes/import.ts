@@ -8,6 +8,8 @@ import {
   parseCSV,
   type RawTransaction,
   type Transaction,
+  type CategoryRule,
+  type Category,
 } from '@cedisense/shared';
 import { generateId } from '../lib/db.js';
 import { findDuplicates } from '../lib/dedup.js';
@@ -52,18 +54,16 @@ async function processImport(
   // Load user's category rules
   const { results: ruleRows } = await env.DB.prepare(
     'SELECT * FROM category_rules WHERE user_id = ? ORDER BY priority DESC'
-  ).bind(userId).all();
+  ).bind(userId).all<CategoryRule>();
 
   // Load system categories for AI categorization
   const { results: categoryRows } = await env.DB.prepare(
     "SELECT * FROM categories WHERE user_id IS NULL"
-  ).bind().all();
+  ).bind().all<Category>();
 
   // Apply rules first, then AI for uncategorized
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const afterRules = applyRules(clean, ruleRows as any);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const categorized = await categorizeWithAI(afterRules, categoryRows as any, env.AI);
+  const afterRules = applyRules(clean, ruleRows as CategoryRule[]);
+  const categorized = await categorizeWithAI(afterRules, categoryRows as Category[], env.AI);
 
   const batchId = generateId();
 

@@ -11,8 +11,8 @@ export function corsMiddleware() {
         'https://cedisense.pages.dev',
       ];
 
-      // Allow Pages preview deploys
-      if (origin?.endsWith('.cedisense.pages.dev')) {
+      // Allow Pages preview deploys (valid Cloudflare preview hash: 8 hex chars)
+      if (origin?.match(/^https:\/\/[a-f0-9]{8}\.cedisense\.pages\.dev$/)) {
         return origin;
       }
 

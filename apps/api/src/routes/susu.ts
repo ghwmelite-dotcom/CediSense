@@ -239,7 +239,11 @@ susu.post('/groups', async (c) => {
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
-  return c.json({ data: mapGroup(group!) }, 201);
+  if (!group) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
+  return c.json({ data: mapGroup(group) }, 201);
 });
 
 // ─── GET /groups — list groups the user is a member of ───────────────────────
@@ -785,7 +789,11 @@ susu.put('/groups/:id', async (c) => {
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
-  return c.json({ data: mapGroup(updated!) });
+  if (!updated) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
+  return c.json({ data: mapGroup(updated) });
 });
 
 // ─── DELETE /groups/:id — delete group (creator only) ────────────────────────
@@ -889,7 +897,11 @@ susu.post('/groups/join', async (c) => {
      FROM susu_members WHERE id = ?`
   ).bind(memberId).first<SusuMemberRow>();
 
-  return c.json({ data: member! }, 201);
+  if (!member) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
+  return c.json({ data: member }, 201);
 });
 
 // ─── POST /groups/:id/leave — leave group (non-creator only) ─────────────────
@@ -1114,9 +1126,13 @@ susu.post('/groups/:id/contributions', async (c) => {
     `SELECT display_name FROM susu_members WHERE id = ?`
   ).bind(member_id).first<{ display_name: string }>();
 
+  if (!contribution) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
   return c.json({
     data: {
-      ...contribution!,
+      ...contribution,
       receipt_number: `CS-${contribId.slice(0, 8).toUpperCase()}`,
       group_name: groupRow?.name ?? '',
       member_name: memberRow?.display_name ?? '',
@@ -1300,7 +1316,11 @@ susu.post('/groups/:id/payouts', async (c) => {
      FROM susu_payouts WHERE id = ?`
   ).bind(payoutId).first<SusuPayoutRow>();
 
-  return c.json({ data: payout! }, 201);
+  if (!payout) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
+  return c.json({ data: payout }, 201);
 });
 
 // ─── POST /groups/:id/advance-round — advance to next round (creator only) ───
@@ -1467,7 +1487,11 @@ susu.post('/groups/:id/advance-round', async (c) => {
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
-  return c.json({ data: mapGroup(updated!) });
+  if (!updated) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
+  return c.json({ data: mapGroup(updated) });
 });
 
 
@@ -1500,7 +1524,22 @@ susu.get('/groups/:id/penalties', async (c) => {
 // ─── GET /groups/trust/:userId — get a user's trust score ─────────────────────
 
 susu.get('/groups/trust/:userId', async (c) => {
+  const requestingUserId = c.get('userId');
   const targetUserId = c.req.param('userId');
+
+  // Only allow if the requesting user shares at least one group with the target user
+  if (requestingUserId !== targetUserId) {
+    const sharedGroup = await c.env.DB.prepare(
+      `SELECT 1 FROM susu_members m1
+       INNER JOIN susu_members m2 ON m1.group_id = m2.group_id
+       WHERE m1.user_id = ? AND m2.user_id = ?
+       LIMIT 1`
+    ).bind(requestingUserId, targetUserId).first();
+
+    if (!sharedGroup) {
+      return c.json({ error: { code: 'FORBIDDEN', message: 'You do not share a group with this user' } }, 403);
+    }
+  }
 
   const row = await c.env.DB.prepare(
     `SELECT score, total_contributions, on_time_contributions, late_contributions,
@@ -1751,10 +1790,14 @@ susu.post('/groups/:id/early-payout', async (c) => {
      WHERE epr.id = ?`
   ).bind(requestId).first<EarlyPayoutRequestRow & { requester_name: string }>();
 
+  if (!row) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
   return c.json({
     data: {
-      ...row!,
-      premium_pesewas: Math.round(row!.amount_pesewas * row!.premium_percent / 100),
+      ...row,
+      premium_pesewas: Math.round(row.amount_pesewas * row.premium_percent / 100),
       my_vote: null,
     },
   }, 201);
@@ -1913,10 +1956,14 @@ susu.post('/groups/:id/early-payout/:requestId/vote', async (c) => {
      WHERE epr.id = ?`
   ).bind(requestId).first<EarlyPayoutRequestRow & { requester_name: string }>();
 
+  if (!final) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
   return c.json({
     data: {
-      ...final!,
-      premium_pesewas: Math.round(final!.amount_pesewas * final!.premium_percent / 100),
+      ...final,
+      premium_pesewas: Math.round(final.amount_pesewas * final.premium_percent / 100),
       my_vote: parsed.data.vote,
     },
   });
@@ -1973,9 +2020,13 @@ susu.post('/groups/:id/early-payout/:requestId/pay', async (c) => {
      WHERE epr.id = ?`
   ).bind(requestId).first<EarlyPayoutRequestRow & { requester_name: string }>();
 
+  if (!final) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
   return c.json({
     data: {
-      ...final!,
+      ...final,
       premium_pesewas: premium,
       payout_amount_pesewas: totalPayout,
     },
@@ -3047,9 +3098,13 @@ susu.post('/groups/:id/funeral-claim', async (c) => {
      WHERE fc.id = ?`
   ).bind(claimId).first<FuneralClaimRow & { claimant_name: string }>();
 
+  if (!claim) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
   return c.json({
     data: {
-      ...claim!,
+      ...claim,
       my_vote: null,
     },
   }, 201);
@@ -3199,9 +3254,13 @@ susu.post('/groups/:id/funeral-claim/:claimId/vote', async (c) => {
      WHERE fc.id = ?`
   ).bind(claimId).first<FuneralClaimRow & { claimant_name: string }>();
 
+  if (!final) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
   return c.json({
     data: {
-      ...final!,
+      ...final,
       my_vote: parsed.data.vote,
     },
   });
@@ -3255,9 +3314,13 @@ susu.post('/groups/:id/funeral-claim/:claimId/pay', async (c) => {
      WHERE fc.id = ?`
   ).bind(claimId).first<FuneralClaimRow & { claimant_name: string }>();
 
+  if (!final) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
   return c.json({
     data: {
-      ...final!,
+      ...final,
       payout_amount_pesewas: claim.amount_pesewas,
     },
   });
