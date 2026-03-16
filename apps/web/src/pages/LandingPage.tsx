@@ -448,18 +448,31 @@ function OfflineVisual() {
 }
 
 /* ================================================================ */
+/*  SUSU ECOSYSTEM DATA                                              */
+/* ================================================================ */
+const SUSU_TYPES = [
+  { name: 'Funeral Fund', icon: '\uD83D\uDD4A\uFE0F', desc: 'Prepare for the unexpected with community support' },
+  { name: 'School Fees', icon: '\uD83C\uDF93', desc: 'Save together for children\'s education' },
+  { name: 'Diaspora Remit', icon: '\uD83C\uDF0D', desc: 'Cross-border group savings for Ghanaians abroad' },
+  { name: 'Market Collector', icon: '\uD83C\uDFEA', desc: 'Digital susu collection for market traders' },
+  { name: 'Wedding Fund', icon: '\uD83D\uDC8D', desc: 'Pool resources for wedding celebrations' },
+  { name: 'Guarantee Fund', icon: '\uD83D\uDEE1\uFE0F', desc: 'Backed savings with group-level guarantees' },
+  { name: 'Trader Groups', icon: '\uD83D\uDCE6', desc: 'Bulk buying power through group capital' },
+  { name: 'Agric Seasonal', icon: '\uD83C\uDF3E', desc: 'Aligned with planting and harvest cycles' },
+  { name: 'Church Welfare', icon: '\u26EA', desc: 'Faith-based community savings groups' },
+  { name: 'Credit Cert', icon: '\uD83D\uDCDC', desc: 'Build a verified savings history for credit access' },
+];
+
+const SUSU_EXTRAS = ['Trust Scores', 'QR Invites', 'Digital Receipts', 'Badges', 'Group Chat', 'Analytics', 'Gamification'];
+
+/* ================================================================ */
 /*  FEATURE DATA                                                     */
 /* ================================================================ */
 const features = [
   {
-    visual: <SmsImportVisual />,
-    title: 'SMS Import',
-    description: 'Paste your MoMo texts and watch transactions auto-categorize across 11 providers.',
-  },
-  {
     visual: <AiAdvisorVisual />,
-    title: 'AI Advisor',
-    description: 'Chat with an AI that understands MoMo fees, susu culture, and Ghanaian finance.',
+    title: 'AI Financial Advisor',
+    description: 'Streaming chat that understands MoMo fees, susu culture, and Ghanaian finance.',
   },
   {
     visual: <DashboardVisual />,
@@ -468,18 +481,23 @@ const features = [
   },
   {
     visual: <BudgetVisual />,
-    title: 'Budgets & Goals',
-    description: 'Set monthly limits by category and savings goals with visual progress tracking.',
+    title: 'Budget & Goals',
+    description: 'Monthly spending limits, savings targets, and visual progress tracking.',
+  },
+  {
+    visual: <SmsImportVisual />,
+    title: 'Import Transactions',
+    description: 'SMS from 11 providers, CSV upload, or manual entry \u2014 all auto-categorized.',
   },
   {
     visual: <SusuVisual />,
-    title: 'Susu Groups',
-    description: 'Organize group savings the Ghanaian way. Track contributions and rotations.',
+    title: 'Investment Tracking',
+    description: 'T-Bills, mutual funds, and fixed deposits with projected returns.',
   },
   {
     visual: <OfflineVisual />,
-    title: 'Works Offline',
-    description: 'Full offline support. Sync when connected. Installable as a PWA on any device.',
+    title: 'Offline & PWA',
+    description: 'Works without internet. Installable on any device. Syncs on reconnect.',
   },
 ];
 
@@ -518,7 +536,7 @@ const steps = [
   {
     number: '3',
     title: 'Watch your wealth grow',
-    description: 'Budget smarter, save more, and let AI guide your financial journey.',
+    description: 'Create Susu groups, budget smarter, and let AI guide your financial journey.',
     visual: (
       <div className="flex items-end justify-center gap-1 h-8">
         {[25, 40, 35, 55, 50, 70, 65].map((h, i) => (
@@ -555,13 +573,14 @@ const providers = [
 /* ================================================================ */
 const pricingFeatures = [
   'Unlimited transactions',
+  '10 Susu group types',
   'AI chat advisor (40/day)',
   '11 provider SMS parsing',
   'Budgets & savings goals',
   'Full offline support',
   'Bill reminders',
   'CSV import & export',
-  'PWA — install on any device',
+  'PWA \u2014 install on any device',
 ];
 
 /* ================================================================ */
@@ -752,9 +771,9 @@ export function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 md:divide-x md:divide-white/[0.06]">
             {[
               { value: '11', label: 'Providers' },
+              { value: '10', label: 'Susu Types' },
               { value: 'AI', label: 'Powered' },
               { value: '100%', label: 'Free' },
-              { value: 'PWA', label: 'Works Offline' },
             ].map((stat) => (
               <div key={stat.label} className="text-center px-4">
                 <p className="text-xl md:text-2xl font-extrabold text-text-primary tracking-tight">{stat.value}</p>
@@ -768,8 +787,100 @@ export function LandingPage() {
       {/* ================================================================ */}
       {/*  FEATURES SECTION                                                */}
       {/* ================================================================ */}
+      {/* ================================================================ */}
+      {/*  SUSU ECOSYSTEM — HERO FEATURE                                   */}
+      {/* ================================================================ */}
       <section id="features" className="relative py-24 sm:py-32 px-6" ref={featuresRef}>
         <div className="max-w-6xl mx-auto">
+          {/* Susu Ecosystem showcase */}
+          <div className="reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0 mb-20">
+            <div
+              className="relative rounded-3xl overflow-hidden p-8 sm:p-10 lg:p-12"
+              style={{
+                background: 'linear-gradient(135deg, rgba(212,168,67,0.08) 0%, rgba(20,20,42,0.98) 30%, rgba(12,12,20,1) 100%)',
+                border: '2px solid rgba(212,168,67,0.2)',
+                boxShadow: '0 0 60px rgba(212,168,67,0.06), 0 0 120px rgba(212,168,67,0.03)',
+              }}
+            >
+              {/* Gold glow accent */}
+              <div
+                className="absolute top-0 left-0 w-full h-1"
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(212,168,67,0.5), transparent)' }}
+                aria-hidden="true"
+              />
+              <div
+                className="absolute -top-20 -right-20 w-64 h-64 pointer-events-none"
+                style={{ background: 'radial-gradient(circle, rgba(212,168,67,0.1) 0%, transparent 70%)' }}
+                aria-hidden="true"
+              />
+
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-3xl" role="img" aria-label="handshake">{'\uD83E\uDD1D'}</span>
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight">
+                      The Susu Ecosystem
+                    </h2>
+                  </div>
+                  <p className="text-gold text-base sm:text-lg font-medium">
+                    The world&apos;s most advanced digital Susu platform
+                  </p>
+                </div>
+                <span className="self-start sm:self-auto bg-gold text-ghana-dark text-[11px] font-bold px-4 py-1.5 rounded-full whitespace-nowrap motion-safe:animate-pulse-soft">
+                  {'\u2B50'} STAR FEATURE
+                </span>
+              </div>
+
+              {/* Susu type grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-8">
+                {SUSU_TYPES.map((susu, i) => (
+                  <div
+                    key={susu.name}
+                    className="group rounded-2xl p-4 border border-gold/[0.1] transition-all duration-200 hover:border-gold/30 hover:shadow-gold-glow cursor-default"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(212,168,67,0.06) 0%, rgba(12,12,20,0.95) 100%)',
+                      animationDelay: `${i * 60}ms`,
+                    }}
+                  >
+                    <span className="text-2xl block mb-2">{susu.icon}</span>
+                    <p className="text-text-primary text-sm font-semibold leading-tight mb-1">{susu.name}</p>
+                    <p className="text-muted text-[11px] leading-snug">{susu.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Extra features */}
+              <div className="flex flex-wrap gap-2 mb-8">
+                {SUSU_EXTRAS.map((extra) => (
+                  <span
+                    key={extra}
+                    className="text-xs font-medium text-gold/80 bg-gold/[0.06] border border-gold/[0.1] rounded-full px-3 py-1.5"
+                  >
+                    {extra}
+                  </span>
+                ))}
+              </div>
+
+              {/* CTAs */}
+              <div className="flex flex-wrap gap-4">
+                <button
+                  onClick={() => openAuth('register')}
+                  className="btn-gold text-sm px-8 py-3"
+                >
+                  Create a Susu Group
+                </button>
+                <button
+                  onClick={scrollToFeatures}
+                  className="px-8 py-3 rounded-xl text-sm font-semibold text-gold border border-gold/30 hover:bg-gold/[0.06] transition-all duration-200 active:scale-[0.98]"
+                >
+                  Learn More
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Regular features header */}
           <div className="text-center mb-16 reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0">
             <p className="section-label mb-4">Features</p>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-5">

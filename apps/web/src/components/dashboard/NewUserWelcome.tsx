@@ -18,6 +18,15 @@ export function dismissWelcome(): void {
   }
 }
 
+/* ─── Susu Types ──────────────────────────────────────────────────────────── */
+
+const SUSU_TYPES = [
+  'Rotating', 'Funeral Fund', 'School Fees', 'Diaspora',
+  'Wedding', 'Guarantee', 'Trader', 'Agricultural', 'Welfare', 'Bidding',
+];
+
+/* ─── Feature Cards ───────────────────────────────────────────────────────── */
+
 interface FeatureCard {
   id: string;
   name: string;
@@ -25,21 +34,9 @@ interface FeatureCard {
   icon: string;
   route: string;
   cta: string;
-  hero?: boolean;
-  secondaryCta?: { label: string; route: string };
 }
 
 const FEATURES: FeatureCard[] = [
-  {
-    id: 'susu',
-    name: 'Susu Groups',
-    description: 'Start or join a rotating savings group \u2014 the smart way to save with your community',
-    icon: '\uD83C\uDFC6',
-    route: '/susu',
-    cta: 'Create Group',
-    secondaryCta: { label: 'Join Group', route: '/susu' },
-    hero: true,
-  },
   {
     id: 'import',
     name: 'Import Transactions',
@@ -50,7 +47,7 @@ const FEATURES: FeatureCard[] = [
   },
   {
     id: 'budget',
-    name: 'Set Your First Budget',
+    name: 'Set Budgets',
     description: 'Take control with monthly spending limits',
     icon: '\uD83D\uDCCA',
     route: '/budgets',
@@ -58,7 +55,7 @@ const FEATURES: FeatureCard[] = [
   },
   {
     id: 'goal',
-    name: 'Start a Savings Goal',
+    name: 'Savings Goals',
     description: 'Dream it. Save it. Achieve it.',
     icon: '\uD83C\uDFAF',
     route: '/goals',
@@ -66,7 +63,7 @@ const FEATURES: FeatureCard[] = [
   },
   {
     id: 'ai',
-    name: 'Chat with AI',
+    name: 'AI Chat Advisor',
     description: 'Ask your personal finance advisor anything',
     icon: '\uD83D\uDCAC',
     route: '/ai-chat',
@@ -80,7 +77,33 @@ const FEATURES: FeatureCard[] = [
     route: '/investments',
     cta: 'Add Investment',
   },
+  {
+    id: 'collector',
+    name: 'Become a Collector',
+    description: 'Manage susu collections for your community',
+    icon: '\uD83C\uDFEA',
+    route: '/collector',
+    cta: 'Get Started',
+  },
+  {
+    id: 'insights',
+    name: 'View Insights',
+    description: 'See where your money goes each month',
+    icon: '\uD83D\uDCA1',
+    route: '/insights',
+    cta: 'View Now',
+  },
+  {
+    id: 'bills',
+    name: 'Manage Bills',
+    description: 'Track recurring payments and never miss a due date',
+    icon: '\uD83D\uDD14',
+    route: '/recurring',
+    cta: 'Add Bill',
+  },
 ];
+
+/* ─── Component ───────────────────────────────────────────────────────────── */
 
 interface Props {
   userName: string;
@@ -112,86 +135,114 @@ export function NewUserWelcome({ userName, onDismiss }: Props) {
         </p>
       </div>
 
-      {/* Feature grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {FEATURES.map((feature, i) => {
-          const isHero = feature.hero;
+      {/* ─── Susu Groups — Hero Section ──────────────────────────────── */}
+      <div
+        className="motion-safe:animate-slide-up mb-6"
+        style={{ animationFillMode: 'both' }}
+      >
+        <div
+          className="relative rounded-2xl overflow-hidden p-6 sm:p-8 border-2 border-gold/30 hover:border-gold/50 hover:shadow-gold-glow-lg transition-all duration-200"
+          style={{
+            background: 'linear-gradient(135deg, rgba(212,168,67,0.08) 0%, rgba(20,20,42,0.98) 40%, transparent 100%)',
+          }}
+        >
+          {/* Star badge */}
+          <span className="absolute top-3 right-3 bg-gold text-ghana-dark text-[10px] font-bold px-3 py-1 rounded-full motion-safe:animate-pulse-soft">
+            STAR FEATURE
+          </span>
 
-          return (
-            <div
-              key={feature.id}
-              className={`motion-safe:animate-slide-up ${isHero ? 'md:col-span-2' : ''}`}
-              style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'both' }}
-            >
-              <div
-                className={`relative rounded-2xl overflow-hidden transition-all duration-200 group ${
-                  isHero
-                    ? 'p-6 sm:p-8 border-2 border-gold/30 bg-gradient-to-br from-gold/[0.06] to-transparent hover:border-gold/50 hover:shadow-gold-glow-lg'
-                    : 'p-5 border border-ghana-surface bg-ghana-surface hover:border-gold/20 hover:shadow-gold-glow'
-                }`}
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl bg-gold/10 border border-gold/20">
+              {'\uD83C\uDFC6'}
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gold tracking-[-0.01em]">
+                <span className="mr-1">{'\u2B50'}</span>
+                Susu Groups
+              </h3>
+              <p className="text-muted text-sm leading-relaxed">
+                10 types of savings groups for every occasion
+              </p>
+            </div>
+          </div>
+
+          {/* Susu type pills */}
+          <div className="flex flex-wrap gap-2 mt-4 mb-5">
+            {SUSU_TYPES.map((type) => (
+              <span
+                key={type}
+                className="text-xs font-medium text-gold/90 bg-gold/[0.08] border border-gold/[0.12] rounded-full px-3 py-1.5"
               >
-                {/* Star badge for Susu */}
-                {isHero && (
-                  <span className="absolute top-3 right-3 bg-gold text-ghana-dark text-[10px] font-bold px-3 py-1 rounded-full motion-safe:animate-pulse-soft">
-                    STAR FEATURE
-                  </span>
-                )}
+                {type}
+              </span>
+            ))}
+          </div>
 
-                <div className={`flex ${isHero ? 'flex-col sm:flex-row' : 'flex-row'} items-start gap-4`}>
-                  {/* Icon */}
-                  <div
-                    className={`flex-shrink-0 rounded-2xl flex items-center justify-center ${
-                      isHero
-                        ? 'w-16 h-16 text-3xl bg-gold/10 border border-gold/20'
-                        : 'w-12 h-12 text-xl bg-ghana-elevated'
-                    }`}
-                  >
-                    {feature.icon}
-                  </div>
+          {/* CTAs */}
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => handleNavigate('/susu')}
+              className="min-h-[44px] px-6 py-2.5 bg-gold text-ghana-dark text-sm font-semibold rounded-xl shadow-gold-btn hover:shadow-gold-glow active:scale-[0.97] transition-all duration-200"
+            >
+              Create Group
+              <svg className="inline-block w-3.5 h-3.5 ml-1.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </button>
+            <button
+              onClick={() => handleNavigate('/susu')}
+              className="min-h-[44px] px-6 py-2.5 border border-gold/30 text-gold text-sm font-semibold rounded-xl hover:bg-gold/[0.06] transition-all duration-200 active:scale-[0.97]"
+            >
+              Join Group
+              <svg className="inline-block w-3.5 h-3.5 ml-1.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className={`font-bold tracking-[-0.01em] ${isHero ? 'text-lg text-gold' : 'text-sm text-text-primary'}`}>
-                      {isHero && <span className="mr-1">&#11088;</span>}
-                      {feature.name}
-                    </h3>
-                    <p className={`text-muted leading-relaxed mt-1 ${isHero ? 'text-sm' : 'text-xs'}`}>
-                      {feature.description}
-                    </p>
+      {/* ─── Other Features — 2-col Grid ────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {FEATURES.map((feature, i) => (
+          <div
+            key={feature.id}
+            className="motion-safe:animate-slide-up"
+            style={{ animationDelay: `${(i + 1) * 80}ms`, animationFillMode: 'both' }}
+          >
+            <div className="p-5 border border-ghana-surface bg-ghana-surface rounded-2xl hover:border-gold/20 hover:shadow-gold-glow transition-all duration-200">
+              <div className="flex flex-row items-start gap-4">
+                {/* Icon */}
+                <div className="flex-shrink-0 w-12 h-12 text-xl bg-ghana-elevated rounded-2xl flex items-center justify-center">
+                  {feature.icon}
+                </div>
 
-                    {/* CTAs */}
-                    <div className={`flex flex-wrap gap-3 ${isHero ? 'mt-5' : 'mt-3'}`}>
-                      <button
-                        onClick={() => handleNavigate(feature.route)}
-                        className={`min-h-[44px] font-semibold rounded-xl transition-all duration-200 active:scale-[0.97] ${
-                          isHero
-                            ? 'px-6 py-2.5 bg-gold text-ghana-dark text-sm shadow-gold-btn hover:shadow-gold-glow'
-                            : 'px-4 py-2 bg-gold/10 text-gold text-xs hover:bg-gold/20'
-                        }`}
-                      >
-                        {feature.cta}
-                        <svg className="inline-block w-3.5 h-3.5 ml-1.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      </button>
-                      {feature.secondaryCta && (
-                        <button
-                          onClick={() => handleNavigate(feature.secondaryCta!.route)}
-                          className="min-h-[44px] px-6 py-2.5 border border-gold/30 text-gold text-sm font-semibold rounded-xl hover:bg-gold/[0.06] transition-all duration-200 active:scale-[0.97]"
-                        >
-                          {feature.secondaryCta.label}
-                          <svg className="inline-block w-3.5 h-3.5 ml-1.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-sm text-text-primary tracking-[-0.01em]">
+                    {feature.name}
+                  </h3>
+                  <p className="text-muted text-xs leading-relaxed mt-1">
+                    {feature.description}
+                  </p>
+
+                  {/* CTA */}
+                  <div className="mt-3">
+                    <button
+                      onClick={() => handleNavigate(feature.route)}
+                      className="min-h-[44px] px-4 py-2 bg-gold/10 text-gold text-xs font-semibold rounded-xl hover:bg-gold/20 transition-all duration-200 active:scale-[0.97]"
+                    >
+                      {feature.cta}
+                      <svg className="inline-block w-3.5 h-3.5 ml-1.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
       {/* Dismiss */}

@@ -16,7 +16,7 @@ interface AccountOption {
   badge?: string;
 }
 
-type FeatureId = 'susu' | 'spending' | 'budgets' | 'goals' | 'ai';
+type FeatureId = 'susu' | 'spending' | 'budgets' | 'goals' | 'ai' | 'collector' | 'investments';
 
 interface FeatureOption {
   id: FeatureId;
@@ -41,11 +41,13 @@ const ACCOUNT_OPTIONS: AccountOption[] = [
 ];
 
 const FEATURE_OPTIONS: FeatureOption[] = [
-  { id: 'susu', name: 'Susu Groups', description: 'Join or create a rotating savings group with friends and family', icon: '🏆', star: true, badge: 'NEW' },
-  { id: 'spending', name: 'Track Spending', description: 'Import SMS transactions and see where your money goes', icon: '📊' },
-  { id: 'budgets', name: 'Set Budgets', description: 'Control your spending with monthly category limits', icon: '💰' },
-  { id: 'goals', name: 'Save for Goals', description: 'Set targets and track your progress', icon: '🎯' },
-  { id: 'ai', name: 'AI Advisor', description: 'Get personalized financial advice', icon: '💬' },
+  { id: 'susu', name: 'Susu Groups', description: '10 types including Funeral Fund, School Fees, Diaspora, Wedding, and more', icon: '\uD83C\uDFC6', star: true, badge: 'NEW' },
+  { id: 'spending', name: 'Track Spending', description: 'Import SMS transactions and see where your money goes', icon: '\uD83D\uDCCA' },
+  { id: 'budgets', name: 'Set Budgets', description: 'Control your spending with monthly category limits', icon: '\uD83D\uDCB0' },
+  { id: 'goals', name: 'Save for Goals', description: 'Set targets and track your progress', icon: '\uD83C\uDFAF' },
+  { id: 'ai', name: 'AI Advisor', description: 'Get personalized financial advice', icon: '\uD83D\uDCAC' },
+  { id: 'collector', name: 'Market Collector', description: 'Manage susu collections for traders in your community', icon: '\uD83C\uDFEA', badge: 'NEW' },
+  { id: 'investments', name: 'Track Investments', description: 'T-Bills, mutual funds, and fixed deposits with returns', icon: '\uD83D\uDCC8', badge: 'NEW' },
 ];
 
 const FEATURE_ROUTES: Record<FeatureId, string> = {
@@ -54,6 +56,8 @@ const FEATURE_ROUTES: Record<FeatureId, string> = {
   budgets: '/budgets',
   goals: '/goals',
   ai: '/ai-chat',
+  collector: '/collector',
+  investments: '/investments',
 };
 
 const STEP_LABELS = ['Welcome', 'Income', 'Account', 'Get Started'];
