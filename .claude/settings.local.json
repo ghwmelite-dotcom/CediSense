@@ -176,7 +176,9 @@
       "WebFetch(domain:www.ynab.com)",
       "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\\\\apps\\\\web\" && npx vitest run 2>&1 | tail -30)",
       "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense/apps/web\" && npx vitest run 2>&1)",
-      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\" && npx --yes sharp-cli --help 2>&1 | head -3 || echo \"sharp not available\")"
+      "Bash(cd \"C:\\\\Users\\\\USER\\\\OneDrive - Smart Workplace\\\\Desktop\\\\Projects\\\\CediSense\" && npx --yes sharp-cli --help 2>&1 | head -3 || echo \"sharp not available\")",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense/apps/web\" && npx tsc --noEmit 2>&1 | head -50)",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense/apps/web\" && npx vitest run 2>&1 | tail -30)"
     ]
   }
 }

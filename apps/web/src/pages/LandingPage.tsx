@@ -1,5 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { AuthModal } from '@/components/auth/AuthModal';
 
 /* ================================================================ */
 /*  SCROLL REVEAL HOOK                                               */
@@ -570,6 +572,40 @@ export function LandingPage() {
   const stepsRef = useScrollReveal();
   const pricingRef = useScrollReveal();
   const providersRef = useScrollReveal();
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'register'>('signin');
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isLoading, isAuthenticated, navigate]);
+
+  // Check URL params for auth modal
+  useEffect(() => {
+    const auth = searchParams.get('auth');
+    if (auth === 'signin' || auth === 'register') {
+      setAuthMode(auth);
+      setAuthOpen(true);
+      // Clean up the URL param
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const openAuth = useCallback((mode: 'signin' | 'register') => {
+    setAuthMode(mode);
+    setAuthOpen(true);
+  }, []);
+
+  const handleAuthSuccess = useCallback(() => {
+    setAuthOpen(false);
+    navigate('/dashboard');
+  }, [navigate]);
 
   const scrollToFeatures = useCallback(() => {
     document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
@@ -639,18 +675,18 @@ export function LandingPage() {
             <span className="text-text-primary font-semibold text-lg tracking-[-0.02em]">CediSense</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link
-              to="/login"
+            <button
+              onClick={() => openAuth('signin')}
               className="text-sm font-medium text-muted hover:text-text-primary transition-colors duration-200 px-3 py-2"
             >
               Sign In
-            </Link>
-            <Link
-              to="/register"
+            </button>
+            <button
+              onClick={() => openAuth('register')}
               className="btn-gold text-sm px-5 py-2 hidden sm:inline-flex"
             >
               Get Started
-            </Link>
+            </button>
           </div>
         </div>
       </header>
@@ -685,12 +721,12 @@ export function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                to="/register"
+              <button
+                onClick={() => openAuth('register')}
                 className="btn-gold text-base px-8 py-3.5 text-center"
               >
                 Start Free &mdash; No Card Needed
-              </Link>
+              </button>
               <button
                 onClick={scrollToFeatures}
                 className="px-8 py-3.5 rounded-xl text-base font-semibold text-muted hover:text-text-primary bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] transition-all duration-200 active:scale-[0.98]"
@@ -923,12 +959,12 @@ export function LandingPage() {
                 ))}
               </div>
 
-              <Link
-                to="/register"
+              <button
+                onClick={() => openAuth('register')}
                 className="btn-gold w-full text-center block py-4 text-base"
               >
                 Get Started Free
-              </Link>
+              </button>
             </div>
 
             <p className="text-muted-dim/40 text-sm mt-6 text-center">
@@ -963,6 +999,14 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Auth Modal */}
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        initialMode={authMode}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }
