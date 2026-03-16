@@ -350,3 +350,36 @@ export const funeralClaimVoteSchema = z.object({
 
 export type FuneralClaimInput = z.infer<typeof funeralClaimSchema>;
 export type FuneralClaimVoteInput = z.infer<typeof funeralClaimVoteSchema>;
+
+// ─── Collector schemas ──────────────────────────────────────────────────────
+
+export const createCollectorProfileSchema = z.object({
+  business_name: z.string().min(1).max(100),
+  market_area: z.string().max(100).optional(),
+  commission_days: z.number().int().min(1).max(5).default(1),
+});
+
+export const addCollectorClientSchema = z.object({
+  client_name: z.string().min(1).max(100),
+  client_phone: z.string().optional(),
+  daily_amount_pesewas: z.number().int().positive(),
+  cycle_days: z.number().int().min(7).max(60).default(30),
+});
+
+export const recordDepositSchema = z.object({
+  amount_pesewas: z.number().int().positive(),
+  deposit_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
+export const updateCollectorClientSchema = z.object({
+  client_name: z.string().min(1).max(100).optional(),
+  client_phone: z.string().optional(),
+  daily_amount_pesewas: z.number().int().positive().optional(),
+  cycle_days: z.number().int().min(7).max(60).optional(),
+  is_active: z.boolean().optional(),
+});
+
+export type CreateCollectorProfileInput = z.infer<typeof createCollectorProfileSchema>;
+export type AddCollectorClientInput = z.infer<typeof addCollectorClientSchema>;
+export type RecordDepositInput = z.infer<typeof recordDepositSchema>;
+export type UpdateCollectorClientInput = z.infer<typeof updateCollectorClientSchema>;

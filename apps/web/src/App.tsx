@@ -20,6 +20,7 @@ import { RecurringPage } from '@/pages/RecurringPage';
 import { SplitsPage } from '@/pages/SplitsPage';
 import { InvestmentsPage } from '@/pages/InvestmentsPage';
 import { SusuPage } from '@/pages/SusuPage';
+import { CollectorPage } from '@/pages/CollectorPage';
 import { JoinByLinkPage } from '@/pages/JoinByLinkPage';
 import { MonthlyReportPrint } from '@/pages/print/MonthlyReportPrint';
 import { TransactionsPrint } from '@/pages/print/TransactionsPrint';
@@ -96,6 +97,7 @@ export function App() {
           <Route path="/splits" element={<SplitsPage />} />
           <Route path="/investments" element={<InvestmentsPage />} />
           <Route path="/susu" element={<SusuPage />} />
+          <Route path="/collector" element={<CollectorPage />} />
         </Route>
 
         {/* Catch-all */}

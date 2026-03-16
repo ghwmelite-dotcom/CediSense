@@ -6,6 +6,7 @@ const mainNav = [
   { to: '/budgets', label: 'Budgets', icon: '📊' },
   { to: '/goals', label: 'Goals', icon: '🎯' },
   { to: '/susu', label: 'Susu Groups', icon: '🤝', highlight: true },
+  { to: '/collector', label: 'Collector', icon: '🏪', highlight: true },
   { to: '/investments', label: 'Investments', icon: '📈' },
 ];
 

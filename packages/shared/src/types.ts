@@ -647,6 +647,49 @@ export interface LeaderboardEntry {
 
 // ─── Micro-Credit Certificate types ─────────────────────────────────────────
 
+// ─── Collector types ─────────────────────────────────────────────────────────
+
+export interface CollectorProfile {
+  user_id: string;
+  business_name: string;
+  market_area: string | null;
+  commission_days: number;
+  is_active: boolean;
+  total_clients: number;
+  created_at: string;
+}
+
+export interface CollectorClient {
+  id: string;
+  collector_id: string;
+  client_name: string;
+  client_phone: string | null;
+  daily_amount_pesewas: number;
+  cycle_days: number;
+  current_cycle_start: string;
+  is_active: boolean;
+  deposits_this_cycle: number;
+  total_deposited_this_cycle_pesewas: number;
+  days_remaining: number;
+}
+
+export interface CollectorDeposit {
+  id: string;
+  client_id: string;
+  amount_pesewas: number;
+  deposit_date: string;
+}
+
+export interface CollectorDashboard {
+  profile: CollectorProfile;
+  clients: CollectorClient[];
+  today_collections: number;
+  today_amount_pesewas: number;
+  cycle_total_pesewas: number;
+}
+
+// ─── Micro-Credit Certificate types ─────────────────────────────────────────
+
 export interface CreditCertificate {
   certificate_id: string;
   user_name: string;

@@ -185,7 +185,8 @@
       "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && grep -E '\"test\"' package.json)",
       "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && npx tsc --noEmit -p packages/shared/tsconfig.json 2>&1 | head -30)",
       "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && pnpm run typecheck 2>&1 | tail -40)",
-      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && pnpm run test 2>&1 | tail -40)"
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && pnpm run test 2>&1 | tail -40)",
+      "Bash(cd \"C:/Users/USER/OneDrive - Smart Workplace/Desktop/Projects/CediSense\" && pnpm run test 2>&1 | tail -30)"
     ]
   }
 }
