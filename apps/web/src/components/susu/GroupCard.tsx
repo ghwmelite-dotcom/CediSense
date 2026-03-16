@@ -30,6 +30,12 @@ function variantBadge(variant: SusuVariant): VariantBadgeConfig {
       return { label: 'Goal-based', className: 'bg-gold/15 text-gold border-gold/30' };
     case 'bidding':
       return { label: 'Bidding', className: 'bg-purple-500/15 text-purple-300 border-purple-500/30' };
+    case 'school_fees':
+      return { label: 'School Fees', className: 'bg-blue-600/15 text-blue-200 border-blue-600/30' };
+    case 'diaspora':
+      return { label: 'Diaspora', className: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' };
+    case 'event_fund':
+      return { label: 'Event Fund', className: 'bg-pink-500/15 text-pink-300 border-pink-500/30' };
     case 'funeral_fund':
       return { label: 'Funeral Fund', className: 'bg-neutral-700/30 text-amber-300 border-amber-700/40' };
   }
@@ -80,6 +86,32 @@ export function GroupCard({ group, isCreator, onClick }: GroupCardProps) {
             </span>
           );
         })()}
+        {/* Extra info badges for new variants */}
+        {group.variant === 'school_fees' && group.school_name && (
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600/10 text-blue-200 border border-blue-600/20 truncate max-w-[140px]">
+            {group.school_name}
+          </span>
+        )}
+        {group.variant === 'school_fees' && group.target_term && (
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600/10 text-blue-200 border border-blue-600/20">
+            {group.target_term}
+          </span>
+        )}
+        {group.variant === 'diaspora' && group.base_currency && group.base_currency !== 'GHS' && (
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+            {group.base_currency}
+          </span>
+        )}
+        {group.variant === 'event_fund' && group.event_name && (
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-300 border border-pink-500/20 truncate max-w-[140px]">
+            {group.event_name}
+          </span>
+        )}
+        {group.variant === 'event_fund' && group.event_date && (
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-300 border border-pink-500/20">
+            {new Date(group.event_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+          </span>
+        )}
         {group.is_active ? (
           <span className="flex items-center gap-1 text-xs font-medium text-income">
             <span className="w-1.5 h-1.5 rounded-full bg-income inline-block" aria-hidden="true" />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { SusuFrequency, SusuVariant } from '@cedisense/shared';
+import type { SusuFrequency, SusuVariant, DiasporaCurrency } from '@cedisense/shared';
 import { AmountInput } from '@/components/transactions/AmountInput';
 
 interface CreateGroupData {
@@ -10,6 +10,11 @@ interface CreateGroupData {
   variant: SusuVariant;
   goal_amount_pesewas?: number;
   goal_description?: string;
+  target_term?: string;
+  school_name?: string;
+  base_currency?: DiasporaCurrency;
+  event_name?: string;
+  event_date?: string;
 }
 
 interface CreateGroupModalProps {
@@ -23,7 +28,24 @@ const VARIANT_OPTIONS: { value: SusuVariant; label: string; description: string;
   { value: 'accumulating', label: 'Accumulating', description: 'Everyone saves, split at the end' },
   { value: 'goal_based', label: 'Goal-based', description: 'Save together for a shared goal' },
   { value: 'bidding', label: 'Bidding', description: 'Bid for early payout each round' },
+  { value: 'school_fees', label: 'School Fees', description: 'Save for school term fees with term payouts' },
+  { value: 'diaspora', label: 'Diaspora', description: 'Save across currencies for Ghana remittances' },
+  { value: 'event_fund', label: 'Event Fund', description: 'Crowdfund a wedding, naming ceremony, or event' },
   { value: 'funeral_fund', label: 'Funeral Fund', description: 'Emergency bereavement support for your family', className: 'col-span-2' },
+];
+
+const CURRENCY_OPTIONS: { value: DiasporaCurrency; label: string; symbol: string }[] = [
+  { value: 'GHS', label: 'Ghana Cedi', symbol: '\u20B5' },
+  { value: 'GBP', label: 'British Pound', symbol: '\u00A3' },
+  { value: 'USD', label: 'US Dollar', symbol: '$' },
+  { value: 'EUR', label: 'Euro', symbol: '\u20AC' },
+  { value: 'CAD', label: 'Canadian Dollar', symbol: 'CA$' },
+];
+
+const TERM_OPTIONS = [
+  { value: 'Term 1', label: 'Term 1 (Sep\u2013Dec)', payout: 'Payout: August' },
+  { value: 'Term 2', label: 'Term 2 (Jan\u2013Apr)', payout: 'Payout: December' },
+  { value: 'Term 3', label: 'Term 3 (May\u2013Jul)', payout: 'Payout: March' },
 ];
 
 export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProps) {
@@ -34,6 +56,14 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
   const [variant, setVariant] = useState<SusuVariant>('rotating');
   const [goalAmountPesewas, setGoalAmountPesewas] = useState(0);
   const [goalDescription, setGoalDescription] = useState('');
+  // School fees
+  const [targetTerm, setTargetTerm] = useState('Term 1');
+  const [schoolName, setSchoolName] = useState('');
+  // Diaspora
+  const [baseCurrency, setBaseCurrency] = useState<DiasporaCurrency>('GHS');
+  // Event fund
+  const [eventName, setEventName] = useState('');
+  const [eventDate, setEventDate] = useState('');
 
   if (!open) return null;
 
@@ -41,6 +71,7 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
     e.preventDefault();
     if (!name.trim() || contributionPesewas <= 0) return;
     if (variant === 'goal_based' && goalAmountPesewas <= 0) return;
+    if (variant === 'event_fund' && !eventName.trim()) return;
 
     onSave({
       name: name.trim(),
@@ -48,8 +79,13 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
       frequency,
       max_members: maxMembers,
       variant,
-      goal_amount_pesewas: variant === 'goal_based' ? goalAmountPesewas : undefined,
+      goal_amount_pesewas: (variant === 'goal_based' || variant === 'event_fund') ? goalAmountPesewas : undefined,
       goal_description: variant === 'goal_based' && goalDescription.trim() ? goalDescription.trim() : undefined,
+      target_term: variant === 'school_fees' ? targetTerm : undefined,
+      school_name: variant === 'school_fees' && schoolName.trim() ? schoolName.trim() : undefined,
+      base_currency: variant === 'diaspora' ? baseCurrency : undefined,
+      event_name: variant === 'event_fund' ? eventName.trim() : undefined,
+      event_date: variant === 'event_fund' && eventDate ? eventDate : undefined,
     });
 
     resetForm();
@@ -63,6 +99,11 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
     setVariant('rotating');
     setGoalAmountPesewas(0);
     setGoalDescription('');
+    setTargetTerm('Term 1');
+    setSchoolName('');
+    setBaseCurrency('GHS');
+    setEventName('');
+    setEventDate('');
   }
 
   function handleClose() {
@@ -75,7 +116,8 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
   const isSubmitDisabled =
     !name.trim() ||
     contributionPesewas <= 0 ||
-    (variant === 'goal_based' && goalAmountPesewas <= 0);
+    (variant === 'goal_based' && goalAmountPesewas <= 0) ||
+    (variant === 'event_fund' && !eventName.trim());
 
   return (
     <div
@@ -184,6 +226,137 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
                     focus:border-gold"
                 />
               </div>
+            </div>
+          )}
+
+          {/* School Fees fields */}
+          {variant === 'school_fees' && (
+            <div className="space-y-3 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+              <p className="text-blue-300 text-xs font-semibold uppercase tracking-wide">School Fees Settings</p>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">Target Term</label>
+                <div className="space-y-2">
+                  {TERM_OPTIONS.map((term) => (
+                    <button
+                      key={term.value}
+                      type="button"
+                      onClick={() => setTargetTerm(term.value)}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all
+                        active:scale-95
+                        ${targetTerm === term.value
+                          ? 'bg-blue-500/15 border-blue-500/60 text-blue-300'
+                          : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                        }`}
+                    >
+                      <span className="text-sm font-semibold">{term.label}</span>
+                      <span className={`text-xs ${targetTerm === term.value ? 'text-blue-300/70' : 'text-muted'}`}>
+                        {term.payout}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">
+                  School Name <span className="text-muted/60">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={schoolName}
+                  onChange={(e) => setSchoolName(e.target.value)}
+                  placeholder="e.g. Accra Academy"
+                  maxLength={200}
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                    placeholder-muted text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                    focus:border-blue-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">Target Amount (fees)</label>
+                <AmountInput
+                  valuePesewas={goalAmountPesewas}
+                  onChange={setGoalAmountPesewas}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Diaspora fields */}
+          {variant === 'diaspora' && (
+            <div className="space-y-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+              <p className="text-emerald-300 text-xs font-semibold uppercase tracking-wide">Diaspora Settings</p>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">Base Currency</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {CURRENCY_OPTIONS.map((cur) => (
+                    <button
+                      key={cur.value}
+                      type="button"
+                      onClick={() => setBaseCurrency(cur.value)}
+                      className={`flex flex-col items-center gap-0.5 p-2.5 rounded-xl border text-center transition-all
+                        active:scale-95
+                        ${baseCurrency === cur.value
+                          ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-300'
+                          : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                        }`}
+                    >
+                      <span className="text-lg font-bold">{cur.symbol}</span>
+                      <span className="text-[10px] font-medium">{cur.value}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="text-muted text-xs">
+                Members can contribute in any supported currency. Amounts are converted to {baseCurrency} equivalent.
+              </p>
+            </div>
+          )}
+
+          {/* Event Fund fields */}
+          {variant === 'event_fund' && (
+            <div className="space-y-3 rounded-xl border border-pink-500/20 bg-pink-500/5 p-4">
+              <p className="text-pink-300 text-xs font-semibold uppercase tracking-wide">Event Fund Settings (Abotr\u025B)</p>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">Event Name</label>
+                <input
+                  type="text"
+                  value={eventName}
+                  onChange={(e) => setEventName(e.target.value)}
+                  placeholder="e.g. Kwame & Ama's Wedding"
+                  maxLength={200}
+                  required
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                    placeholder-muted text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/50
+                    focus:border-pink-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">
+                  Event Date <span className="text-muted/60">(optional)</span>
+                </label>
+                <input
+                  type="date"
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                    text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/50
+                    focus:border-pink-500 [color-scheme:dark]"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">
+                  Target Amount <span className="text-muted/60">(optional)</span>
+                </label>
+                <AmountInput
+                  valuePesewas={goalAmountPesewas}
+                  onChange={setGoalAmountPesewas}
+                  placeholder="0.00"
+                />
+              </div>
+              <p className="text-muted text-xs">
+                Contributions can be any amount -- no fixed minimums for event funds.
+              </p>
             </div>
           )}
 

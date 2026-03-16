@@ -36,6 +36,11 @@ interface SusuGroupRow {
   goal_description: string | null;
   penalty_percent: number;
   penalty_pool_pesewas: number;
+  target_term: string | null;
+  school_name: string | null;
+  base_currency: string | null;
+  event_name: string | null;
+  event_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -66,6 +71,9 @@ interface SusuContributionRow {
   round: number;
   amount_pesewas: number;
   contributed_at: string;
+  original_currency: string | null;
+  original_amount: number | null;
+  exchange_rate: number | null;
 }
 
 interface SusuPayoutRow {
@@ -150,7 +158,11 @@ susu.post('/groups', async (c) => {
     );
   }
 
-  const { name, contribution_pesewas, frequency, max_members, variant, goal_amount_pesewas, goal_description } = parsed.data;
+  const {
+    name, contribution_pesewas, frequency, max_members, variant,
+    goal_amount_pesewas, goal_description,
+    target_term, school_name, base_currency, event_name, event_date,
+  } = parsed.data;
 
   // Fetch creator display_name
   const user = await c.env.DB.prepare(
@@ -165,14 +177,22 @@ susu.post('/groups', async (c) => {
   const memberId = generateId();
   const invite_code = 'SUSU-' + generateId().slice(0, 8).toUpperCase();
 
+  // For event_fund, store target in goal_amount_pesewas
+  const effectiveGoalAmount = variant === 'event_fund'
+    ? (goal_amount_pesewas ?? null)
+    : (goal_amount_pesewas ?? null);
+
   await c.env.DB.prepare(
     `INSERT INTO susu_groups
        (id, name, creator_id, invite_code, contribution_pesewas, frequency, max_members,
-        variant, goal_amount_pesewas, goal_description)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        variant, goal_amount_pesewas, goal_description,
+        target_term, school_name, base_currency, event_name, event_date)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     groupId, name, userId, invite_code, contribution_pesewas, frequency, max_members,
-    variant, goal_amount_pesewas ?? null, goal_description ?? null
+    variant, effectiveGoalAmount, goal_description ?? null,
+    target_term ?? null, school_name ?? null, base_currency ?? 'GHS',
+    event_name ?? null, event_date ?? null
   ).run();
 
   // Auto-add creator as first member
@@ -187,7 +207,7 @@ susu.post('/groups', async (c) => {
   const group = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
             max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
-            penalty_percent, penalty_pool_pesewas, created_at, updated_at
+            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -204,6 +224,7 @@ susu.get('/groups', async (c) => {
             g.frequency, g.max_members, g.current_round, g.is_active,
             g.variant, g.goal_amount_pesewas, g.goal_description,
             g.penalty_percent, g.penalty_pool_pesewas,
+            g.target_term, g.school_name, g.base_currency, g.event_name, g.event_date,
             g.created_at, g.updated_at,
             (SELECT COUNT(*) FROM susu_members m2 WHERE m2.group_id = g.id) AS member_count
      FROM susu_groups g
@@ -237,7 +258,7 @@ susu.get('/groups/:id', async (c) => {
   const group = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
             max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
-            penalty_percent, penalty_pool_pesewas, created_at, updated_at
+            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -339,6 +360,118 @@ susu.get('/groups/:id', async (c) => {
     }
   }
 
+  // Compute school fees info
+  let school_fees_info = null;
+  if (group.variant === 'school_fees' && group.target_term) {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    // Ghana school terms payout dates:
+    // Term 1 (Sep–Dec) → payout in August
+    // Term 2 (Jan–Apr) → payout in December
+    // Term 3 (May–Jul) → payout in March
+    const payoutMonths: Record<string, number> = {
+      'Term 1': 7,  // August (0-indexed)
+      'Term 2': 11, // December
+      'Term 3': 2,  // March
+    };
+    const payoutMonth = payoutMonths[group.target_term] ?? 7;
+
+    let payoutDate = new Date(currentYear, payoutMonth, 1);
+    if (payoutDate <= now) {
+      payoutDate = new Date(currentYear + 1, payoutMonth, 1);
+    }
+
+    const daysUntilPayout = Math.max(0, Math.ceil((payoutDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    const targetAmount = group.goal_amount_pesewas ?? 0;
+    const remaining = Math.max(0, targetAmount - total_contributed_pesewas);
+    const weeksUntil = Math.max(1, Math.ceil(daysUntilPayout / 7));
+    const monthsUntil = Math.max(1, Math.ceil(daysUntilPayout / 30));
+
+    school_fees_info = {
+      target_term: group.target_term,
+      school_name: group.school_name,
+      next_payout_date: payoutDate.toISOString().slice(0, 10),
+      days_until_payout: daysUntilPayout,
+      required_weekly_pesewas: Math.ceil(remaining / weeksUntil),
+      required_monthly_pesewas: Math.ceil(remaining / monthsUntil),
+    };
+  }
+
+  // Compute diaspora info
+  let diaspora_info = null;
+  if (group.variant === 'diaspora') {
+    const { results: diasporaContribs } = await c.env.DB.prepare(
+      `SELECT sc.amount_pesewas, sc.original_currency, sc.original_amount, sc.exchange_rate, sc.contributed_at,
+              sm.display_name AS member_name
+       FROM susu_contributions sc
+       INNER JOIN susu_members sm ON sm.id = sc.member_id
+       WHERE sc.group_id = ? AND sc.original_currency IS NOT NULL
+       ORDER BY sc.contributed_at DESC
+       LIMIT 50`
+    ).bind(groupId).all<{
+      amount_pesewas: number;
+      original_currency: string;
+      original_amount: number;
+      exchange_rate: number;
+      contributed_at: string;
+      member_name: string;
+    }>();
+
+    diaspora_info = {
+      base_currency: group.base_currency ?? 'GHS',
+      contributions_with_currency: diasporaContribs.map((c) => ({
+        member_name: c.member_name,
+        amount_pesewas: c.amount_pesewas,
+        original_currency: c.original_currency,
+        original_amount: c.original_amount,
+        exchange_rate: c.exchange_rate,
+        contributed_at: c.contributed_at,
+      })),
+    };
+  }
+
+  // Compute event fund info
+  let event_fund_info = null;
+  if (group.variant === 'event_fund') {
+    const targetAmount = group.goal_amount_pesewas ?? 0;
+    const percentage = targetAmount > 0
+      ? Math.min(100, Math.round((total_contributed_pesewas / targetAmount) * 100))
+      : 0;
+
+    let daysUntilEvent: number | null = null;
+    if (group.event_date) {
+      const eventDate = new Date(group.event_date + 'T00:00:00');
+      const now = new Date();
+      daysUntilEvent = Math.max(0, Math.ceil((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    }
+
+    // Get contributor list with amounts (guest book style)
+    const { results: contributors } = await c.env.DB.prepare(
+      `SELECT sm.display_name AS member_name, SUM(sc.amount_pesewas) AS amount_pesewas,
+              MAX(sc.contributed_at) AS contributed_at
+       FROM susu_contributions sc
+       INNER JOIN susu_members sm ON sm.id = sc.member_id
+       WHERE sc.group_id = ?
+       GROUP BY sc.member_id
+       ORDER BY amount_pesewas DESC`
+    ).bind(groupId).all<{
+      member_name: string;
+      amount_pesewas: number;
+      contributed_at: string;
+    }>();
+
+    event_fund_info = {
+      event_name: group.event_name ?? group.name,
+      event_date: group.event_date,
+      target_amount_pesewas: targetAmount,
+      total_contributed_pesewas,
+      percentage,
+      days_until_event: daysUntilEvent,
+      contributors,
+    };
+  }
+
   return c.json({
     data: {
       ...mapGroup(group),
@@ -351,6 +484,9 @@ susu.get('/groups/:id', async (c) => {
       accumulating_info,
       funeral_fund_info,
       funeral_claim,
+      school_fees_info,
+      diaspora_info,
+      event_fund_info,
     },
   });
 });
@@ -409,7 +545,7 @@ susu.put('/groups/:id', async (c) => {
   const updated = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
             max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
-            penalty_percent, penalty_pool_pesewas, created_at, updated_at
+            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -598,7 +734,7 @@ susu.post('/groups/:id/contributions', async (c) => {
     );
   }
 
-  const { member_id, amount_pesewas, is_late } = parsed.data;
+  const { member_id, amount_pesewas, is_late, original_currency, original_amount, exchange_rate } = parsed.data;
 
   // Verify member belongs to this group
   const member = await c.env.DB.prepare(
@@ -613,9 +749,9 @@ susu.post('/groups/:id/contributions', async (c) => {
 
   try {
     await c.env.DB.prepare(
-      `INSERT INTO susu_contributions (id, group_id, member_id, round, amount_pesewas)
-       VALUES (?, ?, ?, ?, ?)`
-    ).bind(contribId, groupId, member_id, group.current_round, amount_pesewas).run();
+      `INSERT INTO susu_contributions (id, group_id, member_id, round, amount_pesewas, original_currency, original_amount, exchange_rate)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(contribId, groupId, member_id, group.current_round, amount_pesewas, original_currency ?? null, original_amount ?? null, exchange_rate ?? null).run();
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('UNIQUE')) {
@@ -1021,7 +1157,7 @@ susu.post('/groups/:id/advance-round', async (c) => {
   const updated = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
             max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
-            penalty_percent, penalty_pool_pesewas, created_at, updated_at
+            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
