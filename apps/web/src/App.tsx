@@ -23,6 +23,7 @@ import { SusuPage } from '@/pages/SusuPage';
 import { JoinByLinkPage } from '@/pages/JoinByLinkPage';
 import { MonthlyReportPrint } from '@/pages/print/MonthlyReportPrint';
 import { TransactionsPrint } from '@/pages/print/TransactionsPrint';
+import { VerifyCertificatePage } from '@/pages/VerifyCertificatePage';
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -44,6 +45,7 @@ export function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/join" element={<JoinByLinkPage />} />
+        <Route path="/verify/:certificateId" element={<VerifyCertificatePage />} />
 
         {/* Onboarding (protected, no shell) */}
         <Route

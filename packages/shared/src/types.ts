@@ -644,3 +644,24 @@ export interface LeaderboardEntry {
   total_contributions: number;
   badges_count: number;
 }
+
+// ─── Micro-Credit Certificate types ─────────────────────────────────────────
+
+export interface CreditCertificate {
+  certificate_id: string;
+  user_name: string;
+  user_phone: string;
+  generated_at: string;
+  trust_score: number;
+  trust_label: string;
+  total_groups_participated: number;
+  total_groups_completed: number;
+  total_contributed_pesewas: number;
+  total_contributions: number;
+  on_time_rate: number;
+  current_streak: number;
+  longest_streak: number;
+  member_since: string;
+  badges_earned: string[];
+  summary: string;
+}

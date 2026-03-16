@@ -7,6 +7,7 @@ import { GroupDetail } from '@/components/susu/GroupDetail';
 import { CreateGroupModal } from '@/components/susu/CreateGroupModal';
 import { JoinGroupModal } from '@/components/susu/JoinGroupModal';
 import { ContributionReceipt as ContributionReceiptModal } from '@/components/susu/ContributionReceipt';
+import { CreditCertificateView } from '@/components/susu/CreditCertificateView';
 
 type SusuGroupWithCount = SusuGroup & { member_count: number };
 
@@ -97,6 +98,9 @@ export function SusuPage() {
   const [badges, setBadges] = useState<SusuBadge[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+
+  // Certificate state
+  const [showCertificate, setShowCertificate] = useState(false);
 
   const fetchGroups = useCallback(async () => {
     try {
@@ -344,6 +348,12 @@ export function SusuPage() {
 
   const isEmpty = !loading && groups.length === 0;
 
+  // ── Certificate view ──────────────────────────────────────────────────────
+
+  if (showCertificate) {
+    return <CreditCertificateView onClose={() => setShowCertificate(false)} />;
+  }
+
   // ── Detail view ─────────────────────────────────────────────────────────────
 
   if (selectedGroup) {
@@ -422,6 +432,18 @@ export function SusuPage() {
         <div className="flex items-center justify-between gap-3 max-w-screen-lg mx-auto">
           <h1 className="text-white text-xl font-bold">Susu Groups</h1>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowCertificate(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-500/40
+                text-amber-400 font-semibold text-sm hover:bg-amber-500/10 active:scale-95 transition-all min-h-[44px]"
+              title="View My Certificate"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              </svg>
+              <span className="hidden sm:inline">Certificate</span>
+            </button>
             <button
               type="button"
               onClick={() => setJoinOpen(true)}

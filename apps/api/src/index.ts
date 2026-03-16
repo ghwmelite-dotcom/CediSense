@@ -28,6 +28,18 @@ app.use('*', corsMiddleware());
 // Public auth routes
 app.route('/api/v1/auth', auth);
 
+// Public certificate verification (no auth required)
+app.get('/api/v1/susu/certificate/verify/:certificateId', async (c) => {
+  const certId = c.req.param('certificateId');
+  const row = await c.env.DB.prepare(
+    `SELECT certificate_data FROM credit_certificates WHERE id = ?`
+  ).bind(certId).first<{ certificate_data: string }>();
+  if (!row) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Certificate not found' } }, 404);
+  }
+  return c.json({ data: JSON.parse(row.certificate_data) });
+});
+
 // Protected routes with rate limiting
 app.use('/api/v1/users/*', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/accounts/*', authMiddleware, rateLimitMiddleware);
