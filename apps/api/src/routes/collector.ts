@@ -185,16 +185,19 @@ collector.get('/dashboard', async (c) => {
 
 collector.get('/clients', async (c) => {
   const userId = c.get('userId');
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') ?? '100', 10) || 100, 1), 500);
+  const offset = Math.max(parseInt(c.req.query('offset') ?? '0', 10) || 0, 0);
+
   const rows = await c.env.DB.prepare(
-    'SELECT * FROM collector_clients WHERE collector_id = ? ORDER BY client_name'
-  ).bind(userId).all<CollectorClientRow>();
+    'SELECT * FROM collector_clients WHERE collector_id = ? ORDER BY client_name LIMIT ? OFFSET ?'
+  ).bind(userId, limit, offset).all<CollectorClientRow>();
 
   const clients = (rows.results ?? []).map((r) => ({
     ...r,
     is_active: r.is_active === 1,
   }));
 
-  return c.json({ data: clients });
+  return c.json({ data: clients, meta: { limit, offset } });
 });
 
 // ─── POST /clients — Add a client ───────────────────────────────────────────

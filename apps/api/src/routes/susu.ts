@@ -197,10 +197,7 @@ susu.post('/groups', async (c) => {
   const memberId = generateId();
   const invite_code = 'SUSU-' + generateId().slice(0, 8).toUpperCase();
 
-  // For event_fund, store target in goal_amount_pesewas
-  const effectiveGoalAmount = variant === 'event_fund'
-    ? (goal_amount_pesewas ?? null)
-    : (goal_amount_pesewas ?? null);
+  const effectiveGoalAmount = goal_amount_pesewas ?? null;
 
   await c.env.DB.prepare(
     `INSERT INTO susu_groups
@@ -250,6 +247,8 @@ susu.post('/groups', async (c) => {
 
 susu.get('/groups', async (c) => {
   const userId = c.get('userId');
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') ?? '50', 10) || 50, 1), 100);
+  const offset = Math.max(parseInt(c.req.query('offset') ?? '0', 10) || 0, 0);
 
   const { results } = await c.env.DB.prepare(
     `SELECT g.id, g.name, g.creator_id, g.invite_code, g.contribution_pesewas,
@@ -264,34 +263,90 @@ susu.get('/groups', async (c) => {
             sm.id AS _my_member_id
      FROM susu_groups g
      INNER JOIN susu_members sm ON sm.group_id = g.id AND sm.user_id = ?
-     ORDER BY g.created_at DESC`
-  ).bind(userId).all<SusuGroupRow & { member_count: number; _my_member_id: string }>();
+     ORDER BY g.created_at DESC
+     LIMIT ? OFFSET ?`
+  ).bind(userId, limit, offset).all<SusuGroupRow & { member_count: number; _my_member_id: string }>();
 
-  // Batch-fetch unread counts for all groups
+  // Batch-fetch unread counts: single query using LEFT JOIN + subquery instead of N+1
+  const groupIds = results.map((r) => r.id);
+  const memberIds = results.map((r) => r._my_member_id);
   const unreadCounts = new Map<string, number>();
-  for (const row of results) {
-    const receipt = await c.env.DB.prepare(
-      `SELECT last_read_message_id FROM chat_read_receipts WHERE member_id = ? AND group_id = ?`
-    ).bind(row._my_member_id, row.id).first<{ last_read_message_id: string | null }>();
 
-    let unreadCount = 0;
-    if (receipt?.last_read_message_id) {
-      const cursorRow = await c.env.DB.prepare(
-        `SELECT rowid FROM susu_messages WHERE id = ?`
-      ).bind(receipt.last_read_message_id).first<{ rowid: number }>();
-      if (cursorRow) {
-        const countRow = await c.env.DB.prepare(
-          `SELECT COUNT(*) AS cnt FROM susu_messages WHERE group_id = ? AND rowid > ? AND deleted_at IS NULL`
-        ).bind(row.id, cursorRow.rowid).first<{ cnt: number }>();
-        unreadCount = countRow?.cnt ?? 0;
-      }
-    } else {
-      const countRow = await c.env.DB.prepare(
-        `SELECT COUNT(*) AS cnt FROM susu_messages WHERE group_id = ? AND deleted_at IS NULL`
-      ).bind(row.id).first<{ cnt: number }>();
-      unreadCount = countRow?.cnt ?? 0;
+  if (groupIds.length > 0) {
+    // 1. Fetch all read receipts for this user's memberships in one query
+    const receiptPlaceholders = memberIds.map(() => '?').join(', ');
+    const { results: receipts } = await c.env.DB.prepare(
+      `SELECT group_id, last_read_message_id FROM chat_read_receipts
+       WHERE member_id IN (${receiptPlaceholders})`
+    ).bind(...memberIds).all<{ group_id: string; last_read_message_id: string | null }>();
+
+    const receiptMap = new Map<string, string | null>();
+    for (const r of receipts) {
+      receiptMap.set(r.group_id, r.last_read_message_id);
     }
-    unreadCounts.set(row.id, unreadCount);
+
+    // 2. For groups with a read receipt, resolve rowids in one batch
+    const readMessageIds = receipts
+      .filter((r) => r.last_read_message_id)
+      .map((r) => r.last_read_message_id as string);
+
+    const rowidMap = new Map<string, number>();
+    if (readMessageIds.length > 0) {
+      const rowidPlaceholders = readMessageIds.map(() => '?').join(', ');
+      const { results: rowidRows } = await c.env.DB.prepare(
+        `SELECT id, rowid FROM susu_messages WHERE id IN (${rowidPlaceholders})`
+      ).bind(...readMessageIds).all<{ id: string; rowid: number }>();
+      for (const r of rowidRows) {
+        rowidMap.set(r.id, r.rowid);
+      }
+    }
+
+    // 3. Fetch total message counts per group (for groups with no receipt)
+    const totalCountPlaceholders = groupIds.map(() => '?').join(', ');
+    const { results: totalCounts } = await c.env.DB.prepare(
+      `SELECT group_id, COUNT(*) AS cnt FROM susu_messages
+       WHERE group_id IN (${totalCountPlaceholders}) AND deleted_at IS NULL
+       GROUP BY group_id`
+    ).bind(...groupIds).all<{ group_id: string; cnt: number }>();
+
+    const totalCountMap = new Map<string, number>();
+    for (const r of totalCounts) {
+      totalCountMap.set(r.group_id, r.cnt);
+    }
+
+    // 4. For groups with a read receipt + valid rowid, count messages after that rowid
+    // Build batch queries for groups that have valid cursor rowids
+    const groupsWithCursor: Array<{ groupId: string; rowid: number }> = [];
+    for (const gId of groupIds) {
+      const lastReadId = receiptMap.get(gId);
+      if (lastReadId) {
+        const rowid = rowidMap.get(lastReadId);
+        if (rowid !== undefined) {
+          groupsWithCursor.push({ groupId: gId, rowid });
+        }
+      }
+    }
+
+    // Run unread count queries in parallel for groups with cursors
+    if (groupsWithCursor.length > 0) {
+      const unreadQueries = groupsWithCursor.map((g) =>
+        c.env.DB.prepare(
+          `SELECT COUNT(*) AS cnt FROM susu_messages WHERE group_id = ? AND rowid > ? AND deleted_at IS NULL`
+        ).bind(g.groupId, g.rowid)
+      );
+      const unreadResults = await c.env.DB.batch(unreadQueries);
+      for (let i = 0; i < groupsWithCursor.length; i++) {
+        const row = (unreadResults[i].results as Array<{ cnt: number }>)?.[0];
+        unreadCounts.set(groupsWithCursor[i].groupId, row?.cnt ?? 0);
+      }
+    }
+
+    // 5. Fill in counts for groups without a cursor (no receipt = all messages are unread)
+    for (const gId of groupIds) {
+      if (!unreadCounts.has(gId)) {
+        unreadCounts.set(gId, totalCountMap.get(gId) ?? 0);
+      }
+    }
   }
 
   const data = results.map((row) => ({
@@ -300,7 +355,7 @@ susu.get('/groups', async (c) => {
     unread_count: unreadCounts.get(row.id) ?? 0,
   }));
 
-  return c.json({ data });
+  return c.json({ data, meta: { limit, offset } });
 });
 
 // ─── GET /groups/:id — full group detail ─────────────────────────────────────
@@ -1008,39 +1063,50 @@ susu.post('/groups/:id/contributions', async (c) => {
     throw err;
   }
 
-  // Handle guarantee fund deduction
+  // Compute side-effect values before batching writes
   let guarantee_deduction_pesewas = 0;
   if (group.guarantee_percent > 0) {
     guarantee_deduction_pesewas = Math.round(amount_pesewas * group.guarantee_percent / 100);
-    if (guarantee_deduction_pesewas > 0) {
-      await c.env.DB.prepare(
+  }
+
+  let penalty_pesewas = 0;
+  const penaltyId = generateId();
+  if (is_late) {
+    penalty_pesewas = Math.round(amount_pesewas * group.penalty_percent / 100);
+  }
+
+  // Batch all post-contribution writes in a single transaction
+  const batchStatements: D1PreparedStatement[] = [];
+
+  // Guarantee pool update
+  if (guarantee_deduction_pesewas > 0) {
+    batchStatements.push(
+      c.env.DB.prepare(
         `UPDATE susu_groups
          SET guarantee_pool_pesewas = guarantee_pool_pesewas + ?, updated_at = datetime('now')
          WHERE id = ?`
-      ).bind(guarantee_deduction_pesewas, groupId).run();
-    }
+      ).bind(guarantee_deduction_pesewas, groupId)
+    );
   }
 
-  // Handle penalty if contribution is late
-  let penalty_pesewas = 0;
-  if (is_late) {
-    penalty_pesewas = Math.round(amount_pesewas * group.penalty_percent / 100);
-    if (penalty_pesewas > 0) {
-      const penaltyId = generateId();
-      await c.env.DB.prepare(
+  // Penalty insert + pool update
+  if (is_late && penalty_pesewas > 0) {
+    batchStatements.push(
+      c.env.DB.prepare(
         `INSERT INTO susu_penalties (id, group_id, member_id, round, penalty_pesewas, reason)
          VALUES (?, ?, ?, ?, ?, 'late_contribution')`
-      ).bind(penaltyId, groupId, member_id, group.current_round, penalty_pesewas).run();
-
-      await c.env.DB.prepare(
+      ).bind(penaltyId, groupId, member_id, group.current_round, penalty_pesewas)
+    );
+    batchStatements.push(
+      c.env.DB.prepare(
         `UPDATE susu_groups
          SET penalty_pool_pesewas = penalty_pool_pesewas + ?, updated_at = datetime('now')
          WHERE id = ?`
-      ).bind(penalty_pesewas, groupId).run();
-    }
+      ).bind(penalty_pesewas, groupId)
+    );
   }
 
-  // Update trust score for the contributing user
+  // Trust score upsert
   const contributingMember = await c.env.DB.prepare(
     `SELECT user_id FROM susu_members WHERE id = ?`
   ).bind(member_id).first<{ user_id: string }>();
@@ -1049,28 +1115,35 @@ susu.post('/groups/:id/contributions', async (c) => {
     const membUserId = contributingMember.user_id;
 
     if (is_late) {
-      // Late contribution — reset streak, increment late count
-      await c.env.DB.prepare(
-        `INSERT INTO trust_scores (user_id, score, total_contributions, on_time_contributions, late_contributions, current_streak, longest_streak, updated_at)
-         VALUES (?, 49, 1, 0, 1, 0, 0, datetime('now'))
-         ON CONFLICT(user_id) DO UPDATE SET
-           total_contributions = total_contributions + 1,
-           late_contributions = late_contributions + 1,
-           current_streak = 0,
-           updated_at = datetime('now')`
-      ).bind(membUserId).run();
+      batchStatements.push(
+        c.env.DB.prepare(
+          `INSERT INTO trust_scores (user_id, score, total_contributions, on_time_contributions, late_contributions, current_streak, longest_streak, updated_at)
+           VALUES (?, 49, 1, 0, 1, 0, 0, datetime('now'))
+           ON CONFLICT(user_id) DO UPDATE SET
+             total_contributions = total_contributions + 1,
+             late_contributions = late_contributions + 1,
+             current_streak = 0,
+             updated_at = datetime('now')`
+        ).bind(membUserId)
+      );
     } else {
-      // On-time contribution — increment streak
-      await c.env.DB.prepare(
-        `INSERT INTO trust_scores (user_id, score, total_contributions, on_time_contributions, current_streak, longest_streak, updated_at)
-         VALUES (?, 51, 1, 1, 1, 1, datetime('now'))
-         ON CONFLICT(user_id) DO UPDATE SET
-           total_contributions = total_contributions + 1,
-           on_time_contributions = on_time_contributions + 1,
-           current_streak = current_streak + 1,
-           longest_streak = MAX(longest_streak, current_streak + 1),
-           updated_at = datetime('now')`
-      ).bind(membUserId).run();
+      batchStatements.push(
+        c.env.DB.prepare(
+          `INSERT INTO trust_scores (user_id, score, total_contributions, on_time_contributions, current_streak, longest_streak, updated_at)
+           VALUES (?, 51, 1, 1, 1, 1, datetime('now'))
+           ON CONFLICT(user_id) DO UPDATE SET
+             total_contributions = total_contributions + 1,
+             on_time_contributions = on_time_contributions + 1,
+             current_streak = current_streak + 1,
+             longest_streak = MAX(longest_streak, current_streak + 1),
+             updated_at = datetime('now')`
+        ).bind(membUserId)
+      );
+    }
+
+    // Execute batch transaction for all writes so far
+    if (batchStatements.length > 0) {
+      await c.env.DB.batch(batchStatements);
     }
 
     // Recompute score from current stats and fetch streak for badge checks
@@ -1089,27 +1162,58 @@ susu.post('/groups/:id/contributions', async (c) => {
 
     if (stats) {
       const newScore = computeTrustScore(stats);
-      await c.env.DB.prepare(
-        `UPDATE trust_scores SET score = ? WHERE user_id = ?`
-      ).bind(newScore, membUserId).run();
+      const badgeStatements: D1PreparedStatement[] = [
+        c.env.DB.prepare(
+          `UPDATE trust_scores SET score = ? WHERE user_id = ?`
+        ).bind(newScore, membUserId),
+      ];
 
       // Award first_contribution badge
       if (stats.total_contributions === 1) {
-        await awardBadge(c.env.DB, membUserId, 'first_contribution', groupId);
+        const badgeId = generateId();
+        const badgeName = BADGE_NAMES['first_contribution'] ?? 'first_contribution';
+        const existing = await c.env.DB.prepare(
+          `SELECT id FROM susu_badges WHERE user_id = ? AND badge_type = ? AND group_id = ?`
+        ).bind(membUserId, 'first_contribution', groupId).first();
+        if (!existing) {
+          badgeStatements.push(
+            c.env.DB.prepare(
+              `INSERT INTO susu_badges (id, user_id, badge_type, badge_name, group_id) VALUES (?, ?, ?, ?, ?)`
+            ).bind(badgeId, membUserId, 'first_contribution', badgeName, groupId)
+          );
+        }
       }
 
       // Award streak milestone badges (only on-time contributions trigger these)
       if (!is_late) {
         const streak = stats.current_streak;
-        if (streak >= 20) {
-          await awardBadge(c.env.DB, membUserId, 'streak_20', groupId);
-        } else if (streak >= 10) {
-          await awardBadge(c.env.DB, membUserId, 'streak_10', groupId);
-        } else if (streak >= 5) {
-          await awardBadge(c.env.DB, membUserId, 'streak_5', groupId);
+        let streakBadgeType: string | null = null;
+        if (streak >= 20) streakBadgeType = 'streak_20';
+        else if (streak >= 10) streakBadgeType = 'streak_10';
+        else if (streak >= 5) streakBadgeType = 'streak_5';
+
+        if (streakBadgeType) {
+          const existing = await c.env.DB.prepare(
+            `SELECT id FROM susu_badges WHERE user_id = ? AND badge_type = ? AND group_id = ?`
+          ).bind(membUserId, streakBadgeType, groupId).first();
+          if (!existing) {
+            const badgeId = generateId();
+            const badgeName = BADGE_NAMES[streakBadgeType] ?? streakBadgeType;
+            badgeStatements.push(
+              c.env.DB.prepare(
+                `INSERT INTO susu_badges (id, user_id, badge_type, badge_name, group_id) VALUES (?, ?, ?, ?, ?)`
+              ).bind(badgeId, membUserId, streakBadgeType, badgeName, groupId)
+            );
+          }
         }
       }
+
+      // Batch trust score update + badge inserts
+      await c.env.DB.batch(badgeStatements);
     }
+  } else if (batchStatements.length > 0) {
+    // No contributing member found but still need to flush penalty/guarantee writes
+    await c.env.DB.batch(batchStatements);
   }
 
   const contribution = await c.env.DB.prepare(
@@ -1582,6 +1686,7 @@ susu.get('/groups/trust/:userId', async (c) => {
 susu.get('/groups/:id/history', async (c) => {
   const userId = c.get('userId');
   const groupId = c.req.param('id');
+  const limit = Math.min(Math.max(parseInt(c.req.query('limit') ?? '50', 10) || 50, 1), 200);
 
   // Verify membership
   const member = await c.env.DB.prepare(
@@ -1598,8 +1703,9 @@ susu.get('/groups/:id/history', async (c) => {
      FROM susu_contributions sc
      INNER JOIN susu_members sm ON sm.id = sc.member_id
      WHERE sc.group_id = ?
-     ORDER BY sc.round DESC, sc.contributed_at DESC`
-  ).bind(groupId).all<SusuContributionRow & { member_display_name: string }>();
+     ORDER BY sc.round DESC, sc.contributed_at DESC
+     LIMIT ?`
+  ).bind(groupId, limit).all<SusuContributionRow & { member_display_name: string }>();
 
   const { results: payouts } = await c.env.DB.prepare(
     `SELECT sp.id, sp.group_id, sp.member_id, sp.round, sp.amount_pesewas, sp.paid_at,
@@ -1607,10 +1713,11 @@ susu.get('/groups/:id/history', async (c) => {
      FROM susu_payouts sp
      INNER JOIN susu_members sm ON sm.id = sp.member_id
      WHERE sp.group_id = ?
-     ORDER BY sp.round DESC, sp.paid_at DESC`
-  ).bind(groupId).all<SusuPayoutRow & { member_display_name: string }>();
+     ORDER BY sp.round DESC, sp.paid_at DESC
+     LIMIT ?`
+  ).bind(groupId, limit).all<SusuPayoutRow & { member_display_name: string }>();
 
-  return c.json({ data: { contributions, payouts } });
+  return c.json({ data: { contributions, payouts }, meta: { limit } });
 });
 
 // ─── GET /groups/:groupId/contributions/:id/receipt — fetch receipt data ──────
@@ -2001,17 +2108,17 @@ susu.post('/groups/:id/early-payout/:requestId/pay', async (c) => {
   const premium = Math.round(request.amount_pesewas * request.premium_percent / 100);
   const totalPayout = request.amount_pesewas + premium;
 
-  // Record as a susu_payout
+  // Batch: insert payout + mark request as paid in a single transaction
   const payoutId = generateId();
-  await c.env.DB.prepare(
-    `INSERT INTO susu_payouts (id, group_id, member_id, round, amount_pesewas)
-     VALUES (?, ?, ?, ?, ?)`
-  ).bind(payoutId, groupId, request.requester_member_id, group.current_round, totalPayout).run();
-
-  // Mark request as paid
-  await c.env.DB.prepare(
-    `UPDATE early_payout_requests SET status = 'paid', resolved_at = datetime('now') WHERE id = ?`
-  ).bind(requestId).run();
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      `INSERT INTO susu_payouts (id, group_id, member_id, round, amount_pesewas)
+       VALUES (?, ?, ?, ?, ?)`
+    ).bind(payoutId, groupId, request.requester_member_id, group.current_round, totalPayout),
+    c.env.DB.prepare(
+      `UPDATE early_payout_requests SET status = 'paid', resolved_at = datetime('now') WHERE id = ?`
+    ).bind(requestId),
+  ]);
 
   const final = await c.env.DB.prepare(
     `SELECT epr.*, sm.display_name AS requester_name

@@ -109,6 +109,7 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
       const msgs = await api.get<SusuMessage[]>(
         `/susu/groups/${groupId}/messages?limit=${LIMIT}`
       );
+      if (!mountedRef.current) return;
       setMessages(msgs);
       setHasOlder(msgs.length === LIMIT);
       if (msgs.length > 0) {
@@ -117,9 +118,10 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
         void markAsRead(msgs[msgs.length - 1].id);
       }
     } catch {
+      if (!mountedRef.current) return;
       setError('Failed to load messages.');
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, [groupId, markAsRead]);
 
@@ -129,6 +131,7 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
       const afterId = newestIdRef.current;
       if (!afterId) {
         await new Promise((r) => setTimeout(r, 3000));
+        if (!mountedRef.current) return;
         continue;
       }
 
@@ -136,7 +139,7 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
         const result = await api.get<SusuMessage[]>(
           `/susu/groups/${groupId}/messages/poll?after=${afterId}&timeout=25`
         );
-        if (!mountedRef.current) break;
+        if (!mountedRef.current) return;
 
         if (result && result.length > 0) {
           setMessages((prev) => {
@@ -153,9 +156,9 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
           }
         }
       } catch {
-        if (mountedRef.current) {
-          await new Promise((r) => setTimeout(r, 5000));
-        }
+        if (!mountedRef.current) return;
+        await new Promise((r) => setTimeout(r, 5000));
+        if (!mountedRef.current) return;
       }
     }
   }, [groupId, markAsRead]);
@@ -171,6 +174,7 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
       const older = await api.get<SusuMessage[]>(
         `/susu/groups/${groupId}/messages?limit=${LIMIT}&before=${oldestIdRef.current}`
       );
+      if (!mountedRef.current) return;
       if (older.length > 0) {
         setMessages((prev) => {
           const existingIds = new Set(prev.map((m) => m.id));
@@ -191,7 +195,7 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
     } catch {
       // silent fail
     } finally {
-      setLoadingOlder(false);
+      if (mountedRef.current) setLoadingOlder(false);
     }
   }, [groupId, loadingOlder]);
 
@@ -385,7 +389,7 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
   // ─── Typing indicator: send ───────────────────────────────────────────────
   const sendTypingIndicator = useCallback(() => {
     const now = Date.now();
-    if (now - lastTypingSentRef.current < 3000) return;
+    if (now - lastTypingSentRef.current < 4000) return;
     lastTypingSentRef.current = now;
     api.post(`/susu/groups/${groupId}/typing`, {}).catch(() => {});
   }, [groupId]);
@@ -404,7 +408,7 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
       } catch {
         // silent
       }
-    }, 3000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [groupId]);
