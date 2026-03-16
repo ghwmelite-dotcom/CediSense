@@ -53,3 +53,33 @@ export function normalizePhone(phone: string): string | null {
 
   return null;
 }
+
+/**
+ * Normalize any phone number — Ghana local or international.
+ * For Ghana numbers (0XXXXXXXXX or +233XXXXXXXXX), returns normalized Ghana format.
+ * For international numbers (e.g. +44..., +1...), returns the number with leading +.
+ * Returns null if the input doesn't look like a valid phone number.
+ */
+export function normalizePhoneInternational(phone: string): string | null {
+  const trimmed = phone.trim();
+
+  // Try Ghana format first
+  const ghanaResult = normalizePhone(trimmed);
+  if (ghanaResult) return ghanaResult;
+
+  // International format: must start with + and have 8-15 digits
+  if (trimmed.startsWith('+')) {
+    const digits = trimmed.replace(/\D/g, '');
+    if (digits.length >= 8 && digits.length <= 15) {
+      return '+' + digits;
+    }
+  }
+
+  // Raw digits that look international (8-15 digits, not Ghana)
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length >= 8 && digits.length <= 15) {
+    return digits;
+  }
+
+  return null;
+}

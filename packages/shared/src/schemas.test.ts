@@ -34,13 +34,33 @@ describe('registerSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects invalid phone prefix', () => {
+  it('accepts international phone number', () => {
     const result = registerSchema.safeParse({
-      phone: '0611234567',
+      phone: '+447123456789',
+      name: 'Test',
+      pin: '5839',
+      country_code: '+44',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects phone too short', () => {
+    const result = registerSchema.safeParse({
+      phone: '123',
       name: 'Test',
       pin: '5839',
     });
     expect(result.success).toBe(false);
+  });
+
+  it('accepts optional email', () => {
+    const result = registerSchema.safeParse({
+      phone: '0241234567',
+      name: 'Kwame',
+      pin: '5839',
+      email: 'kwame@example.com',
+    });
+    expect(result.success).toBe(true);
   });
 
   it('rejects short name', () => {
@@ -62,9 +82,16 @@ describe('loginSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects invalid phone', () => {
+  it('accepts email login', () => {
     const result = loginSchema.safeParse({
-      phone: '0611234567',
+      email: 'user@example.com',
+      pin: '1234',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects login with neither phone nor email', () => {
+    const result = loginSchema.safeParse({
       pin: '1234',
     });
     expect(result.success).toBe(false);

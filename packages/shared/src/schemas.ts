@@ -14,15 +14,21 @@ export const pinSchema = z.string()
   .refine(pin => !WEAK_PINS.has(pin), 'PIN is too common. Choose a stronger PIN.');
 
 export const registerSchema = z.object({
-  phone: z.string().regex(ghanaPhoneRegex, 'Invalid Ghana phone number'),
+  phone: z.string().min(8, 'Phone number too short').max(15, 'Phone number too long'),
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   pin: pinSchema,
+  email: z.string().email('Invalid email address').optional(),
+  country_code: z.string().regex(/^\+\d{1,4}$/, 'Invalid country code').optional(),
 });
 
 export const loginSchema = z.object({
-  phone: z.string().regex(ghanaPhoneRegex, 'Invalid Ghana phone number'),
+  phone: z.string().min(4).max(100).optional(),
+  email: z.string().email().optional(),
   pin: z.string().regex(/^\d{4}$/, 'PIN must be 4 digits'),
-});
+}).refine(
+  (data) => data.phone || data.email,
+  { message: 'Either phone or email is required', path: ['phone'] }
+);
 
 export const updateUserSchema = z.object({
   name: z.string().min(2).max(100).optional(),
@@ -279,17 +285,31 @@ export type UpdateInvestmentInput = z.infer<typeof updateInvestmentSchema>;
 
 // ─── Susu schemas ─────────────────────────────────────────────────────────────
 
+export const SUSU_VARIANTS = ['rotating', 'accumulating', 'goal_based', 'bidding', 'funeral_fund', 'school_fees', 'diaspora', 'event_fund'] as const;
+export const DIASPORA_CURRENCIES = ['GHS', 'GBP', 'USD', 'EUR', 'CAD'] as const;
+
 export const createSusuGroupSchema = z.object({
   name: z.string().min(1).max(100),
   contribution_pesewas: z.number().int().positive(),
   frequency: z.enum(['daily', 'weekly', 'monthly']),
   max_members: z.number().int().min(2).max(50).default(12),
-  variant: z.enum(['rotating', 'accumulating', 'goal_based', 'bidding', 'funeral_fund']).default('rotating'),
+  variant: z.enum(SUSU_VARIANTS).default('rotating'),
   goal_amount_pesewas: z.number().int().positive().optional(),
   goal_description: z.string().max(200).optional(),
+  // School Fees fields
+  target_term: z.string().optional(),
+  school_name: z.string().max(200).optional(),
+  // Diaspora fields
+  base_currency: z.enum(DIASPORA_CURRENCIES).optional(),
+  // Event Fund fields
+  event_name: z.string().max(200).optional(),
+  event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 }).refine(
   (data) => data.variant !== 'goal_based' || data.goal_amount_pesewas !== undefined,
   { message: 'goal_amount_pesewas is required for goal_based variant', path: ['goal_amount_pesewas'] }
+).refine(
+  (data) => data.variant !== 'event_fund' || data.event_name !== undefined,
+  { message: 'event_name is required for event_fund variant', path: ['event_name'] }
 );
 
 export const joinSusuGroupSchema = z.object({
@@ -300,6 +320,10 @@ export const recordContributionSchema = z.object({
   member_id: z.string().min(1),
   amount_pesewas: z.number().int().positive(),
   is_late: z.boolean().optional(),
+  // Diaspora currency fields
+  original_currency: z.enum(DIASPORA_CURRENCIES).optional(),
+  original_amount: z.number().int().positive().optional(),
+  exchange_rate: z.number().positive().optional(),
 });
 
 export const updateSusuGroupSchema = z.object({

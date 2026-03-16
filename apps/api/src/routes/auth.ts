@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { Env, Variables, AppContext } from '../types.js';
-import { registerSchema, loginSchema, normalizePhone } from '@cedisense/shared';
+import { registerSchema, loginSchema, normalizePhone, normalizePhoneInternational } from '@cedisense/shared';
 import { hashPin, verifyPin } from '../lib/hash.js';
 import {
   signAccessToken,
@@ -70,11 +70,11 @@ auth.post('/register', async (c) => {
     );
   }
 
-  const { name, pin } = parsed.data;
-  const phone = normalizePhone(parsed.data.phone);
+  const { name, pin, email, country_code } = parsed.data;
+  const phone = normalizePhoneInternational(parsed.data.phone);
   if (!phone) {
     return c.json(
-      { error: { code: 'VALIDATION_ERROR', message: 'Invalid Ghana phone number' } },
+      { error: { code: 'VALIDATION_ERROR', message: 'Invalid phone number' } },
       400
     );
   }
@@ -91,6 +91,20 @@ auth.post('/register', async (c) => {
     );
   }
 
+  // Check if email already registered (if provided)
+  if (email) {
+    const emailExists = await c.env.DB.prepare(
+      'SELECT id FROM users WHERE email = ?'
+    ).bind(email.toLowerCase()).first();
+
+    if (emailExists) {
+      return c.json(
+        { error: { code: 'EMAIL_EXISTS', message: 'This email is already registered' } },
+        409
+      );
+    }
+  }
+
   // Hash PIN
   const { hash, salt } = await hashPin(pin);
   const credential: PinCredential = { hash, salt };
@@ -101,8 +115,8 @@ auth.post('/register', async (c) => {
 
   await c.env.DB.batch([
     c.env.DB.prepare(
-      'INSERT INTO users (id, phone, name) VALUES (?, ?, ?)'
-    ).bind(userId, phone, name),
+      'INSERT INTO users (id, phone, name, email, country_code) VALUES (?, ?, ?, ?, ?)'
+    ).bind(userId, phone, name, email ? email.toLowerCase() : null, country_code ?? '+233'),
     c.env.DB.prepare(
       'INSERT INTO auth_methods (id, user_id, type, credential, is_primary) VALUES (?, ?, ?, ?, ?)'
     ).bind(authMethodId, userId, 'pin', JSON.stringify(credential), 1),
@@ -145,16 +159,23 @@ auth.post('/login', async (c) => {
     );
   }
 
-  const phone = normalizePhone(parsed.data.phone);
-  if (!phone) {
-    return c.json(
-      { error: { code: 'VALIDATION_ERROR', message: 'Invalid Ghana phone number' } },
-      400
-    );
+  // Determine login identifier: phone or email
+  const loginEmail = parsed.data.email?.toLowerCase();
+  let phone: string | null = null;
+  const rateLimitKey = loginEmail ?? parsed.data.phone ?? '';
+
+  if (parsed.data.phone) {
+    phone = normalizePhoneInternational(parsed.data.phone);
+    if (!phone) {
+      return c.json(
+        { error: { code: 'VALIDATION_ERROR', message: 'Invalid phone number' } },
+        400
+      );
+    }
   }
 
   // Check rate limit
-  const rateLimit = await checkLoginRateLimit(c.env.KV, phone);
+  const rateLimit = await checkLoginRateLimit(c.env.KV, rateLimitKey);
   if (!rateLimit.allowed) {
     return c.json(
       {
@@ -169,18 +190,29 @@ auth.post('/login', async (c) => {
     );
   }
 
-  // Lookup user and auth method
-  const row = await c.env.DB.prepare(
-    `SELECT u.id, u.name, u.phone, am.credential
-     FROM users u
-     JOIN auth_methods am ON am.user_id = u.id AND am.type = 'pin' AND am.is_primary = 1
-     WHERE u.phone = ?`
-  ).bind(phone).first<{ id: string; name: string; phone: string; credential: string }>();
+  // Lookup user and auth method — by phone or email
+  let row: { id: string; name: string; phone: string; credential: string } | null = null;
+
+  if (phone) {
+    row = await c.env.DB.prepare(
+      `SELECT u.id, u.name, u.phone, am.credential
+       FROM users u
+       JOIN auth_methods am ON am.user_id = u.id AND am.type = 'pin' AND am.is_primary = 1
+       WHERE u.phone = ?`
+    ).bind(phone).first<{ id: string; name: string; phone: string; credential: string }>();
+  } else if (loginEmail) {
+    row = await c.env.DB.prepare(
+      `SELECT u.id, u.name, u.phone, am.credential
+       FROM users u
+       JOIN auth_methods am ON am.user_id = u.id AND am.type = 'pin' AND am.is_primary = 1
+       WHERE u.email = ?`
+    ).bind(loginEmail).first<{ id: string; name: string; phone: string; credential: string }>();
+  }
 
   if (!row) {
-    await incrementLoginAttempts(c.env.KV, phone);
+    await incrementLoginAttempts(c.env.KV, rateLimitKey);
     return c.json(
-      { error: { code: 'INVALID_CREDENTIALS', message: 'Invalid phone number or PIN' } },
+      { error: { code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' } },
       401,
       { 'X-RateLimit-Remaining': String(rateLimit.remaining) }
     );
@@ -191,16 +223,16 @@ auth.post('/login', async (c) => {
   const valid = await verifyPin(parsed.data.pin, hash, salt);
 
   if (!valid) {
-    await incrementLoginAttempts(c.env.KV, phone);
+    await incrementLoginAttempts(c.env.KV, rateLimitKey);
     return c.json(
-      { error: { code: 'INVALID_CREDENTIALS', message: 'Invalid phone number or PIN' } },
+      { error: { code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' } },
       401,
       { 'X-RateLimit-Remaining': String(rateLimit.remaining) }
     );
   }
 
   // Success — clear rate limit
-  await clearLoginAttempts(c.env.KV, phone);
+  await clearLoginAttempts(c.env.KV, rateLimitKey);
 
   // Generate tokens
   const accessToken = await signAccessToken(row.id, c.env.JWT_SECRET);

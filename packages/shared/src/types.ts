@@ -3,6 +3,8 @@ export interface User {
   id: string;
   phone: string;
   name: string;
+  email: string | null;
+  country_code: string | null;
   monthly_income_ghs: number | null;
   preferred_language: 'en' | 'tw' | 'ee' | 'dag';
   onboarding_completed: 0 | 1;
@@ -423,7 +425,9 @@ export interface InvestmentSummary {
 
 export type SusuFrequency = 'daily' | 'weekly' | 'monthly';
 
-export type SusuVariant = 'rotating' | 'accumulating' | 'goal_based' | 'bidding' | 'funeral_fund';
+export type SusuVariant = 'rotating' | 'accumulating' | 'goal_based' | 'bidding' | 'funeral_fund' | 'school_fees' | 'diaspora' | 'event_fund';
+
+export type DiasporaCurrency = 'GHS' | 'GBP' | 'USD' | 'EUR' | 'CAD';
 
 export interface SusuGroup {
   id: string;
@@ -440,6 +444,14 @@ export interface SusuGroup {
   goal_description: string | null;
   penalty_percent: number;
   penalty_pool_pesewas: number;
+  // School Fees fields
+  target_term: string | null;
+  school_name: string | null;
+  // Diaspora fields
+  base_currency: DiasporaCurrency | null;
+  // Event Fund fields
+  event_name: string | null;
+  event_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -471,6 +483,10 @@ export interface SusuContribution {
   round: number;
   amount_pesewas: number;
   contributed_at: string;
+  // Diaspora currency fields
+  original_currency: DiasporaCurrency | null;
+  original_amount: number | null;
+  exchange_rate: number | null;
 }
 
 export interface SusuPayout {
@@ -532,6 +548,41 @@ export interface FuneralFundInfo {
   available_pool_pesewas: number;
 }
 
+export interface SchoolFeesInfo {
+  target_term: string;
+  school_name: string | null;
+  next_payout_date: string;
+  days_until_payout: number;
+  required_weekly_pesewas: number;
+  required_monthly_pesewas: number;
+}
+
+export interface DiasporaInfo {
+  base_currency: DiasporaCurrency;
+  contributions_with_currency: Array<{
+    member_name: string;
+    amount_pesewas: number;
+    original_currency: DiasporaCurrency;
+    original_amount: number;
+    exchange_rate: number;
+    contributed_at: string;
+  }>;
+}
+
+export interface EventFundInfo {
+  event_name: string;
+  event_date: string | null;
+  target_amount_pesewas: number;
+  total_contributed_pesewas: number;
+  percentage: number;
+  days_until_event: number | null;
+  contributors: Array<{
+    member_name: string;
+    amount_pesewas: number;
+    contributed_at: string;
+  }>;
+}
+
 export interface SusuGroupWithDetails extends SusuGroup {
   member_count: number;
   members: Array<SusuMember & { has_contributed_this_round: boolean; trust_score: number; trust_label: string }>;
@@ -542,6 +593,9 @@ export interface SusuGroupWithDetails extends SusuGroup {
   accumulating_info: SusuAccumulatingInfo | null;
   funeral_fund_info: FuneralFundInfo | null;
   funeral_claim: FuneralClaim | null;
+  school_fees_info: SchoolFeesInfo | null;
+  diaspora_info: DiasporaInfo | null;
+  event_fund_info: EventFundInfo | null;
 }
 
 export interface ContributionReceipt {

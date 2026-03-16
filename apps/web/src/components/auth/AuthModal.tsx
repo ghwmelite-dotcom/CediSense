@@ -14,6 +14,8 @@ type AuthMode = 'signin' | 'register';
 /* ================================================================ */
 /*  SIGN IN FORM                                                      */
 /* ================================================================ */
+type LoginMethod = 'phone' | 'email';
+
 function SignInForm({
   onSuccess,
   onSwitchMode,
@@ -21,17 +23,23 @@ function SignInForm({
   onSuccess: () => void;
   onSwitchMode: () => void;
 }) {
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>('phone');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const phoneRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => phoneRef.current?.focus(), 100);
+    const t = setTimeout(() => {
+      if (loginMethod === 'phone') phoneRef.current?.focus();
+      else emailRef.current?.focus();
+    }, 100);
     return () => clearTimeout(t);
-  }, []);
+  }, [loginMethod]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,7 +47,10 @@ function SignInForm({
     setLoading(true);
 
     try {
-      await login({ phone: phone.replace(/\s|-/g, ''), pin });
+      const payload = loginMethod === 'phone'
+        ? { phone: phone.replace(/\s|-/g, ''), pin }
+        : { email, pin };
+      await login(payload);
       onSuccess();
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -63,18 +74,59 @@ function SignInForm({
         </div>
       )}
 
-      <div>
-        <label className="section-label block mb-2.5">Phone Number</label>
-        <input
-          ref={phoneRef}
-          type="tel"
-          placeholder="024 123 4567"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className="input-premium"
-          required
-        />
+      {/* Login method toggle */}
+      <div className="flex rounded-lg bg-white/[0.04] p-0.5">
+        <button
+          type="button"
+          onClick={() => setLoginMethod('phone')}
+          className={`flex-1 py-2 rounded-md text-xs font-semibold transition-all duration-200 ${
+            loginMethod === 'phone'
+              ? 'bg-white/10 text-white shadow-sm'
+              : 'text-muted hover:text-text-primary'
+          }`}
+        >
+          Phone
+        </button>
+        <button
+          type="button"
+          onClick={() => setLoginMethod('email')}
+          className={`flex-1 py-2 rounded-md text-xs font-semibold transition-all duration-200 ${
+            loginMethod === 'email'
+              ? 'bg-white/10 text-white shadow-sm'
+              : 'text-muted hover:text-text-primary'
+          }`}
+        >
+          Email
+        </button>
       </div>
+
+      {loginMethod === 'phone' ? (
+        <div>
+          <label className="section-label block mb-2.5">Phone Number</label>
+          <input
+            ref={phoneRef}
+            type="tel"
+            placeholder="024 123 4567 or +44 7123 456789"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="input-premium"
+            required
+          />
+        </div>
+      ) : (
+        <div>
+          <label className="section-label block mb-2.5">Email Address</label>
+          <input
+            ref={emailRef}
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="input-premium"
+            required
+          />
+        </div>
+      )}
 
       <div>
         <label className="section-label block mb-2.5">PIN</label>
@@ -131,6 +183,19 @@ function SignInForm({
 /* ================================================================ */
 /*  REGISTER FORM                                                     */
 /* ================================================================ */
+const COUNTRY_CODES = [
+  { code: '+233', label: 'Ghana (+233)', flag: 'GH' },
+  { code: '+44', label: 'UK (+44)', flag: 'GB' },
+  { code: '+1', label: 'US/CA (+1)', flag: 'US' },
+  { code: '+49', label: 'Germany (+49)', flag: 'DE' },
+  { code: '+31', label: 'Netherlands (+31)', flag: 'NL' },
+  { code: '+39', label: 'Italy (+39)', flag: 'IT' },
+  { code: '+34', label: 'Spain (+34)', flag: 'ES' },
+  { code: '+61', label: 'Australia (+61)', flag: 'AU' },
+  { code: '+27', label: 'South Africa (+27)', flag: 'ZA' },
+  { code: '+234', label: 'Nigeria (+234)', flag: 'NG' },
+];
+
 function RegisterForm({
   onSuccess,
   onSwitchMode,
@@ -140,12 +205,16 @@ function RegisterForm({
 }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [countryCode, setCountryCode] = useState('+233');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const nameRef = useRef<HTMLInputElement>(null);
+
+  const isInternational = countryCode !== '+233';
 
   useEffect(() => {
     const t = setTimeout(() => nameRef.current?.focus(), 100);
@@ -167,7 +236,18 @@ function RegisterForm({
     setLoading(true);
 
     try {
-      await register({ phone: phone.replace(/\s|-/g, ''), name, pin });
+      const rawPhone = phone.replace(/\s|-/g, '');
+      const fullPhone = isInternational
+        ? (rawPhone.startsWith('+') ? rawPhone : countryCode + rawPhone)
+        : rawPhone;
+
+      await register({
+        phone: fullPhone,
+        name,
+        pin,
+        ...(email ? { email } : {}),
+        ...(isInternational ? { country_code: countryCode } : {}),
+      });
       onSuccess();
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -204,15 +284,51 @@ function RegisterForm({
         />
       </div>
 
-      <div>
+      {/* Country code + Phone */}
+      <div className="space-y-1.5">
         <label className="section-label block mb-2.5">Phone Number</label>
+        <div className="flex gap-2">
+          <select
+            value={countryCode}
+            onChange={(e) => setCountryCode(e.target.value)}
+            className="w-[130px] bg-white/[0.06] border border-white/10 rounded-xl px-3 py-3 text-white
+              text-sm focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold
+              appearance-none cursor-pointer shrink-0"
+            aria-label="Country code"
+          >
+            {COUNTRY_CODES.map((cc) => (
+              <option key={cc.code} value={cc.code} className="bg-[#14142A]">
+                {cc.label}
+              </option>
+            ))}
+          </select>
+          <input
+            type="tel"
+            placeholder={isInternational ? '7123 456789' : '024 123 4567'}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="input-premium flex-1"
+            required
+          />
+        </div>
+        {isInternational && (
+          <p className="text-muted text-xs px-1">
+            International number detected. You can also add an email below.
+          </p>
+        )}
+      </div>
+
+      {/* Email (optional, shown prominently for international) */}
+      <div>
+        <label className="section-label block mb-2.5">
+          Email {isInternational ? '' : <span className="text-muted/60">(optional)</span>}
+        </label>
         <input
-          type="tel"
-          placeholder="024 123 4567"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="input-premium"
-          required
         />
       </div>
 
