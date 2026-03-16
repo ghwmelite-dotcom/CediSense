@@ -5,6 +5,8 @@ import { SideNav } from './SideNav';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { OfflineBanner } from './OfflineBanner';
 import { SyncIndicator } from './SyncIndicator';
+import { InstallBanner } from './InstallBanner';
+import { UpdateBanner } from './UpdateBanner';
 
 export function AppShell() {
   const { isOnline, syncCount, isSyncing, triggerSync } = useOnlineStatus();
@@ -45,6 +47,9 @@ export function AppShell() {
       {(syncCount > 0 || isSyncing) && (
         <SyncIndicator syncCount={syncCount} isSyncing={isSyncing} onSync={triggerSync} />
       )}
+
+      <InstallBanner />
+      <UpdateBanner />
     </div>
   );
 }
