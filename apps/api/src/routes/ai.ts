@@ -30,7 +30,11 @@ ai.post('/chat', async (c) => {
   const kvKey = `ai-usage:${userId}:${today}`;
   const currentCount = parseInt(await c.env.KV.get(kvKey) ?? '0', 10);
   const newCount = currentCount + 1;
-  await c.env.KV.put(kvKey, String(newCount), { expirationTtl: 86400 });
+  // Use absolute expiration at midnight UTC to avoid TTL reset on every request
+  const tomorrow = new Date();
+  tomorrow.setUTCHours(24, 0, 0, 0);
+  const expiration = Math.floor(tomorrow.getTime() / 1000);
+  await c.env.KV.put(kvKey, String(newCount), { expiration });
 
   // Fetch recent messages + clean orphaned trailing user messages
   const historyResult = await c.env.DB.prepare(

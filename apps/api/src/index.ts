@@ -29,8 +29,29 @@ app.use('*', corsMiddleware());
 // Public auth routes
 app.route('/api/v1/auth', auth);
 
-// Public certificate verification (no auth required)
+// Public certificate verification (no auth required) — IP rate limited, PII stripped
 app.get('/api/v1/susu/certificate/verify/:certificateId', async (c) => {
+  // IP-based rate limiting: 20 requests per minute
+  const ip = c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for') ?? 'unknown';
+  const rlKey = `rate:cert-verify:${ip}`;
+  const rlCurrent = await c.env.KV.get(rlKey);
+  const rlCount = rlCurrent ? parseInt(rlCurrent, 10) : 0;
+
+  if (rlCount >= 20) {
+    return c.json(
+      { error: { code: 'RATE_LIMITED', message: 'Too many requests. Please slow down.' } },
+      429,
+      { 'Retry-After': '60' }
+    );
+  }
+
+  // Only set TTL on first write to avoid resetting the window
+  if (rlCount === 0) {
+    await c.env.KV.put(rlKey, '1', { expirationTtl: 60 });
+  } else {
+    await c.env.KV.put(rlKey, String(rlCount + 1));
+  }
+
   const certId = c.req.param('certificateId');
   const row = await c.env.DB.prepare(
     `SELECT certificate_data FROM credit_certificates WHERE id = ?`
@@ -38,7 +59,21 @@ app.get('/api/v1/susu/certificate/verify/:certificateId', async (c) => {
   if (!row) {
     return c.json({ error: { code: 'NOT_FOUND', message: 'Certificate not found' } }, 404);
   }
-  return c.json({ data: JSON.parse(row.certificate_data) });
+
+  // Strip PII — only return safe public fields
+  const fullData = JSON.parse(row.certificate_data) as Record<string, unknown>;
+  const holderName = typeof fullData.holder_name === 'string'
+    ? fullData.holder_name.split(' ')[0]
+    : undefined;
+
+  return c.json({
+    data: {
+      valid: true,
+      holder_first_name: holderName ?? 'Member',
+      trust_score_label: fullData.trust_score_label ?? null,
+      issued_date: fullData.issued_date ?? fullData.issued_at ?? null,
+    },
+  });
 });
 
 // Protected routes with rate limiting

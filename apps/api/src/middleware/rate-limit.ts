@@ -36,10 +36,12 @@ export const rateLimitMiddleware = createMiddleware<{
     );
   }
 
-  // Increment counter with TTL
-  await c.env.KV.put(key, String(count + 1), {
-    expirationTtl: GENERAL_WINDOW_SECONDS,
-  });
+  // Increment counter — only set TTL on first write to preserve the window
+  if (count === 0) {
+    await c.env.KV.put(key, '1', { expirationTtl: GENERAL_WINDOW_SECONDS });
+  } else {
+    await c.env.KV.put(key, String(count + 1));
+  }
 
   await next();
 });
@@ -67,7 +69,12 @@ export async function incrementLoginAttempts(kv: KVNamespace, phone: string): Pr
   const key = `rate:login:${phone}`;
   const current = await kv.get(key);
   const count = current ? parseInt(current, 10) : 0;
-  await kv.put(key, String(count + 1), { expirationTtl: 900 });
+  // Only set TTL on first write to preserve the 15-minute window
+  if (count === 0) {
+    await kv.put(key, '1', { expirationTtl: 900 });
+  } else {
+    await kv.put(key, String(count + 1));
+  }
 }
 
 export async function clearLoginAttempts(kv: KVNamespace, phone: string): Promise<void> {

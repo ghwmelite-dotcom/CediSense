@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { AppShell } from '@/components/layout/AppShell';
 import { LandingPage } from '@/pages/LandingPage';
@@ -38,6 +39,7 @@ function Placeholder({ name }: { name: string }) {
 
 export function App() {
   return (
+    <ErrorBoundary>
     <LanguageProvider>
       <AuthProvider>
       <Routes>
@@ -84,19 +86,19 @@ export function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<ErrorBoundary><DashboardPage /></ErrorBoundary>} />
           <Route path="/transactions" element={<TransactionFeedPage />} />
           <Route path="/transactions/import" element={<ImportPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="/goals" element={<GoalsPage />} />
-          <Route path="/ai-chat" element={<AIChatPage />} />
+          <Route path="/ai-chat" element={<ErrorBoundary><AIChatPage /></ErrorBoundary>} />
           <Route path="/add" element={<AddTransactionPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/insights" element={<InsightsPage />} />
           <Route path="/recurring" element={<RecurringPage />} />
           <Route path="/splits" element={<SplitsPage />} />
           <Route path="/investments" element={<InvestmentsPage />} />
-          <Route path="/susu" element={<SusuPage />} />
+          <Route path="/susu" element={<ErrorBoundary><SusuPage /></ErrorBoundary>} />
           <Route path="/collector" element={<CollectorPage />} />
         </Route>
 
@@ -105,5 +107,6 @@ export function App() {
       </Routes>
       </AuthProvider>
     </LanguageProvider>
+    </ErrorBoundary>
   );
 }
