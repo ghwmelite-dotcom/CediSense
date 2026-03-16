@@ -8,6 +8,8 @@ import {
   earlyPayoutRequestSchema,
   earlyPayoutVoteSchema,
   susuMessageSchema,
+  messageReactionSchema,
+  editMessageSchema,
   funeralClaimSchema,
   funeralClaimVoteSchema,
   guaranteeClaimSchema,
@@ -2587,16 +2589,30 @@ susu.post('/groups/:id/messages', async (c) => {
   }
 
   const messageId = generateId();
+  const replyToId = parsed.data.reply_to_id ?? null;
+
+  // Validate reply_to_id if provided
+  if (replyToId) {
+    const replyMsg = await c.env.DB.prepare(
+      `SELECT id FROM susu_messages WHERE id = ? AND group_id = ?`
+    ).bind(replyToId, groupId).first<{ id: string }>();
+    if (!replyMsg) {
+      return c.json({ error: { code: 'NOT_FOUND', message: 'Reply target message not found in this group' } }, 404);
+    }
+  }
 
   await c.env.DB.prepare(
-    `INSERT INTO susu_messages (id, group_id, member_id, content) VALUES (?, ?, ?, ?)`
-  ).bind(messageId, groupId, myMember.id, parsed.data.content).run();
+    `INSERT INTO susu_messages (id, group_id, member_id, content, reply_to_id) VALUES (?, ?, ?, ?, ?)`
+  ).bind(messageId, groupId, myMember.id, parsed.data.content, replyToId).run();
 
   const row = await c.env.DB.prepare(
     `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
-            m.reply_to_id, m.edited_at, m.deleted_at
+            m.reply_to_id, m.edited_at, m.deleted_at,
+            rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
      FROM susu_messages m
      JOIN susu_members sm ON m.member_id = sm.id
+     LEFT JOIN susu_messages rm ON m.reply_to_id = rm.id
+     LEFT JOIN susu_members rsm ON rm.member_id = rsm.id
      WHERE m.id = ?`
   ).bind(messageId).first<{
     id: string;
@@ -2605,6 +2621,8 @@ susu.post('/groups/:id/messages', async (c) => {
     sender_name: string;
     sender_user_id: string;
     reply_to_id: string | null;
+    reply_to_content: string | null;
+    reply_to_sender: string | null;
     edited_at: string | null;
     deleted_at: string | null;
   }>();
@@ -2616,8 +2634,8 @@ susu.post('/groups/:id/messages', async (c) => {
     sender_user_id: row.sender_user_id,
     created_at: row.created_at,
     reply_to_id: row.reply_to_id,
-    reply_to_content: null,
-    reply_to_sender: null,
+    reply_to_content: row.reply_to_content ? (row.reply_to_content.length > 100 ? row.reply_to_content.slice(0, 100) + '...' : row.reply_to_content) : null,
+    reply_to_sender: row.reply_to_sender,
     edited_at: row.edited_at,
     is_deleted: false,
     reactions: [] as Array<{ emoji: string; count: number; reacted_by_me: boolean }>,
@@ -2625,6 +2643,279 @@ susu.post('/groups/:id/messages', async (c) => {
   } : null;
 
   return c.json({ data: message }, 201);
+});
+
+// ─── POST /groups/:id/messages/:messageId/react — toggle emoji reaction ──────
+
+susu.post('/groups/:id/messages/:messageId/react', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const messageId = c.req.param('messageId');
+
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Verify message exists in this group
+  const msg = await c.env.DB.prepare(
+    `SELECT id FROM susu_messages WHERE id = ? AND group_id = ? AND deleted_at IS NULL`
+  ).bind(messageId, groupId).first<{ id: string }>();
+
+  if (!msg) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Message not found' } }, 404);
+  }
+
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: { code: 'INVALID_JSON', message: 'Invalid JSON body' } }, 400);
+  }
+
+  const parsed = messageReactionSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid input' } }, 422);
+  }
+
+  const { emoji } = parsed.data;
+
+  // Check if reaction already exists (toggle)
+  const existing = await c.env.DB.prepare(
+    `SELECT id FROM message_reactions WHERE message_id = ? AND member_id = ? AND emoji = ?`
+  ).bind(messageId, myMember.id, emoji).first<{ id: string }>();
+
+  if (existing) {
+    // Remove reaction
+    await c.env.DB.prepare(
+      `DELETE FROM message_reactions WHERE id = ?`
+    ).bind(existing.id).run();
+  } else {
+    // Add reaction
+    const reactionId = generateId();
+    await c.env.DB.prepare(
+      `INSERT INTO message_reactions (id, message_id, member_id, emoji) VALUES (?, ?, ?, ?)`
+    ).bind(reactionId, messageId, myMember.id, emoji).run();
+  }
+
+  // Return updated reactions for this message
+  const { results: reactionRows } = await c.env.DB.prepare(
+    `SELECT emoji, COUNT(*) AS count,
+            MAX(CASE WHEN member_id = ? THEN 1 ELSE 0 END) AS reacted_by_me
+     FROM message_reactions
+     WHERE message_id = ?
+     GROUP BY emoji`
+  ).bind(myMember.id, messageId).all<{ emoji: string; count: number; reacted_by_me: number }>();
+
+  const reactions = reactionRows.map((r) => ({
+    emoji: r.emoji,
+    count: r.count,
+    reacted_by_me: r.reacted_by_me === 1,
+  }));
+
+  return c.json({ data: { message_id: messageId, reactions } });
+});
+
+// ─── PUT /groups/:id/messages/:messageId — edit a message ────────────────────
+
+susu.put('/groups/:id/messages/:messageId', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const messageId = c.req.param('messageId');
+
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Verify message exists, belongs to sender, and is within 15 minutes
+  const msg = await c.env.DB.prepare(
+    `SELECT id, member_id, created_at FROM susu_messages WHERE id = ? AND group_id = ? AND deleted_at IS NULL`
+  ).bind(messageId, groupId).first<{ id: string; member_id: string; created_at: string }>();
+
+  if (!msg) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Message not found' } }, 404);
+  }
+
+  if (msg.member_id !== myMember.id) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'You can only edit your own messages' } }, 403);
+  }
+
+  // Check 15-minute window
+  const createdAt = new Date(msg.created_at.endsWith('Z') ? msg.created_at : msg.created_at + 'Z');
+  const now = new Date();
+  const diffMin = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+  if (diffMin > 15) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Messages can only be edited within 15 minutes of sending' } }, 403);
+  }
+
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: { code: 'INVALID_JSON', message: 'Invalid JSON body' } }, 400);
+  }
+
+  const parsed = editMessageSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid input' } }, 422);
+  }
+
+  await c.env.DB.prepare(
+    `UPDATE susu_messages SET content = ?, edited_at = datetime('now') WHERE id = ?`
+  ).bind(parsed.data.content, messageId).run();
+
+  const row = await c.env.DB.prepare(
+    `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+            m.reply_to_id, m.edited_at, m.deleted_at,
+            rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
+     FROM susu_messages m
+     JOIN susu_members sm ON m.member_id = sm.id
+     LEFT JOIN susu_messages rm ON m.reply_to_id = rm.id
+     LEFT JOIN susu_members rsm ON rm.member_id = rsm.id
+     WHERE m.id = ?`
+  ).bind(messageId).first<{
+    id: string; content: string; created_at: string; sender_name: string; sender_user_id: string;
+    reply_to_id: string | null; reply_to_content: string | null; reply_to_sender: string | null;
+    edited_at: string | null; deleted_at: string | null;
+  }>();
+
+  if (!row) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Message not found' } }, 404);
+  }
+
+  // Get reactions
+  const { results: reactionRows } = await c.env.DB.prepare(
+    `SELECT emoji, COUNT(*) AS count,
+            MAX(CASE WHEN member_id = ? THEN 1 ELSE 0 END) AS reacted_by_me
+     FROM message_reactions WHERE message_id = ? GROUP BY emoji`
+  ).bind(myMember.id, messageId).all<{ emoji: string; count: number; reacted_by_me: number }>();
+
+  return c.json({
+    data: {
+      id: row.id,
+      content: row.content,
+      sender_name: row.sender_name,
+      sender_user_id: row.sender_user_id,
+      created_at: row.created_at,
+      reply_to_id: row.reply_to_id,
+      reply_to_content: row.reply_to_content ? (row.reply_to_content.length > 100 ? row.reply_to_content.slice(0, 100) + '...' : row.reply_to_content) : null,
+      reply_to_sender: row.reply_to_sender,
+      edited_at: row.edited_at,
+      is_deleted: false,
+      reactions: reactionRows.map((r) => ({ emoji: r.emoji, count: r.count, reacted_by_me: r.reacted_by_me === 1 })),
+      read_by_count: 0,
+    },
+  });
+});
+
+// ─── DELETE /groups/:id/messages/:messageId — soft delete a message ──────────
+
+susu.delete('/groups/:id/messages/:messageId', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const messageId = c.req.param('messageId');
+
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Verify message exists
+  const msg = await c.env.DB.prepare(
+    `SELECT id, member_id FROM susu_messages WHERE id = ? AND group_id = ? AND deleted_at IS NULL`
+  ).bind(messageId, groupId).first<{ id: string; member_id: string }>();
+
+  if (!msg) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Message not found' } }, 404);
+  }
+
+  // Check if sender or group creator (for moderation)
+  const group = await c.env.DB.prepare(
+    `SELECT creator_id FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ creator_id: string }>();
+
+  if (msg.member_id !== myMember.id && group?.creator_id !== userId) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'You can only delete your own messages' } }, 403);
+  }
+
+  await c.env.DB.prepare(
+    `UPDATE susu_messages SET deleted_at = datetime('now') WHERE id = ?`
+  ).bind(messageId).run();
+
+  return c.body(null, 204);
+});
+
+// ─── GET /groups/:id/messages/search — search messages ───────────────────────
+
+susu.get('/groups/:id/messages/search', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  const q = c.req.query('q') ?? '';
+  if (q.length < 2) {
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: 'Search query must be at least 2 characters' } }, 422);
+  }
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+            m.reply_to_id, m.edited_at, m.deleted_at,
+            rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
+     FROM susu_messages m
+     JOIN susu_members sm ON m.member_id = sm.id
+     LEFT JOIN susu_messages rm ON m.reply_to_id = rm.id
+     LEFT JOIN susu_members rsm ON rm.member_id = rsm.id
+     WHERE m.group_id = ? AND m.deleted_at IS NULL AND m.content LIKE ?
+     ORDER BY m.created_at DESC
+     LIMIT 20`
+  ).bind(groupId, `%${q}%`).all<{
+    id: string; content: string; created_at: string; sender_name: string; sender_user_id: string;
+    reply_to_id: string | null; reply_to_content: string | null; reply_to_sender: string | null;
+    edited_at: string | null; deleted_at: string | null;
+  }>();
+
+  const messages = [];
+  for (const msg of results) {
+    const { results: reactionRows } = await c.env.DB.prepare(
+      `SELECT emoji, COUNT(*) AS count,
+              MAX(CASE WHEN member_id = ? THEN 1 ELSE 0 END) AS reacted_by_me
+       FROM message_reactions WHERE message_id = ? GROUP BY emoji`
+    ).bind(myMember.id, msg.id).all<{ emoji: string; count: number; reacted_by_me: number }>();
+
+    messages.push({
+      id: msg.id,
+      content: msg.content,
+      sender_name: msg.sender_name,
+      sender_user_id: msg.sender_user_id,
+      created_at: msg.created_at,
+      reply_to_id: msg.reply_to_id,
+      reply_to_content: msg.reply_to_content ? (msg.reply_to_content.length > 100 ? msg.reply_to_content.slice(0, 100) + '...' : msg.reply_to_content) : null,
+      reply_to_sender: msg.reply_to_sender,
+      edited_at: msg.edited_at,
+      is_deleted: false,
+      reactions: reactionRows.map((r) => ({ emoji: r.emoji, count: r.count, reacted_by_me: r.reacted_by_me === 1 })),
+      read_by_count: 0,
+    });
+  }
+
+  return c.json({ data: messages });
 });
 
 // ─── POST /groups/:id/funeral-claim — submit a funeral claim ─────────────────

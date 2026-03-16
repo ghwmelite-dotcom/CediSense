@@ -379,9 +379,20 @@ export type EarlyPayoutVoteInput = z.infer<typeof earlyPayoutVoteSchema>;
 
 export const susuMessageSchema = z.object({
   content: z.string().min(1).max(500),
+  reply_to_id: z.string().optional(),
+});
+
+export const messageReactionSchema = z.object({
+  emoji: z.string().min(1).max(4),
+});
+
+export const editMessageSchema = z.object({
+  content: z.string().min(1).max(500),
 });
 
 export type SusuMessageInput = z.infer<typeof susuMessageSchema>;
+export type MessageReactionInput = z.infer<typeof messageReactionSchema>;
+export type EditMessageInput = z.infer<typeof editMessageSchema>;
 
 // ─── Funeral Fund schemas ────────────────────────────────────────────────────
 
