@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { SusuGroupWithDetails, EarlyPayoutRequest, FuneralClaim, SusuVariant, SusuAnalytics, SusuBadge, LeaderboardEntry } from '@cedisense/shared';
+import type { SusuGroupWithDetails, EarlyPayoutRequest, FuneralClaim, SusuVariant, SusuAnalytics, SusuBadge, LeaderboardEntry, GuaranteeClaim } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 import { InviteQRModal } from './InviteQRModal';
 import { EarlyPayoutCard } from './EarlyPayoutCard';
@@ -31,6 +31,10 @@ interface GroupDetailProps {
   funeralClaimPaying?: boolean;
   earlyPayoutVoting?: boolean;
   earlyPayoutPaying?: boolean;
+  /** Guarantee fund handlers */
+  onGuaranteeClaim?: (memberId: string) => void;
+  /** Bulk purchase handler */
+  onPaySupplier?: () => void;
   /** Called when the user taps "View Receipt" for a member who has contributed */
   onViewReceipt?: (memberId: string) => void;
   /** Analytics data — fetched lazily when Analytics tab is opened */
@@ -53,6 +57,7 @@ const VARIANT_LABEL: Record<SusuVariant, string> = {
   school_fees: 'School Fees',
   diaspora: 'Diaspora',
   event_fund: 'Event Fund',
+  bulk_purchase: 'Bulk Purchase',
 };
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -90,6 +95,8 @@ export function GroupDetail({
   leaderboard = [],
   leaderboardLoading = false,
   onLoadLeaderboard,
+  onGuaranteeClaim,
+  onPaySupplier,
 }: GroupDetailProps) {
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
@@ -314,6 +321,50 @@ export function GroupDetail({
             <span className="text-xs text-expense font-semibold">Penalty Pool</span>
           </div>
           <span className="text-expense font-bold text-sm">{formatPesewas(group.penalty_pool_pesewas)}</span>
+        </div>
+      )}
+
+      {/* Guarantee Fund display */}
+      {group.guarantee_percent > 0 && (
+        <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl px-4 py-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span className="text-xs text-cyan-300 font-semibold">Guarantee Fund ({group.guarantee_percent}%)</span>
+            </div>
+            <span className="text-cyan-200 font-bold text-sm">{formatPesewas(group.guarantee_pool_pesewas)}</span>
+          </div>
+          {group.is_creator && onGuaranteeClaim && group.guarantee_pool_pesewas > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-cyan-300/60 text-xs">Claim for a defaulting member:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {group.members.filter(m => !m.has_contributed_this_round).map(m => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => onGuaranteeClaim(m.id)}
+                    className="px-3 py-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-cyan-200
+                      text-xs font-semibold hover:bg-cyan-500/25 active:scale-95 transition-all min-h-[36px]"
+                  >
+                    Claim for {m.display_name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {group.guarantee_claims && group.guarantee_claims.length > 0 && (
+            <div className="space-y-1 mt-2">
+              <p className="text-cyan-300/60 text-xs font-medium">Claims history:</p>
+              {group.guarantee_claims.slice(0, 5).map((claim) => (
+                <div key={claim.id} className="flex items-center justify-between text-xs bg-cyan-500/5 rounded-lg px-3 py-1.5">
+                  <span className="text-cyan-100 truncate">{claim.defaulting_member_name} (Rd {claim.round})</span>
+                  <span className="text-cyan-200 font-bold shrink-0">{formatPesewas(claim.covered_amount_pesewas)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -610,6 +661,80 @@ export function GroupDetail({
                 ))}
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Bulk Purchase info */}
+      {group.variant === 'bulk_purchase' && group.bulk_purchase_info && (
+        <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-orange-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+            </svg>
+            <p className="text-orange-200 text-xs font-semibold uppercase tracking-wide">
+              {VARIANT_LABEL.bulk_purchase} — Trader Group
+            </p>
+          </div>
+
+          {/* Supplier info */}
+          <div className="bg-orange-500/5 rounded-lg px-3 py-2 space-y-1">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-orange-300/60 text-xs">Supplier</span>
+              <span className="text-orange-100 font-semibold">{group.bulk_purchase_info.supplier_name}</span>
+            </div>
+            {group.bulk_purchase_info.supplier_contact && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-orange-300/60 text-xs">Contact</span>
+                <span className="text-orange-100">{group.bulk_purchase_info.supplier_contact}</span>
+              </div>
+            )}
+            {group.bulk_purchase_info.item_description && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-orange-300/60 text-xs">Items</span>
+                <span className="text-orange-100">{group.bulk_purchase_info.item_description}</span>
+              </div>
+            )}
+            {group.bulk_purchase_info.estimated_savings_percent != null && group.bulk_purchase_info.estimated_savings_percent > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-orange-300/60 text-xs">Est. Savings</span>
+                <span className="text-income font-bold">{group.bulk_purchase_info.estimated_savings_percent}% off retail</span>
+              </div>
+            )}
+          </div>
+
+          {/* Pool progress */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-0.5">
+              <p className="text-orange-300/60 text-xs">Total Pool</p>
+              <p className="text-orange-100 font-bold text-lg">
+                {formatPesewas(group.bulk_purchase_info.total_pool_pesewas)}
+              </p>
+            </div>
+            <div className="text-right space-y-0.5">
+              <p className="text-orange-300/60 text-xs">Your Share</p>
+              <p className="text-orange-200 font-bold text-base">
+                {formatPesewas(group.bulk_purchase_info.per_member_share_pesewas)}
+              </p>
+            </div>
+          </div>
+
+          {/* Pay Supplier button (creator only) */}
+          {group.is_creator && onPaySupplier && group.bulk_purchase_info.total_pool_pesewas > 0 && (
+            <button
+              type="button"
+              onClick={onPaySupplier}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
+                bg-orange-500 text-white font-semibold text-sm hover:brightness-110
+                active:scale-95 transition-all min-h-[44px]"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2
+                     2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              Pay Supplier
+            </button>
           )}
         </div>
       )}

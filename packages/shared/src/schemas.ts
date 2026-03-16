@@ -285,7 +285,7 @@ export type UpdateInvestmentInput = z.infer<typeof updateInvestmentSchema>;
 
 // ─── Susu schemas ─────────────────────────────────────────────────────────────
 
-export const SUSU_VARIANTS = ['rotating', 'accumulating', 'goal_based', 'bidding', 'funeral_fund', 'school_fees', 'diaspora', 'event_fund'] as const;
+export const SUSU_VARIANTS = ['rotating', 'accumulating', 'goal_based', 'bidding', 'funeral_fund', 'school_fees', 'diaspora', 'event_fund', 'bulk_purchase'] as const;
 export const DIASPORA_CURRENCIES = ['GHS', 'GBP', 'USD', 'EUR', 'CAD'] as const;
 
 export const createSusuGroupSchema = z.object({
@@ -304,12 +304,22 @@ export const createSusuGroupSchema = z.object({
   // Event Fund fields
   event_name: z.string().max(200).optional(),
   event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  // Guarantee Fund fields (any variant)
+  guarantee_percent: z.number().int().min(0).max(10).default(0),
+  // Bulk Purchase fields
+  supplier_name: z.string().max(200).optional(),
+  supplier_contact: z.string().max(200).optional(),
+  item_description: z.string().max(500).optional(),
+  estimated_savings_percent: z.number().int().min(0).max(100).optional(),
 }).refine(
   (data) => data.variant !== 'goal_based' || data.goal_amount_pesewas !== undefined,
   { message: 'goal_amount_pesewas is required for goal_based variant', path: ['goal_amount_pesewas'] }
 ).refine(
   (data) => data.variant !== 'event_fund' || data.event_name !== undefined,
   { message: 'event_name is required for event_fund variant', path: ['event_name'] }
+).refine(
+  (data) => data.variant !== 'bulk_purchase' || data.supplier_name !== undefined,
+  { message: 'supplier_name is required for bulk_purchase variant', path: ['supplier_name'] }
 );
 
 export const joinSusuGroupSchema = z.object({
@@ -374,6 +384,16 @@ export const funeralClaimVoteSchema = z.object({
 
 export type FuneralClaimInput = z.infer<typeof funeralClaimSchema>;
 export type FuneralClaimVoteInput = z.infer<typeof funeralClaimVoteSchema>;
+
+// ─── Guarantee Fund schemas ─────────────────────────────────────────────────
+
+export const guaranteeClaimSchema = z.object({
+  defaulting_member_id: z.string().min(1),
+  round: z.number().int().positive(),
+  covered_amount_pesewas: z.number().int().positive(),
+});
+
+export type GuaranteeClaimInput = z.infer<typeof guaranteeClaimSchema>;
 
 // ─── Collector schemas ──────────────────────────────────────────────────────
 

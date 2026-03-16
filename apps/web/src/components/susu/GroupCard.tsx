@@ -38,6 +38,8 @@ function variantBadge(variant: SusuVariant): VariantBadgeConfig {
       return { label: 'Event Fund', className: 'bg-pink-500/15 text-pink-300 border-pink-500/30' };
     case 'funeral_fund':
       return { label: 'Funeral Fund', className: 'bg-neutral-700/30 text-amber-300 border-amber-700/40' };
+    case 'bulk_purchase':
+      return { label: 'Bulk Purchase', className: 'bg-orange-500/15 text-orange-300 border-orange-500/30' };
   }
 }
 
@@ -110,6 +112,21 @@ export function GroupCard({ group, isCreator, onClick }: GroupCardProps) {
         {group.variant === 'event_fund' && group.event_date && (
           <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-300 border border-pink-500/20">
             {new Date(group.event_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+          </span>
+        )}
+        {group.variant === 'bulk_purchase' && group.item_description && (
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-300 border border-orange-500/20 truncate max-w-[140px]">
+            {group.item_description}
+          </span>
+        )}
+        {group.variant === 'bulk_purchase' && group.estimated_savings_percent != null && group.estimated_savings_percent > 0 && (
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-income/10 text-income border border-income/20">
+            Save {group.estimated_savings_percent}%
+          </span>
+        )}
+        {group.guarantee_percent > 0 && (
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+            {group.guarantee_percent}% Guarantee
           </span>
         )}
         {group.is_active ? (

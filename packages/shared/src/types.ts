@@ -425,7 +425,7 @@ export interface InvestmentSummary {
 
 export type SusuFrequency = 'daily' | 'weekly' | 'monthly';
 
-export type SusuVariant = 'rotating' | 'accumulating' | 'goal_based' | 'bidding' | 'funeral_fund' | 'school_fees' | 'diaspora' | 'event_fund';
+export type SusuVariant = 'rotating' | 'accumulating' | 'goal_based' | 'bidding' | 'funeral_fund' | 'school_fees' | 'diaspora' | 'event_fund' | 'bulk_purchase';
 
 export type DiasporaCurrency = 'GHS' | 'GBP' | 'USD' | 'EUR' | 'CAD';
 
@@ -452,6 +452,14 @@ export interface SusuGroup {
   // Event Fund fields
   event_name: string | null;
   event_date: string | null;
+  // Guarantee Fund fields
+  guarantee_percent: number;
+  guarantee_pool_pesewas: number;
+  // Bulk Purchase fields
+  supplier_name: string | null;
+  supplier_contact: string | null;
+  item_description: string | null;
+  estimated_savings_percent: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -583,6 +591,25 @@ export interface EventFundInfo {
   }>;
 }
 
+export interface GuaranteeClaim {
+  id: string;
+  group_id: string;
+  defaulting_member_id: string;
+  defaulting_member_name?: string;
+  round: number;
+  covered_amount_pesewas: number;
+  created_at: string;
+}
+
+export interface BulkPurchaseInfo {
+  total_pool_pesewas: number;
+  per_member_share_pesewas: number;
+  supplier_name: string | null;
+  supplier_contact: string | null;
+  item_description: string | null;
+  estimated_savings_percent: number | null;
+}
+
 export interface SusuGroupWithDetails extends SusuGroup {
   member_count: number;
   members: Array<SusuMember & { has_contributed_this_round: boolean; trust_score: number; trust_label: string }>;
@@ -596,6 +623,8 @@ export interface SusuGroupWithDetails extends SusuGroup {
   school_fees_info: SchoolFeesInfo | null;
   diaspora_info: DiasporaInfo | null;
   event_fund_info: EventFundInfo | null;
+  guarantee_claims: GuaranteeClaim[];
+  bulk_purchase_info: BulkPurchaseInfo | null;
 }
 
 export interface ContributionReceipt {

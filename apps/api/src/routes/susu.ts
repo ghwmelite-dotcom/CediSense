@@ -10,6 +10,7 @@ import {
   susuMessageSchema,
   funeralClaimSchema,
   funeralClaimVoteSchema,
+  guaranteeClaimSchema,
 } from '@cedisense/shared';
 import type { SusuFrequency, SusuVariant, CreditCertificate } from '@cedisense/shared';
 import { generateId } from '../lib/db.js';
@@ -41,6 +42,12 @@ interface SusuGroupRow {
   base_currency: string | null;
   event_name: string | null;
   event_date: string | null;
+  guarantee_percent: number;
+  guarantee_pool_pesewas: number;
+  supplier_name: string | null;
+  supplier_contact: string | null;
+  item_description: string | null;
+  estimated_savings_percent: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -162,6 +169,8 @@ susu.post('/groups', async (c) => {
     name, contribution_pesewas, frequency, max_members, variant,
     goal_amount_pesewas, goal_description,
     target_term, school_name, base_currency, event_name, event_date,
+    guarantee_percent,
+    supplier_name, supplier_contact, item_description, estimated_savings_percent,
   } = parsed.data;
 
   // Fetch creator display_name
@@ -186,13 +195,17 @@ susu.post('/groups', async (c) => {
     `INSERT INTO susu_groups
        (id, name, creator_id, invite_code, contribution_pesewas, frequency, max_members,
         variant, goal_amount_pesewas, goal_description,
-        target_term, school_name, base_currency, event_name, event_date)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        target_term, school_name, base_currency, event_name, event_date,
+        guarantee_percent,
+        supplier_name, supplier_contact, item_description, estimated_savings_percent)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     groupId, name, userId, invite_code, contribution_pesewas, frequency, max_members,
     variant, effectiveGoalAmount, goal_description ?? null,
     target_term ?? null, school_name ?? null, base_currency ?? 'GHS',
-    event_name ?? null, event_date ?? null
+    event_name ?? null, event_date ?? null,
+    guarantee_percent ?? 0,
+    supplier_name ?? null, supplier_contact ?? null, item_description ?? null, estimated_savings_percent ?? null
   ).run();
 
   // Auto-add creator as first member
@@ -207,7 +220,7 @@ susu.post('/groups', async (c) => {
   const group = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
             max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
-            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, created_at, updated_at
+            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, guarantee_percent, guarantee_pool_pesewas, supplier_name, supplier_contact, item_description, estimated_savings_percent, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -225,6 +238,7 @@ susu.get('/groups', async (c) => {
             g.variant, g.goal_amount_pesewas, g.goal_description,
             g.penalty_percent, g.penalty_pool_pesewas,
             g.target_term, g.school_name, g.base_currency, g.event_name, g.event_date,
+            g.guarantee_percent, g.guarantee_pool_pesewas, g.supplier_name, g.supplier_contact, g.item_description, g.estimated_savings_percent,
             g.created_at, g.updated_at,
             (SELECT COUNT(*) FROM susu_members m2 WHERE m2.group_id = g.id) AS member_count
      FROM susu_groups g
@@ -258,7 +272,7 @@ susu.get('/groups/:id', async (c) => {
   const group = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
             max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
-            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, created_at, updated_at
+            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, guarantee_percent, guarantee_pool_pesewas, supplier_name, supplier_contact, item_description, estimated_savings_percent, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -472,6 +486,42 @@ susu.get('/groups/:id', async (c) => {
     };
   }
 
+  // Compute guarantee claims
+  let guarantee_claims: Array<{
+    id: string; group_id: string; defaulting_member_id: string;
+    defaulting_member_name: string; round: number;
+    covered_amount_pesewas: number; created_at: string;
+  }> = [];
+  if (group.guarantee_percent > 0) {
+    const { results: claimsRows } = await c.env.DB.prepare(
+      `SELECT gc.id, gc.group_id, gc.defaulting_member_id, sm.display_name AS defaulting_member_name,
+              gc.round, gc.covered_amount_pesewas, gc.created_at
+       FROM guarantee_claims gc
+       INNER JOIN susu_members sm ON sm.id = gc.defaulting_member_id
+       WHERE gc.group_id = ?
+       ORDER BY gc.created_at DESC`
+    ).bind(groupId).all<{
+      id: string; group_id: string; defaulting_member_id: string;
+      defaulting_member_name: string; round: number;
+      covered_amount_pesewas: number; created_at: string;
+    }>();
+    guarantee_claims = claimsRows;
+  }
+
+  // Compute bulk purchase info
+  let bulk_purchase_info = null;
+  if (group.variant === 'bulk_purchase') {
+    const perMemberShare = member_count > 0 ? Math.floor(total_contributed_pesewas / member_count) : 0;
+    bulk_purchase_info = {
+      total_pool_pesewas: total_contributed_pesewas,
+      per_member_share_pesewas: perMemberShare,
+      supplier_name: group.supplier_name,
+      supplier_contact: group.supplier_contact,
+      item_description: group.item_description,
+      estimated_savings_percent: group.estimated_savings_percent,
+    };
+  }
+
   return c.json({
     data: {
       ...mapGroup(group),
@@ -487,6 +537,8 @@ susu.get('/groups/:id', async (c) => {
       school_fees_info,
       diaspora_info,
       event_fund_info,
+      guarantee_claims,
+      bulk_purchase_info,
     },
   });
 });
@@ -545,7 +597,7 @@ susu.put('/groups/:id', async (c) => {
   const updated = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
             max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
-            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, created_at, updated_at
+            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, guarantee_percent, guarantee_pool_pesewas, supplier_name, supplier_contact, item_description, estimated_savings_percent, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -707,8 +759,8 @@ susu.post('/groups/:id/contributions', async (c) => {
   const groupId = c.req.param('id');
 
   const group = await c.env.DB.prepare(
-    `SELECT id, creator_id, current_round, penalty_percent FROM susu_groups WHERE id = ?`
-  ).bind(groupId).first<{ id: string; creator_id: string; current_round: number; penalty_percent: number }>();
+    `SELECT id, creator_id, current_round, penalty_percent, guarantee_percent FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; creator_id: string; current_round: number; penalty_percent: number; guarantee_percent: number }>();
 
   if (!group) {
     return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
@@ -758,6 +810,19 @@ susu.post('/groups/:id/contributions', async (c) => {
       return c.json({ error: { code: 'CONFLICT', message: 'Member has already contributed this round' } }, 409);
     }
     throw err;
+  }
+
+  // Handle guarantee fund deduction
+  let guarantee_deduction_pesewas = 0;
+  if (group.guarantee_percent > 0) {
+    guarantee_deduction_pesewas = Math.round(amount_pesewas * group.guarantee_percent / 100);
+    if (guarantee_deduction_pesewas > 0) {
+      await c.env.DB.prepare(
+        `UPDATE susu_groups
+         SET guarantee_pool_pesewas = guarantee_pool_pesewas + ?, updated_at = datetime('now')
+         WHERE id = ?`
+      ).bind(guarantee_deduction_pesewas, groupId).run();
+    }
   }
 
   // Handle penalty if contribution is late
@@ -990,6 +1055,35 @@ susu.post('/groups/:id/payouts', async (c) => {
     return c.json({ data: { type: 'goal_distribution', payouts, total_pool: totalPool, share_per_member: sharePerMember } }, 201);
   }
 
+  // ── Bulk Purchase variant: single payout to group (supplier payment) ──────
+  if (group.variant === 'bulk_purchase') {
+    const totalRow = await c.env.DB.prepare(
+      `SELECT COALESCE(SUM(amount_pesewas), 0) AS total FROM susu_contributions WHERE group_id = ?`
+    ).bind(groupId).first<{ total: number }>();
+    const totalPool = totalRow?.total ?? 0;
+
+    // Creator records a single payout representing the supplier payment
+    const creatorMember = await c.env.DB.prepare(
+      `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+    ).bind(groupId, userId).first<{ id: string }>();
+
+    if (!creatorMember) {
+      return c.json({ error: { code: 'NOT_FOUND', message: 'Creator member not found' } }, 404);
+    }
+
+    const payoutId = generateId();
+    await c.env.DB.prepare(
+      `INSERT INTO susu_payouts (id, group_id, member_id, round, amount_pesewas)
+       VALUES (?, ?, ?, ?, ?)`
+    ).bind(payoutId, groupId, creatorMember.id, group.current_round, totalPool).run();
+
+    const payout = await c.env.DB.prepare(
+      `SELECT id, group_id, member_id, round, amount_pesewas, paid_at FROM susu_payouts WHERE id = ?`
+    ).bind(payoutId).first<SusuPayoutRow>();
+
+    return c.json({ data: { type: 'bulk_purchase_payment', payout, total_pool: totalPool } }, 201);
+  }
+
   // ── Rotating / Bidding variant: one member gets payout per round ──────────
   const payoutOrder = ((group.current_round - 1) % member_count) + 1;
 
@@ -1032,7 +1126,7 @@ susu.post('/groups/:id/advance-round', async (c) => {
   const groupId = c.req.param('id');
 
   const group = await c.env.DB.prepare(
-    `SELECT id, creator_id, current_round, variant, goal_amount_pesewas, max_members FROM susu_groups WHERE id = ?`
+    `SELECT id, creator_id, current_round, variant, goal_amount_pesewas, max_members, guarantee_percent, guarantee_pool_pesewas FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<{
     id: string;
     creator_id: string;
@@ -1040,6 +1134,8 @@ susu.post('/groups/:id/advance-round', async (c) => {
     variant: SusuVariant;
     goal_amount_pesewas: number | null;
     max_members: number;
+    guarantee_percent: number;
+    guarantee_pool_pesewas: number;
   }>();
 
   if (!group) {
@@ -1070,10 +1166,11 @@ susu.post('/groups/:id/advance-round', async (c) => {
 
   // ── Variant-specific advance logic ────────────────────────────────────────
 
-  if (group.variant === 'accumulating' || group.variant === 'funeral_fund') {
+  if (group.variant === 'accumulating' || group.variant === 'funeral_fund' || group.variant === 'bulk_purchase') {
     // No per-round payout required. Contributions accumulate in the pool.
     // For accumulating: when all rounds complete, flag as complete.
     // For funeral_fund: pool grows indefinitely, payouts triggered by claims.
+    // For bulk_purchase: pool grows until creator pays supplier.
     await c.env.DB.prepare(
       `UPDATE susu_groups
        SET current_round = current_round + 1, updated_at = datetime('now')
@@ -1154,10 +1251,35 @@ susu.post('/groups/:id/advance-round', async (c) => {
     ).bind(groupId).run();
   }
 
+  // Refund guarantee pool if cycle is complete (new round > max_members)
+  const afterRound = group.current_round + 1;
+  if (group.guarantee_percent > 0 && group.guarantee_pool_pesewas > 0 && afterRound > group.max_members && member_count > 0) {
+    const refundPerMember = Math.floor(group.guarantee_pool_pesewas / member_count);
+    if (refundPerMember > 0) {
+      const { results: allMembersForRefund } = await c.env.DB.prepare(
+        `SELECT id FROM susu_members WHERE group_id = ?`
+      ).bind(groupId).all<{ id: string }>();
+
+      for (const m of allMembersForRefund) {
+        const refundPayoutId = generateId();
+        await c.env.DB.prepare(
+          `INSERT INTO susu_payouts (id, group_id, member_id, round, amount_pesewas)
+           VALUES (?, ?, ?, ?, ?)`
+        ).bind(refundPayoutId, groupId, m.id, group.current_round, refundPerMember).run().catch(() => {
+          // Best-effort — ignore duplicate
+        });
+      }
+
+      await c.env.DB.prepare(
+        `UPDATE susu_groups SET guarantee_pool_pesewas = 0, updated_at = datetime('now') WHERE id = ?`
+      ).bind(groupId).run();
+    }
+  }
+
   const updated = await c.env.DB.prepare(
     `SELECT id, name, creator_id, invite_code, contribution_pesewas, frequency,
             max_members, current_round, is_active, variant, goal_amount_pesewas, goal_description,
-            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, created_at, updated_at
+            penalty_percent, penalty_pool_pesewas, target_term, school_name, base_currency, event_name, event_date, guarantee_percent, guarantee_pool_pesewas, supplier_name, supplier_contact, item_description, estimated_savings_percent, created_at, updated_at
      FROM susu_groups WHERE id = ?`
   ).bind(groupId).first<SusuGroupRow>();
 
@@ -2490,6 +2612,90 @@ susu.get('/certificate/verify/:certificateId', async (c) => {
 
   const certificate: CreditCertificate = JSON.parse(row.certificate_data);
   return c.json({ data: certificate });
+});
+
+// ─── POST /groups/:id/guarantee-claim — claim from guarantee fund (creator only)
+
+susu.post('/groups/:id/guarantee-claim', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  const group = await c.env.DB.prepare(
+    `SELECT id, creator_id, guarantee_percent, guarantee_pool_pesewas FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; creator_id: string; guarantee_percent: number; guarantee_pool_pesewas: number }>();
+
+  if (!group) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  if (group.creator_id !== userId) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only the creator can claim from the guarantee fund' } }, 403);
+  }
+
+  if (group.guarantee_percent === 0) {
+    return c.json({ error: { code: 'BAD_REQUEST', message: 'Guarantee fund is not enabled for this group' } }, 400);
+  }
+
+  const body = await c.req.json();
+  const parsed = guaranteeClaimSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request',
+          details: { fieldErrors: parsed.error.flatten().fieldErrors },
+        },
+      },
+      400
+    );
+  }
+
+  const { defaulting_member_id, round, covered_amount_pesewas } = parsed.data;
+
+  // Verify member belongs to this group
+  const member = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE id = ? AND group_id = ?`
+  ).bind(defaulting_member_id, groupId).first();
+
+  if (!member) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Member not found in this group' } }, 404);
+  }
+
+  // Check sufficient funds in guarantee pool
+  if (covered_amount_pesewas > group.guarantee_pool_pesewas) {
+    return c.json({
+      error: {
+        code: 'BAD_REQUEST',
+        message: `Insufficient guarantee fund. Available: ${group.guarantee_pool_pesewas}, Requested: ${covered_amount_pesewas}`,
+      },
+    }, 400);
+  }
+
+  const claimId = generateId();
+
+  await c.env.DB.prepare(
+    `INSERT INTO guarantee_claims (id, group_id, defaulting_member_id, round, covered_amount_pesewas)
+     VALUES (?, ?, ?, ?, ?)`
+  ).bind(claimId, groupId, defaulting_member_id, round, covered_amount_pesewas).run();
+
+  // Deduct from guarantee pool
+  await c.env.DB.prepare(
+    `UPDATE susu_groups
+     SET guarantee_pool_pesewas = guarantee_pool_pesewas - ?, updated_at = datetime('now')
+     WHERE id = ?`
+  ).bind(covered_amount_pesewas, groupId).run();
+
+  const claim = await c.env.DB.prepare(
+    `SELECT gc.id, gc.group_id, gc.defaulting_member_id, sm.display_name AS defaulting_member_name,
+            gc.round, gc.covered_amount_pesewas, gc.created_at
+     FROM guarantee_claims gc
+     INNER JOIN susu_members sm ON sm.id = gc.defaulting_member_id
+     WHERE gc.id = ?`
+  ).bind(claimId).first();
+
+  return c.json({ data: claim }, 201);
 });
 
 export { susu };

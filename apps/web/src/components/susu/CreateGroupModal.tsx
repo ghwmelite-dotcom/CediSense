@@ -15,6 +15,11 @@ interface CreateGroupData {
   base_currency?: DiasporaCurrency;
   event_name?: string;
   event_date?: string;
+  guarantee_percent?: number;
+  supplier_name?: string;
+  supplier_contact?: string;
+  item_description?: string;
+  estimated_savings_percent?: number;
 }
 
 interface CreateGroupModalProps {
@@ -31,7 +36,8 @@ const VARIANT_OPTIONS: { value: SusuVariant; label: string; description: string;
   { value: 'school_fees', label: 'School Fees', description: 'Save for school term fees with term payouts' },
   { value: 'diaspora', label: 'Diaspora', description: 'Save across currencies for Ghana remittances' },
   { value: 'event_fund', label: 'Event Fund', description: 'Crowdfund a wedding, naming ceremony, or event' },
-  { value: 'funeral_fund', label: 'Funeral Fund', description: 'Emergency bereavement support for your family', className: 'col-span-2' },
+  { value: 'bulk_purchase', label: 'Bulk Purchase', description: 'Pool money to buy inventory at wholesale prices' },
+  { value: 'funeral_fund', label: 'Funeral Fund', description: 'Emergency bereavement support for your family' },
 ];
 
 const CURRENCY_OPTIONS: { value: DiasporaCurrency; label: string; symbol: string }[] = [
@@ -64,6 +70,14 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
   // Event fund
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState('');
+  // Guarantee fund
+  const [guaranteeEnabled, setGuaranteeEnabled] = useState(false);
+  const [guaranteePercent, setGuaranteePercent] = useState(2);
+  // Bulk purchase
+  const [supplierName, setSupplierName] = useState('');
+  const [supplierContact, setSupplierContact] = useState('');
+  const [itemDescription, setItemDescription] = useState('');
+  const [estimatedSavingsPercent, setEstimatedSavingsPercent] = useState(0);
 
   if (!open) return null;
 
@@ -72,6 +86,7 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
     if (!name.trim() || contributionPesewas <= 0) return;
     if (variant === 'goal_based' && goalAmountPesewas <= 0) return;
     if (variant === 'event_fund' && !eventName.trim()) return;
+    if (variant === 'bulk_purchase' && !supplierName.trim()) return;
 
     onSave({
       name: name.trim(),
@@ -86,6 +101,11 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
       base_currency: variant === 'diaspora' ? baseCurrency : undefined,
       event_name: variant === 'event_fund' ? eventName.trim() : undefined,
       event_date: variant === 'event_fund' && eventDate ? eventDate : undefined,
+      guarantee_percent: guaranteeEnabled ? guaranteePercent : undefined,
+      supplier_name: variant === 'bulk_purchase' ? supplierName.trim() : undefined,
+      supplier_contact: variant === 'bulk_purchase' && supplierContact.trim() ? supplierContact.trim() : undefined,
+      item_description: variant === 'bulk_purchase' && itemDescription.trim() ? itemDescription.trim() : undefined,
+      estimated_savings_percent: variant === 'bulk_purchase' && estimatedSavingsPercent > 0 ? estimatedSavingsPercent : undefined,
     });
 
     resetForm();
@@ -104,6 +124,12 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
     setBaseCurrency('GHS');
     setEventName('');
     setEventDate('');
+    setGuaranteeEnabled(false);
+    setGuaranteePercent(2);
+    setSupplierName('');
+    setSupplierContact('');
+    setItemDescription('');
+    setEstimatedSavingsPercent(0);
   }
 
   function handleClose() {
@@ -117,7 +143,8 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
     !name.trim() ||
     contributionPesewas <= 0 ||
     (variant === 'goal_based' && goalAmountPesewas <= 0) ||
-    (variant === 'event_fund' && !eventName.trim());
+    (variant === 'event_fund' && !eventName.trim()) ||
+    (variant === 'bulk_purchase' && !supplierName.trim());
 
   return (
     <div
@@ -359,6 +386,122 @@ export function CreateGroupModal({ open, onClose, onSave }: CreateGroupModalProp
               </p>
             </div>
           )}
+
+          {/* Bulk Purchase fields */}
+          {variant === 'bulk_purchase' && (
+            <div className="space-y-3 rounded-xl border border-orange-500/20 bg-orange-500/5 p-4">
+              <p className="text-orange-300 text-xs font-semibold uppercase tracking-wide">Bulk Purchase Settings</p>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">Supplier Name</label>
+                <input
+                  type="text"
+                  value={supplierName}
+                  onChange={(e) => setSupplierName(e.target.value)}
+                  placeholder="e.g. Makola Wholesale Ltd"
+                  maxLength={200}
+                  required
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                    placeholder-muted text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50
+                    focus:border-orange-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">
+                  Supplier Contact <span className="text-muted/60">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={supplierContact}
+                  onChange={(e) => setSupplierContact(e.target.value)}
+                  placeholder="e.g. 024 123 4567"
+                  maxLength={200}
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                    placeholder-muted text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50
+                    focus:border-orange-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">
+                  Item Description <span className="text-muted/60">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={itemDescription}
+                  onChange={(e) => setItemDescription(e.target.value)}
+                  placeholder="e.g. 100 bags of rice"
+                  maxLength={500}
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white
+                    placeholder-muted text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/50
+                    focus:border-orange-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">
+                  Estimated Savings <span className="text-muted/60">(% off retail)</span>
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min={0}
+                    max={50}
+                    value={estimatedSavingsPercent}
+                    onChange={(e) => setEstimatedSavingsPercent(parseInt(e.target.value, 10))}
+                    className="flex-1 accent-orange-500"
+                  />
+                  <span className="text-orange-300 font-bold text-sm w-10 text-right">
+                    {estimatedSavingsPercent}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Guarantee Fund toggle (any variant) */}
+          <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-cyan-300 text-xs font-semibold uppercase tracking-wide">Guarantee Fund</p>
+                <p className="text-muted text-xs mt-0.5">Protect against member defaults</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGuaranteeEnabled(!guaranteeEnabled)}
+                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors duration-200
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50
+                  ${guaranteeEnabled ? 'bg-cyan-500' : 'bg-white/20'}`}
+                role="switch"
+                aria-checked={guaranteeEnabled}
+              >
+                <span
+                  className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200
+                    ${guaranteeEnabled ? 'translate-x-[22px]' : 'translate-x-0.5'} mt-0.5`}
+                />
+              </button>
+            </div>
+            {guaranteeEnabled && (
+              <div className="space-y-1.5">
+                <label className="text-muted text-sm font-medium">
+                  Percentage per contribution
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min={1}
+                    max={5}
+                    value={guaranteePercent}
+                    onChange={(e) => setGuaranteePercent(parseInt(e.target.value, 10))}
+                    className="flex-1 accent-cyan-500"
+                  />
+                  <span className="text-cyan-300 font-bold text-sm w-8 text-right">
+                    {guaranteePercent}%
+                  </span>
+                </div>
+                <p className="text-muted text-xs">
+                  {guaranteePercent}% of each contribution goes into a guarantee pool. Unused funds are refunded at cycle end.
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Contribution amount */}
           <div className="space-y-1.5">
