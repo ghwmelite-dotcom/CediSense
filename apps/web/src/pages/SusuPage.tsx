@@ -102,6 +102,9 @@ export function SusuPage() {
   // Certificate state
   const [showCertificate, setShowCertificate] = useState(false);
 
+  // Reorder state
+  const [reorderSaving, setReorderSaving] = useState(false);
+
   const fetchGroups = useCallback(async () => {
     try {
       const data = await api.get<SusuGroupWithCount[]>('/susu/groups');
@@ -217,6 +220,24 @@ export function SusuPage() {
       } else {
         setJoinError('invalid');
       }
+    }
+  }
+
+  // ── Reorder members ─────────────────────────────────────────────────────────
+
+  async function handleReorderMembers(memberIds: string[]) {
+    if (!selectedGroup) return;
+    setReorderSaving(true);
+    try {
+      await api.put(`/susu/groups/${selectedGroup.id}/reorder`, { order: memberIds });
+      const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
+      setSelectedGroup(updated);
+    } catch {
+      // Revert — re-fetch current state
+      const current = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
+      setSelectedGroup(current);
+    } finally {
+      setReorderSaving(false);
     }
   }
 
@@ -407,6 +428,8 @@ export function SusuPage() {
               leaderboard={leaderboard}
               leaderboardLoading={leaderboardLoading}
               onLoadLeaderboard={() => fetchLeaderboard(selectedGroup.id)}
+              onReorderMembers={handleReorderMembers}
+              reorderSaving={reorderSaving}
             />
           </div>
         </div>

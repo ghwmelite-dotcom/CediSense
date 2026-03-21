@@ -318,6 +318,8 @@ export const createSusuGroupSchema = z.object({
   // Welfare fields
   organization_name: z.string().max(200).optional(),
   organization_type: z.enum(['church', 'mosque', 'community', 'other']).optional(),
+  // Migration support — for groups already in progress offline
+  starting_round: z.number().int().min(1).max(50).optional(),
 }).refine(
   (data) => data.variant !== 'goal_based' || data.goal_amount_pesewas !== undefined,
   { message: 'goal_amount_pesewas is required for goal_based variant', path: ['goal_amount_pesewas'] }
@@ -357,10 +359,15 @@ export const updateSusuGroupSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
+export const reorderSusuMembersSchema = z.object({
+  order: z.array(z.string().min(1)).min(1),
+});
+
 export type CreateSusuGroupInput = z.infer<typeof createSusuGroupSchema>;
 export type JoinSusuGroupInput = z.infer<typeof joinSusuGroupSchema>;
 export type RecordContributionInput = z.infer<typeof recordContributionSchema>;
 export type UpdateSusuGroupInput = z.infer<typeof updateSusuGroupSchema>;
+export type ReorderSusuMembersInput = z.infer<typeof reorderSusuMembersSchema>;
 
 // ─── Early Payout schemas ─────────────────────────────────────────────────────
 

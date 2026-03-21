@@ -15,6 +15,7 @@ import {
   guaranteeClaimSchema,
   welfareClaimSchema,
   welfareClaimApproveSchema,
+  reorderSusuMembersSchema,
 } from '@cedisense/shared';
 import type { SusuFrequency, SusuVariant, CreditCertificate, AgriculturalPhase } from '@cedisense/shared';
 import { generateId } from '../lib/db.js';
@@ -182,6 +183,7 @@ susu.post('/groups', async (c) => {
     supplier_name, supplier_contact, item_description, estimated_savings_percent,
     crop_type, planting_month, harvest_month,
     organization_name, organization_type,
+    starting_round,
   } = parsed.data;
 
   // Fetch creator display_name
@@ -202,15 +204,17 @@ susu.post('/groups', async (c) => {
   await c.env.DB.prepare(
     `INSERT INTO susu_groups
        (id, name, creator_id, invite_code, contribution_pesewas, frequency, max_members,
+        current_round,
         variant, goal_amount_pesewas, goal_description,
         target_term, school_name, base_currency, event_name, event_date,
         guarantee_percent,
         supplier_name, supplier_contact, item_description, estimated_savings_percent,
         crop_type, planting_month, harvest_month,
         organization_name, organization_type)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     groupId, name, userId, invite_code, contribution_pesewas, frequency, max_members,
+    starting_round ?? 1,
     variant, effectiveGoalAmount, goal_description ?? null,
     target_term ?? null, school_name ?? null, base_currency ?? 'GHS',
     event_name ?? null, event_date ?? null,
@@ -1001,6 +1005,79 @@ susu.post('/groups/:id/leave', async (c) => {
   }
 
   return c.body(null, 204);
+});
+
+// ─── PUT /groups/:id/reorder — reorder payout positions (creator only) ────────
+
+susu.put('/groups/:id/reorder', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  const group = await c.env.DB.prepare(
+    `SELECT id, creator_id, current_round FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; creator_id: string; current_round: number }>();
+
+  if (!group) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  if (group.creator_id !== userId) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only the group creator can reorder members' } }, 403);
+  }
+
+  const body = await c.req.json();
+  const parsed = reorderSusuMembersSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json({
+      error: { code: 'VALIDATION_ERROR', message: 'order must be a non-empty array of member IDs', details: { fieldErrors: parsed.error.flatten().fieldErrors } }
+    }, 400);
+  }
+
+  // Verify all provided member IDs belong to this group
+  const { results: members } = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? ORDER BY payout_order ASC`
+  ).bind(groupId).all<{ id: string }>();
+
+  const memberIds = new Set(members.map((m) => m.id));
+
+  const { order } = parsed.data;
+
+  if (order.length !== members.length) {
+    return c.json({
+      error: { code: 'VALIDATION_ERROR', message: `order must contain exactly ${members.length} member IDs` }
+    }, 400);
+  }
+
+  for (const id of order) {
+    if (!memberIds.has(id)) {
+      return c.json({
+        error: { code: 'VALIDATION_ERROR', message: `Member ID ${id} not found in this group` }
+      }, 400);
+    }
+  }
+
+  // Check for duplicates
+  if (new Set(order).size !== order.length) {
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: 'Duplicate member IDs in order' } }, 400);
+  }
+
+  // Apply new order using batch for atomicity
+  const stmts = order.map((memberId, i) =>
+    c.env.DB.prepare(
+      `UPDATE susu_members SET payout_order = ? WHERE id = ? AND group_id = ?`
+    ).bind(i + 1, memberId, groupId)
+  );
+
+  await c.env.DB.batch(stmts);
+
+  // Return updated members
+  const { results: updated } = await c.env.DB.prepare(
+    `SELECT id, group_id, user_id, display_name, payout_order, joined_at
+     FROM susu_members WHERE group_id = ? ORDER BY payout_order ASC`
+  ).bind(groupId).all<SusuMemberRow>();
+
+  return c.json({ data: updated });
 });
 
 // ─── POST /groups/:id/contributions — record a contribution (creator only) ───
