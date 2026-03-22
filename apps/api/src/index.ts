@@ -18,13 +18,24 @@ import { insights } from './routes/insights.js';
 import { recurring } from './routes/recurring.js';
 import { ious } from './routes/ious.js';
 import { investments } from './routes/investments.js';
-import { susu } from './routes/susu.js';
+import { susu } from './routes/susu/index.js';
 import { collector } from './routes/collector.js';
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // Global middleware
 app.use('*', corsMiddleware());
+
+// Security headers middleware
+app.use('*', async (c, next) => {
+  await next();
+  c.header('X-Content-Type-Options', 'nosniff');
+  c.header('X-Frame-Options', 'DENY');
+  c.header('X-XSS-Protection', '0');
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+  c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  c.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com; font-src 'self' https://fonts.gstatic.com https://cdn.fontshare.com; img-src 'self' data: blob: https://flagcdn.com; connect-src 'self' https://cedisense-api.ghwmelite.workers.dev; frame-ancestors 'none'");
+});
 
 // Public auth routes
 app.route('/api/v1/auth', auth);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import type { SavingsGoalWithProgress } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 import { AmountInput } from '@/components/transactions/AmountInput';
@@ -10,7 +10,7 @@ interface GoalCardProps {
   onDelete: (id: string) => void;
 }
 
-export function GoalCard({ goal, onContribute, onUpdate, onDelete }: GoalCardProps) {
+export const GoalCard = memo(function GoalCard({ goal, onContribute, onUpdate, onDelete }: GoalCardProps) {
   const [contributing, setContributing] = useState(false);
   const [contributionPesewas, setContributionPesewas] = useState(0);
 
@@ -218,4 +218,4 @@ export function GoalCard({ goal, onContribute, onUpdate, onDelete }: GoalCardPro
       )}
     </div>
   );
-}
+});

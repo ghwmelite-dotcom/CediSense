@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import type { BudgetWithSpending } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 import { AmountInput } from '@/components/transactions/AmountInput';
@@ -30,7 +30,7 @@ const STATUS_STYLES = {
   },
 } as const;
 
-export function BudgetCard({ budget, onUpdate, onDelete }: BudgetCardProps) {
+export const BudgetCard = memo(function BudgetCard({ budget, onUpdate, onDelete }: BudgetCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [editAmount, setEditAmount] = useState(budget.amount_pesewas);
   const [saving, setSaving] = useState(false);
@@ -170,4 +170,4 @@ export function BudgetCard({ budget, onUpdate, onDelete }: BudgetCardProps) {
       )}
     </div>
   );
-}
+});

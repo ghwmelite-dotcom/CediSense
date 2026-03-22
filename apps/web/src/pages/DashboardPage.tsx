@@ -75,6 +75,11 @@ export function DashboardPage() {
     try {
       const result = await api.get<DashboardData>(`/dashboard?month=${m}`);
       cache.current.set(m, result);
+      // Cap cache at 12 entries — evict oldest key
+      if (cache.current.size > 12) {
+        const oldest = cache.current.keys().next().value!;
+        cache.current.delete(oldest);
+      }
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dashboard');

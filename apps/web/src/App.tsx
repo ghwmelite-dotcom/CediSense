@@ -1,31 +1,34 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { AppShell } from '@/components/layout/AppShell';
-import { LandingPage } from '@/pages/LandingPage';
-import { LoginPage } from '@/pages/LoginPage';
-import { RegisterPage } from '@/pages/RegisterPage';
-import { OnboardingPage } from '@/pages/OnboardingPage';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { SettingsPage } from '@/pages/SettingsPage';
-import { TransactionFeedPage } from '@/pages/TransactionFeedPage';
-import { AddTransactionPage } from '@/pages/AddTransactionPage';
-import { ImportPage } from '@/pages/ImportPage';
-import { AIChatPage } from '@/pages/AIChatPage';
-import { BudgetsPage } from '@/pages/BudgetsPage';
-import { GoalsPage } from '@/pages/GoalsPage';
-import { InsightsPage } from '@/pages/InsightsPage';
-import { RecurringPage } from '@/pages/RecurringPage';
-import { SplitsPage } from '@/pages/SplitsPage';
-import { InvestmentsPage } from '@/pages/InvestmentsPage';
-import { SusuPage } from '@/pages/SusuPage';
-import { CollectorPage } from '@/pages/CollectorPage';
-import { JoinByLinkPage } from '@/pages/JoinByLinkPage';
-import { MonthlyReportPrint } from '@/pages/print/MonthlyReportPrint';
-import { TransactionsPrint } from '@/pages/print/TransactionsPrint';
-import { VerifyCertificatePage } from '@/pages/VerifyCertificatePage';
+
+// Lazy-loaded page components
+const LandingPage = lazy(() => import('@/pages/LandingPage').then(m => ({ default: m.LandingPage })));
+const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('@/pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const OnboardingPage = lazy(() => import('@/pages/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const TransactionFeedPage = lazy(() => import('@/pages/TransactionFeedPage').then(m => ({ default: m.TransactionFeedPage })));
+const AddTransactionPage = lazy(() => import('@/pages/AddTransactionPage').then(m => ({ default: m.AddTransactionPage })));
+const ImportPage = lazy(() => import('@/pages/ImportPage').then(m => ({ default: m.ImportPage })));
+const AIChatPage = lazy(() => import('@/pages/AIChatPage').then(m => ({ default: m.AIChatPage })));
+const BudgetsPage = lazy(() => import('@/pages/BudgetsPage').then(m => ({ default: m.BudgetsPage })));
+const GoalsPage = lazy(() => import('@/pages/GoalsPage').then(m => ({ default: m.GoalsPage })));
+const InsightsPage = lazy(() => import('@/pages/InsightsPage').then(m => ({ default: m.InsightsPage })));
+const RecurringPage = lazy(() => import('@/pages/RecurringPage').then(m => ({ default: m.RecurringPage })));
+const SplitsPage = lazy(() => import('@/pages/SplitsPage').then(m => ({ default: m.SplitsPage })));
+const InvestmentsPage = lazy(() => import('@/pages/InvestmentsPage').then(m => ({ default: m.InvestmentsPage })));
+const SusuPage = lazy(() => import('@/pages/SusuPage').then(m => ({ default: m.SusuPage })));
+const CollectorPage = lazy(() => import('@/pages/CollectorPage').then(m => ({ default: m.CollectorPage })));
+const JoinByLinkPage = lazy(() => import('@/pages/JoinByLinkPage').then(m => ({ default: m.JoinByLinkPage })));
+const MonthlyReportPrint = lazy(() => import('@/pages/print/MonthlyReportPrint').then(m => ({ default: m.MonthlyReportPrint })));
+const TransactionsPrint = lazy(() => import('@/pages/print/TransactionsPrint').then(m => ({ default: m.TransactionsPrint })));
+const VerifyCertificatePage = lazy(() => import('@/pages/VerifyCertificatePage').then(m => ({ default: m.VerifyCertificatePage })));
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -42,6 +45,11 @@ export function App() {
     <ErrorBoundary>
     <LanguageProvider>
       <AuthProvider>
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen bg-ghana-dark">
+          <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+        </div>
+      }>
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
@@ -105,6 +113,7 @@ export function App() {
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
       </AuthProvider>
     </LanguageProvider>
     </ErrorBoundary>

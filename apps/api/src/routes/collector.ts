@@ -114,44 +114,72 @@ collector.get('/dashboard', async (c) => {
     'SELECT * FROM collector_clients WHERE collector_id = ? AND is_active = 1 ORDER BY client_name'
   ).bind(userId).all<CollectorClientRow>();
 
-  const clients = await Promise.all(
-    (clientRows.results ?? []).map(async (client) => {
-      const cycleStart = client.current_cycle_start;
+  // Batch fetch: all cycle deposit stats grouped by client_id
+  const clientList = clientRows.results ?? [];
+  const cycleStatsMap = new Map<string, { cnt: number; total: number }>();
+  const todayDepositSet = new Set<string>();
 
-      // Count deposits and total in current cycle
-      const stats = await c.env.DB.prepare(
-        `SELECT COUNT(*) as cnt, COALESCE(SUM(amount_pesewas), 0) as total
+  if (clientList.length > 0) {
+    // Build a single query for all clients' cycle deposits using CASE/GROUP BY
+    // We need per-client cycle starts, so use a UNION approach via batch
+    const cycleQueries = clientList.map((client) =>
+      c.env.DB.prepare(
+        `SELECT ? AS client_id, COUNT(*) AS cnt, COALESCE(SUM(amount_pesewas), 0) AS total
          FROM collector_deposits
          WHERE client_id = ? AND deposit_date >= ?`
-      ).bind(client.id, cycleStart).first<{ cnt: number; total: number }>();
+      ).bind(client.id, client.id, client.current_cycle_start)
+    );
 
-      // Check if deposited today
-      const todayDeposit = await c.env.DB.prepare(
-        'SELECT id FROM collector_deposits WHERE client_id = ? AND deposit_date = ?'
-      ).bind(client.id, today).first();
+    // Single query for all today's deposits
+    const clientIds = clientList.map((c) => c.id);
+    const todayPlaceholders = clientIds.map(() => '?').join(', ');
+    const todayQuery = c.env.DB.prepare(
+      `SELECT DISTINCT client_id FROM collector_deposits
+       WHERE client_id IN (${todayPlaceholders}) AND deposit_date = ?`
+    ).bind(...clientIds, today);
 
-      // Calculate days remaining
-      const cycleEnd = new Date(cycleStart);
-      cycleEnd.setDate(cycleEnd.getDate() + client.cycle_days);
-      const now = new Date(today);
-      const daysRemaining = Math.max(0, Math.ceil((cycleEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    // Execute all in a single batch (one round-trip)
+    const batchResults = await c.env.DB.batch([...cycleQueries, todayQuery]);
 
-      return {
-        id: client.id,
-        collector_id: client.collector_id,
-        client_name: client.client_name,
-        client_phone: client.client_phone,
-        daily_amount_pesewas: client.daily_amount_pesewas,
-        cycle_days: client.cycle_days,
-        current_cycle_start: client.current_cycle_start,
-        is_active: client.is_active === 1,
-        deposits_this_cycle: stats?.cnt ?? 0,
-        total_deposited_this_cycle_pesewas: stats?.total ?? 0,
-        days_remaining: daysRemaining,
-        deposited_today: !!todayDeposit,
-      };
-    })
-  );
+    // Parse cycle stats
+    for (let i = 0; i < clientList.length; i++) {
+      const row = (batchResults[i].results as Array<{ client_id: string; cnt: number; total: number }>)?.[0];
+      if (row) {
+        cycleStatsMap.set(row.client_id, { cnt: row.cnt, total: row.total });
+      }
+    }
+
+    // Parse today's deposits
+    const todayResults = batchResults[clientList.length].results as Array<{ client_id: string }>;
+    for (const row of todayResults) {
+      todayDepositSet.add(row.client_id);
+    }
+  }
+
+  const clients = clientList.map((client) => {
+    const stats = cycleStatsMap.get(client.id);
+
+    // Calculate days remaining
+    const cycleEnd = new Date(client.current_cycle_start);
+    cycleEnd.setDate(cycleEnd.getDate() + client.cycle_days);
+    const now = new Date(today);
+    const daysRemaining = Math.max(0, Math.ceil((cycleEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+    return {
+      id: client.id,
+      collector_id: client.collector_id,
+      client_name: client.client_name,
+      client_phone: client.client_phone,
+      daily_amount_pesewas: client.daily_amount_pesewas,
+      cycle_days: client.cycle_days,
+      current_cycle_start: client.current_cycle_start,
+      is_active: client.is_active === 1,
+      deposits_this_cycle: stats?.cnt ?? 0,
+      total_deposited_this_cycle_pesewas: stats?.total ?? 0,
+      days_remaining: daysRemaining,
+      deposited_today: todayDepositSet.has(client.id),
+    };
+  });
 
   // Today's collection stats
   const todayStats = await c.env.DB.prepare(

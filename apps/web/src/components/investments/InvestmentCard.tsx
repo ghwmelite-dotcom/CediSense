@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import type { InvestmentWithReturns, InvestmentType } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 import { AmountInput } from '@/components/transactions/AmountInput';
@@ -32,7 +32,7 @@ function formatDate(dateStr: string): string {
   });
 }
 
-export function InvestmentCard({ investment, onUpdate, onMature, onDelete }: InvestmentCardProps) {
+export const InvestmentCard = memo(function InvestmentCard({ investment, onUpdate, onMature, onDelete }: InvestmentCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [editValue, setEditValue] = useState(investment.current_value_pesewas ?? 0);
   const [editNotes, setEditNotes] = useState(investment.notes ?? '');
@@ -250,4 +250,4 @@ export function InvestmentCard({ investment, onUpdate, onMature, onDelete }: Inv
       )}
     </div>
   );
-}
+});

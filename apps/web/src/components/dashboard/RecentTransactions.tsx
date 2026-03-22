@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Category, Transaction } from '@cedisense/shared';
 import type { DashboardRecentTransaction } from '@cedisense/shared';
@@ -49,7 +50,7 @@ function TransactionsEmptyState() {
   );
 }
 
-export function RecentTransactions({ transactions, categories }: RecentTransactionsProps) {
+export const RecentTransactions = memo(function RecentTransactions({ transactions, categories }: RecentTransactionsProps) {
   const navigate = useNavigate();
 
   return (
@@ -94,4 +95,4 @@ export function RecentTransactions({ transactions, categories }: RecentTransacti
       )}
     </div>
   );
-}
+});

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { SusuGroup, SusuFrequency, SusuVariant } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 
@@ -47,7 +48,7 @@ function variantBadge(variant: SusuVariant): VariantBadgeConfig {
   }
 }
 
-export function GroupCard({ group, isCreator, onClick }: GroupCardProps) {
+export const GroupCard = memo(function GroupCard({ group, isCreator, onClick }: GroupCardProps) {
   return (
     <button
       type="button"
@@ -164,4 +165,4 @@ export function GroupCard({ group, isCreator, onClick }: GroupCardProps) {
       </div>
     </button>
   );
-}
+});
