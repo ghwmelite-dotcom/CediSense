@@ -14,7 +14,7 @@ interface ChatInputProps {
   onFileSelect: (e: ChangeEvent<HTMLInputElement>) => void;
   onCancelReply: () => void;
   onToggleSearch: () => void;
-  inputRef: React.RefObject<HTMLTextAreaElement | null>;
+  inputRef: React.RefObject<HTMLTextAreaElement>;
 }
 
 export function ChatInput({

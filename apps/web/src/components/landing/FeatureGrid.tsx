@@ -280,7 +280,7 @@ const pricingFeatures = [
 /* ================================================================ */
 /*  SCROLL REVEAL HOOK                                               */
 /* ================================================================ */
-function useScrollReveal(): RefObject<HTMLDivElement | null> {
+function useScrollReveal(): RefObject<HTMLDivElement> {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
