@@ -10,7 +10,7 @@ const SOURCE_LABELS: Record<string, string> = {
 
 const SOURCE_STYLES: Record<string, string> = {
   sms_import:
-    'bg-ghana-green/10 text-ghana-green/80 border border-ghana-green/15',
+    'bg-[#FF6B35]/10 text-[#FF6B35]/80 border border-[#FF6B35]/15',
   csv_import:
     'bg-gold/8 text-gold/80 border border-gold/12',
   manual:

@@ -8,6 +8,7 @@ import { ChatInput } from '@/components/chat/ChatInput';
 import { WelcomeMessage } from '@/components/chat/WelcomeMessage';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { UsageWarning } from '@/components/chat/UsageWarning';
+import { AdinkraWhisper } from '@/components/shared/AdinkraWhisper';
 
 export function AIChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -134,8 +135,8 @@ export function AIChatPage() {
         className="flex-1 overflow-y-auto px-4 pt-4"
         style={{
           background:
-            'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,168,67,0.02) 0%, transparent 70%), ' +
-            'radial-gradient(ellipse 60% 40% at 50% 100%, rgba(34,197,94,0.02) 0%, transparent 70%)',
+            'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,107,53,0.03) 0%, transparent 70%), ' +
+            'radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,200,150,0.02) 0%, transparent 70%)',
         }}
       >
         {isLoadingHistory && (
@@ -198,7 +199,7 @@ export function AIChatPage() {
                         handleSend(lastUserMsg.content);
                       }
                     }}
-                    className="text-gold/70 text-xs mt-1.5 hover:text-gold transition-colors"
+                    className="text-[#FF6B35]/70 text-xs mt-1.5 hover:text-[#FF6B35] transition-colors"
                   >
                     Tap to retry
                   </button>
@@ -206,6 +207,7 @@ export function AIChatPage() {
               </div>
             )}
 
+            <AdinkraWhisper symbol="sankofa" className="mt-8 mb-4" />
             <div ref={messagesEndRef} className="h-4" />
           </div>
         )}

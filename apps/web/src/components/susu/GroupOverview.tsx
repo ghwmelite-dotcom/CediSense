@@ -109,7 +109,7 @@ export function GroupOverview({
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-3">
-        <h2 className="text-white text-xl font-bold">{group.name}</h2>
+        <h2 className="text-white text-xl font-bold font-display">{group.name}</h2>
 
         {/* Invite code */}
         <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3">

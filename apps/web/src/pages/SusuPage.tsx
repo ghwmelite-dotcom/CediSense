@@ -8,6 +8,7 @@ import { CreateGroupModal } from '@/components/susu/CreateGroupModal';
 import { JoinGroupModal } from '@/components/susu/JoinGroupModal';
 import { ContributionReceipt as ContributionReceiptModal } from '@/components/susu/ContributionReceipt';
 import { CreditCertificateView } from '@/components/susu/CreditCertificateView';
+import { AdinkraWhisper } from '@/components/shared/AdinkraWhisper';
 
 type SusuGroupWithCount = SusuGroup & { member_count: number; unread_count?: number };
 
@@ -402,7 +403,7 @@ export function SusuPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
               </button>
-              <h1 className="text-white text-xl font-bold flex-1 truncate">Group Detail</h1>
+              <h1 className="text-white text-xl font-bold font-display flex-1 truncate">Group Detail</h1>
             </div>
           </div>
 
@@ -453,7 +454,7 @@ export function SusuPage() {
       {/* Sticky page header */}
       <div className="sticky top-0 z-30 bg-ghana-dark/95 backdrop-blur-md border-b border-white/10 px-4 py-4">
         <div className="flex items-center justify-between gap-3 max-w-screen-lg mx-auto">
-          <h1 className="text-white text-xl font-bold">Susu Groups</h1>
+          <h1 className="text-white text-xl font-bold font-display">Susu Groups</h1>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -528,6 +529,8 @@ export function SusuPage() {
           </>
         )}
       </div>
+
+      <AdinkraWhisper symbol="gye-nyame" className="mt-8 mb-4" />
 
       {/* Modals */}
       <CreateGroupModal

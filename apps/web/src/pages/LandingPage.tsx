@@ -6,6 +6,7 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { SocialProof } from '@/components/landing/SocialProof';
 import { FeatureGrid } from '@/components/landing/FeatureGrid';
 import { Footer } from '@/components/landing/Footer';
+import { KenteStripe } from '@/components/shared/KenteStripe';
 
 /* ================================================================ */
 /*  LANDING PAGE                                                     */
@@ -74,9 +75,9 @@ export function LandingPage() {
 
       {/* --- Background gradient mesh --- */}
       <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 15% 10%, rgba(212,168,67,0.08) 0%, transparent 55%)' }} />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 50% at 85% 85%, rgba(0,107,63,0.06) 0%, transparent 50%)' }} />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 40% 30% at 50% 50%, rgba(212,168,67,0.03) 0%, transparent 60%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 15% 10%, rgba(255,107,53,0.06) 0%, transparent 55%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 50% at 85% 85%, rgba(0,200,150,0.04) 0%, transparent 50%)' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 40% 30% at 50% 50%, rgba(255,107,53,0.02) 0%, transparent 60%)' }} />
       </div>
 
       {/* --- Sticky navbar --- */}
@@ -91,14 +92,21 @@ export function LandingPage() {
       >
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-gold font-extrabold text-2xl leading-none">&#x20B5;</span>
-            <span className="text-text-primary font-semibold text-lg tracking-[-0.02em]">CediSense</span>
+            <span className="text-flame font-extrabold text-2xl leading-none">&#x20B5;</span>
+            <span className="text-text-primary font-display font-semibold text-lg tracking-[-0.02em]">CediSense</span>
           </Link>
           <div className="flex items-center gap-3">
             <button onClick={() => openAuth('signin')} className="text-sm font-medium text-muted hover:text-text-primary transition-colors duration-200 px-3 py-2">
               Sign In
             </button>
-            <button onClick={() => openAuth('register')} className="btn-gold text-sm px-5 py-2 hidden sm:inline-flex">
+            <button
+              onClick={() => openAuth('register')}
+              className="text-sm px-5 py-2 hidden sm:inline-flex font-semibold text-white rounded-xl transition-all duration-200 active:scale-[0.98]"
+              style={{
+                background: 'linear-gradient(135deg, #FF6B35, #E85D2C)',
+                boxShadow: '0 4px 15px rgba(255,107,53,0.25)',
+              }}
+            >
               Get Started
             </button>
           </div>
@@ -106,8 +114,20 @@ export function LandingPage() {
       </header>
 
       <HeroSection onOpenAuth={openAuth} onScrollToFeatures={scrollToFeatures} />
+
+      {/* KenteStripe divider */}
+      <KenteStripe className="max-w-6xl mx-auto" />
+
       <SocialProof />
+
+      {/* KenteStripe divider */}
+      <KenteStripe className="max-w-6xl mx-auto" />
+
       <FeatureGrid onOpenAuth={openAuth} onScrollToFeatures={scrollToFeatures} />
+
+      {/* KenteStripe above footer */}
+      <KenteStripe />
+
       <Footer />
 
       <AuthModal

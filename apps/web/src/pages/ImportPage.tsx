@@ -263,7 +263,7 @@ export function ImportPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-white text-xl font-bold tracking-tight">Import Transactions</h1>
+        <h1 className="text-white text-xl font-bold font-display tracking-tight">Import Transactions</h1>
       </div>
 
       {/* Tab switcher */}
@@ -429,7 +429,7 @@ export function ImportPage() {
       {/* Preview */}
       {rows.length > 0 && batchId && (
         <div className="mt-8">
-          <h2 className="text-white text-base font-semibold mb-4">
+          <h2 className="text-white text-base font-semibold font-display mb-4">
             Preview
           </h2>
           <ImportPreview

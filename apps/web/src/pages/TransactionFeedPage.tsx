@@ -225,7 +225,7 @@ export function TransactionFeedPage() {
       {/* Sticky header */}
       <div className="sticky top-0 z-10 backdrop-blur-xl bg-ghana-dark/95 border-b border-[#1F1F35]/40 px-4 pt-4 pb-3 space-y-3">
         <div className="flex items-center justify-between">
-          <h1 className="text-text-primary text-xl font-bold tracking-tight">Transactions</h1>
+          <h1 className="text-text-primary text-xl font-bold font-display tracking-tight">Transactions</h1>
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -237,14 +237,14 @@ export function TransactionFeedPage() {
                 if (toFilter) params.set('to', toFilter);
                 window.open(`/print/transactions?${params.toString()}`, '_blank');
               }}
-              className="px-3.5 py-2 rounded-xl text-gold/70 text-sm font-medium hover:bg-white/[0.03] hover:text-gold transition-all min-h-[44px]"
+              className="px-3.5 py-2 rounded-xl text-[#FF6B35]/70 text-sm font-medium hover:bg-white/[0.03] hover:text-[#FF6B35] transition-all min-h-[44px]"
             >
               Export
             </button>
             <button
               type="button"
               onClick={() => navigate('/transactions/import')}
-              className="px-3.5 py-2 rounded-xl text-gold/70 text-sm font-medium hover:bg-white/[0.03] hover:text-gold transition-all min-h-[44px]"
+              className="px-3.5 py-2 rounded-xl text-[#FF6B35]/70 text-sm font-medium hover:bg-white/[0.03] hover:text-[#FF6B35] transition-all min-h-[44px]"
             >
               Import
             </button>
@@ -271,8 +271,8 @@ export function TransactionFeedPage() {
             className="w-full rounded-xl pl-10 pr-4 py-2.5 text-text-primary text-sm
               placeholder-muted-dim/60 border border-[#1F1F35]/60
               bg-[#13132260]
-              focus:outline-none focus:border-gold/30 focus:bg-ghana-surface
-              focus:shadow-[0_0_0_3px_rgba(212,168,67,0.08)]
+              focus:outline-none focus:border-[#FF6B35]/30 focus:bg-ghana-surface
+              focus:shadow-[0_0_0_3px_rgba(255,107,53,0.08)]
               transition-all duration-200"
           />
         </div>
@@ -283,9 +283,9 @@ export function TransactionFeedPage() {
             value={accountFilter}
             onChange={(e) => setAccountFilter(e.target.value)}
             className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all
-              focus:outline-none focus:ring-1 focus:ring-gold/30
+              focus:outline-none focus:ring-1 focus:ring-[rgba(255,107,53,0.5)]
               ${accountFilter
-                ? 'bg-gold/10 border border-gold/25 text-gold'
+                ? 'bg-[#FF6B35]/10 border border-[#FF6B35]/25 text-[#FF6B35]'
                 : 'bg-white/[0.03] border border-[#1F1F35]/60 text-muted hover:text-text-primary hover:border-[#1F1F35]'
               }`}
           >
@@ -301,9 +301,9 @@ export function TransactionFeedPage() {
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all
-              focus:outline-none focus:ring-1 focus:ring-gold/30
+              focus:outline-none focus:ring-1 focus:ring-[rgba(255,107,53,0.5)]
               ${categoryFilter
-                ? 'bg-gold/10 border border-gold/25 text-gold'
+                ? 'bg-[#FF6B35]/10 border border-[#FF6B35]/25 text-[#FF6B35]'
                 : 'bg-white/[0.03] border border-[#1F1F35]/60 text-muted hover:text-text-primary hover:border-[#1F1F35]'
               }`}
           >
@@ -371,7 +371,7 @@ export function TransactionFeedPage() {
               >
                 {/* Date group header */}
                 <div className="flex items-center gap-2.5 mb-2 px-1">
-                  <div className="w-0.5 h-3 rounded-full bg-gold/40" />
+                  <div className="w-0.5 h-3 rounded-full bg-[#FF6B35]/40" />
                   <h2 className="text-muted-dim text-xs font-semibold uppercase tracking-wider">
                     {dateLabel}
                   </h2>
@@ -424,7 +424,7 @@ export function TransactionFeedPage() {
 
             {loading && (
               <div className="flex justify-center py-4">
-                <div className="w-5 h-5 border-2 border-gold/40 border-t-gold rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-[#FF6B35]/40 border-t-[#FF6B35] rounded-full animate-spin" />
               </div>
             )}
 

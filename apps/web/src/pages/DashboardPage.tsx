@@ -11,6 +11,7 @@ import { CategoryBreakdownCard } from '@/components/dashboard/CategoryBreakdownC
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { UpcomingBillsCard } from '@/components/recurring/UpcomingBillsCard';
 import { NewUserWelcome, isWelcomeDismissed } from '@/components/dashboard/NewUserWelcome';
+import { AdinkraWhisper } from '@/components/shared/AdinkraWhisper';
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -124,11 +125,11 @@ export function DashboardPage() {
         {/* Greeting -- generous, clean, with date */}
         <div className="motion-safe:animate-fade-in" style={stagger(0, 60)}>
           <p className="section-label">{greeting}</p>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-text-primary mt-2 tracking-[-0.02em]">
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-text-primary mt-2 tracking-[-0.02em]">
             {firstName ? (
               <>
                 {firstName}
-                <span className="text-gold/50">.</span>
+                <span className="text-flame/50">.</span>
               </>
             ) : (
               'Dashboard'
@@ -163,7 +164,7 @@ export function DashboardPage() {
             <button
               type="button"
               onClick={() => fetchDashboard(month)}
-              className="text-gold text-sm font-medium px-6 py-2.5 rounded-xl bg-gold/[0.06] hover:bg-gold/[0.1] transition-colors duration-200"
+              className="text-flame text-sm font-medium px-6 py-2.5 rounded-xl bg-flame/[0.06] hover:bg-flame/[0.1] transition-colors duration-200"
             >
               Try again
             </button>
@@ -224,6 +225,11 @@ export function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </Link>
+            </div>
+
+            {/* Adinkra Whisper — cultural signature */}
+            <div className="mt-10 mb-4 motion-safe:animate-fade-in" style={stagger(7)}>
+              <AdinkraWhisper symbol="gye-nyame" />
             </div>
           </div>
         )}

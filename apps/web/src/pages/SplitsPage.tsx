@@ -203,7 +203,7 @@ export function SplitsPage() {
       {/* Sticky page header */}
       <div className="sticky top-0 z-30 bg-ghana-dark/95 backdrop-blur-md border-b border-white/10 px-4 py-4">
         <div className="flex items-center justify-between max-w-screen-lg mx-auto">
-          <h1 className="text-white text-xl font-bold">Shared Expenses</h1>
+          <h1 className="text-white text-xl font-bold font-display">Shared Expenses</h1>
           <button
             type="button"
             onClick={() => setModalOpen(true)}

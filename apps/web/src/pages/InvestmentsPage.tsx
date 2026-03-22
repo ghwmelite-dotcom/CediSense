@@ -87,7 +87,7 @@ export function InvestmentsPage() {
       {/* Sticky page header */}
       <div className="sticky top-0 z-30 bg-ghana-dark/95 backdrop-blur-md border-b border-white/10 px-4 py-4">
         <div className="flex items-center justify-between max-w-screen-lg mx-auto">
-          <h1 className="text-white text-xl font-bold">Investments</h1>
+          <h1 className="text-white text-xl font-bold font-display">Investments</h1>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
@@ -132,7 +132,7 @@ export function InvestmentsPage() {
                       className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium
                         transition-all min-h-[36px] border ${
                           activeTab === tab.value
-                            ? 'bg-gold text-ghana-dark border-gold'
+                            ? 'bg-[#FF6B35] text-white border-[#FF6B35]'
                             : 'bg-white/5 text-muted border-white/10 hover:bg-white/10'
                         }`}
                     >
@@ -140,7 +140,7 @@ export function InvestmentsPage() {
                       {count > 0 && (
                         <span
                           className={`ml-1.5 opacity-70 ${
-                            activeTab === tab.value ? 'text-ghana-dark/70' : ''
+                            activeTab === tab.value ? 'text-white/70' : ''
                           }`}
                         >
                           {count}

@@ -122,8 +122,8 @@ export function SettingsPage() {
     <div className="p-4 md:p-6 pb-24 max-w-2xl mx-auto motion-safe:animate-fade-in">
       {/* Page header */}
       <div className="flex items-center gap-2.5 mb-8">
-        <div className="w-0.5 h-5 rounded-full bg-gold/50" />
-        <h1 className="text-text-primary text-xl font-bold tracking-tight">Settings</h1>
+        <div className="w-0.5 h-5 rounded-full bg-[#FF6B35]/50" />
+        <h1 className="text-text-primary text-xl font-bold font-display tracking-tight">Settings</h1>
       </div>
 
       {error && (

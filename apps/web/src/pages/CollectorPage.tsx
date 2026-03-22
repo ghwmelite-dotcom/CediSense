@@ -113,7 +113,7 @@ export function CollectorPage() {
           <div className="w-16 h-16 rounded-2xl bg-gold/15 flex items-center justify-center mx-auto mb-4">
             <span className="text-3xl">🏪</span>
           </div>
-          <h1 className="text-text-primary font-bold text-2xl mb-2">Susu Nkr{'\u0254'}fo</h1>
+          <h1 className="text-text-primary font-bold font-display text-2xl mb-2">Susu Nkr{'\u0254'}fo</h1>
           <p className="text-muted text-sm leading-relaxed max-w-sm mx-auto">
             Digitalize your susu collection. Track daily deposits from your market clients transparently.
             No more lost records.
@@ -135,7 +135,7 @@ export function CollectorPage() {
               onChange={(e) => setBusinessName(e.target.value)}
               placeholder="e.g., Ama's Daily Savings"
               className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-text-primary text-sm
-                         placeholder:text-muted-dim focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20
+                         placeholder:text-muted-dim focus:outline-none focus:border-[#FF6B35]/40 focus:ring-1 focus:ring-[rgba(255,107,53,0.5)]
                          transition-all"
               autoFocus
             />
@@ -149,7 +149,7 @@ export function CollectorPage() {
               onChange={(e) => setMarketArea(e.target.value)}
               placeholder="e.g., Makola Market, Kaneshie"
               className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-text-primary text-sm
-                         placeholder:text-muted-dim focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20
+                         placeholder:text-muted-dim focus:outline-none focus:border-[#FF6B35]/40 focus:ring-1 focus:ring-[rgba(255,107,53,0.5)]
                          transition-all"
             />
           </div>
@@ -160,7 +160,7 @@ export function CollectorPage() {
               value={commissionDays}
               onChange={(e) => setCommissionDays(e.target.value)}
               className="w-full h-12 px-4 bg-white/[0.04] border border-white/[0.08] rounded-xl text-text-primary text-sm
-                         focus:outline-none focus:border-gold/40 focus:ring-1 focus:ring-gold/20 transition-all"
+                         focus:outline-none focus:border-[#FF6B35]/40 focus:ring-1 focus:ring-[rgba(255,107,53,0.5)] transition-all"
             >
               <option value="1">1 day (standard)</option>
               <option value="2">2 days</option>
@@ -205,7 +205,7 @@ export function CollectorPage() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-1">
-          <h1 className="text-text-primary font-bold text-xl">{profile.business_name}</h1>
+          <h1 className="text-text-primary font-bold font-display text-xl">{profile.business_name}</h1>
           <span className="text-muted text-xs bg-white/[0.04] px-2.5 py-1 rounded-lg">
             {profile.total_clients} client{profile.total_clients !== 1 ? 's' : ''}
           </span>
@@ -217,10 +217,10 @@ export function CollectorPage() {
 
       {/* Today's summary cards */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
-          <p className="text-emerald-400/70 text-xs font-medium uppercase tracking-wider mb-1">Today</p>
-          <p className="text-emerald-400 font-bold text-xl">{'\u20B5'}{todayAmountGHS}</p>
-          <p className="text-emerald-400/60 text-xs mt-0.5">
+        <div className="bg-[#00C896]/10 border border-[#00C896]/20 rounded-2xl p-4">
+          <p className="text-[#00C896]/70 text-xs font-medium uppercase tracking-wider mb-1">Today</p>
+          <p className="text-[#00C896] font-bold text-xl">{'\u20B5'}{todayAmountGHS}</p>
+          <p className="text-[#00C896]/60 text-xs mt-0.5">
             from {today_collections} client{today_collections !== 1 ? 's' : ''}
           </p>
         </div>
@@ -233,7 +233,7 @@ export function CollectorPage() {
 
       {/* Client list header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-text-primary font-semibold text-base">Clients</h2>
+        <h2 className="text-text-primary font-semibold font-display text-base">Clients</h2>
         <button
           onClick={() => setAddModalOpen(true)}
           className="h-10 px-4 rounded-xl bg-gold/15 text-gold font-semibold text-sm

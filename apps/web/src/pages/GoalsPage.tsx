@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { GoalCard } from '@/components/goals/GoalCard';
 import { AddGoalModal } from '@/components/goals/AddGoalModal';
 import { CompletedSection } from '@/components/goals/CompletedSection';
+import { AdinkraWhisper } from '@/components/shared/AdinkraWhisper';
 
 export function GoalsPage() {
   const [goals, setGoals] = useState<SavingsGoalWithProgress[]>([]);
@@ -89,8 +90,8 @@ export function GoalsPage() {
       <div className="sticky top-0 z-10 backdrop-blur-xl bg-ghana-dark/95 border-b border-[#1F1F35]/40 px-4 pt-4 pb-3">
         <div className="flex items-center justify-between max-w-screen-lg mx-auto">
           <div className="flex items-center gap-2.5">
-            <div className="w-0.5 h-5 rounded-full bg-gold/50" />
-            <h1 className="text-text-primary text-xl font-bold tracking-tight">Savings Goals</h1>
+            <div className="w-0.5 h-5 rounded-full bg-[#FF6B35]/50" />
+            <h1 className="text-text-primary text-xl font-bold font-display tracking-tight">Savings Goals</h1>
           </div>
           <button
             type="button"
@@ -226,6 +227,8 @@ export function GoalsPage() {
           </div>
         )}
       </div>
+
+      <AdinkraWhisper symbol="fawohodie" className="mt-8 mb-4" />
 
       {/* Add goal modal */}
       <AddGoalModal

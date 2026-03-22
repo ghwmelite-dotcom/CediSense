@@ -16,35 +16,47 @@ interface BalanceCardProps {
 
 const ACCOUNT_TYPE_COLORS: Record<AccountType, string> = {
   momo: '#D4A843',
-  bank: '#34D399',
+  bank: '#00C896',
   cash: '#8888A8',
   susu: '#60A5FA',
 };
 
 export function BalanceCard({ totalBalance, accounts }: BalanceCardProps) {
   return (
-    <div className="relative premium-card rounded-2xl p-6 overflow-hidden motion-safe:animate-fade-in">
+    <div
+      className="relative rounded-[20px] p-5 overflow-hidden motion-safe:animate-fade-in"
+      style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,107,53,0.1)',
+        boxShadow: '0 0 25px rgba(255,107,53,0.04)',
+      }}
+    >
       {/* Decorative gradient sweep background */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.035] motion-safe:animate-gradient-sweep"
         style={{
-          background: 'linear-gradient(135deg, transparent 0%, #D4A843 30%, transparent 60%, #006B3F 80%, transparent 100%)',
+          background: 'linear-gradient(135deg, transparent 0%, #FF6B35 30%, transparent 60%, #00C896 80%, transparent 100%)',
           backgroundSize: '200% 200%',
         }}
       />
 
-      {/* Ambient gold glow — hero emphasis */}
-      <div className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 w-80 h-44 bg-gold/[0.06] rounded-full blur-3xl" />
+      {/* Ambient orange glow — hero emphasis */}
+      <div className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 w-80 h-44 bg-flame/[0.06] rounded-full blur-3xl" />
 
       {/* Subtle top highlight line */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/[0.12] to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-flame/[0.12] to-transparent" />
 
-      <p className="section-label relative">Total Balance</p>
       <p
-        className="text-4xl md:text-5xl font-extrabold text-text-primary mt-3 tracking-tight relative motion-safe:animate-breathe"
-        style={{ fontVariantNumeric: 'tabular-nums' }}
+        className="relative text-[10px] font-medium uppercase text-muted"
+        style={{ letterSpacing: '2px' }}
       >
-        <span className="text-gold/70 text-2xl md:text-3xl mr-0.5 align-baseline">GH₵</span>
+        Total Balance
+      </p>
+      <p
+        className="text-[32px] md:text-4xl font-extrabold text-white mt-3 tracking-tight relative motion-safe:animate-breathe"
+        style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}
+      >
+        <span className="text-flame/70 text-2xl md:text-3xl mr-0.5 align-baseline">GH&#x20B5;</span>
         {formatPesewas(totalBalance).replace(/^GH₵\s*/, '').replace(/^₵\s*/, '')}
       </p>
 

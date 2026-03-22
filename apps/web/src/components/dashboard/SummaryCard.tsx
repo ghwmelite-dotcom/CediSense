@@ -41,11 +41,24 @@ export function SummaryCard({ income, expenses, fees }: SummaryCardProps) {
   const animatedNet = useCountUp(Math.abs(net), 700);
 
   return (
-    <div className="premium-card rounded-2xl p-6 card-interactive motion-safe:animate-fade-in">
+    <div
+      className="rounded-[14px] p-4 card-interactive motion-safe:animate-fade-in"
+      style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+      }}
+    >
       <div className="grid grid-cols-2 gap-4">
         {/* Income column */}
-        <div className="relative rounded-xl p-4 bg-income/[0.05] overflow-hidden">
-          {/* Subtle green gradient in top-left corner */}
+        <div
+          className="relative rounded-xl p-4 overflow-hidden"
+          style={{
+            background: 'rgba(0,200,150,0.08)',
+            border: '1px solid rgba(0,200,150,0.12)',
+          }}
+        >
+          {/* Subtle teal gradient in top-left corner */}
           <div className="pointer-events-none absolute -top-6 -left-6 w-20 h-20 bg-income/[0.08] rounded-full blur-2xl" />
           <p className="section-label relative">Income</p>
           <div className="flex items-center gap-1.5 mt-3 relative">
@@ -59,8 +72,14 @@ export function SummaryCard({ income, expenses, fees }: SummaryCardProps) {
         </div>
 
         {/* Expenses column */}
-        <div className="relative rounded-xl p-4 bg-expense/[0.05] overflow-hidden">
-          {/* Subtle red gradient in top-left corner */}
+        <div
+          className="relative rounded-xl p-4 overflow-hidden"
+          style={{
+            background: 'rgba(255,107,138,0.08)',
+            border: '1px solid rgba(255,107,138,0.12)',
+          }}
+        >
+          {/* Subtle rose gradient in top-left corner */}
           <div className="pointer-events-none absolute -top-6 -left-6 w-20 h-20 bg-expense/[0.08] rounded-full blur-2xl" />
           <p className="section-label relative">Expenses</p>
           <div className="flex items-center gap-1.5 mt-3 relative">

@@ -1,3 +1,10 @@
+const STAT_GRADIENTS = [
+  'linear-gradient(135deg, #FF6B35, #FFB347)',  // orange
+  'linear-gradient(135deg, #00C896, #00E5A0)',  // teal
+  'linear-gradient(135deg, #D4A843, #E8C873)',  // gold
+  'linear-gradient(135deg, #FF6B35, #FFB347)',  // orange
+];
+
 export function SocialProof() {
   return (
     <section className="relative py-10 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
@@ -9,9 +16,19 @@ export function SocialProof() {
             { value: '10', label: 'Susu Types' },
             { value: 'AI', label: 'Powered' },
             { value: '100%', label: 'Free' },
-          ].map((stat) => (
+          ].map((stat, i) => (
             <div key={stat.label} className="text-center px-4">
-              <p className="text-xl md:text-2xl font-extrabold text-text-primary tracking-tight">{stat.value}</p>
+              <p
+                className="text-xl md:text-2xl font-extrabold tracking-tight"
+                style={{
+                  background: STAT_GRADIENTS[i],
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                {stat.value}
+              </p>
               <p className="text-xs text-muted mt-1">{stat.label}</p>
             </div>
           ))}

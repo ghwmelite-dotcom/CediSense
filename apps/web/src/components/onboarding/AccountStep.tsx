@@ -66,7 +66,7 @@ export function AccountStep({ onComplete, onSkip }: Props) {
             })
           }
           disabled={!selected}
-          className="flex-[2] bg-ghana-green text-white font-semibold py-3 rounded-lg disabled:opacity-50 transition-colors"
+          className="flex-[2] bg-gradient-to-br from-[#FF6B35] to-[#E85D2C] text-white font-semibold py-3 rounded-lg disabled:opacity-50 transition-colors"
         >
           Continue
         </button>

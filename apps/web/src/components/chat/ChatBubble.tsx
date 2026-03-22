@@ -28,9 +28,12 @@ export function ChatBubble({ role, content, timestamp, isStreaming }: ChatBubble
         <div
           className={`px-4 py-3 text-sm leading-relaxed text-white ${
             isUser
-              ? 'bg-gold/12 rounded-2xl rounded-br-md border border-gold/[0.08] shadow-[0_1px_8px_rgba(212,168,67,0.06)]'
-              : 'bg-white/[0.04] rounded-2xl rounded-bl-md border border-white/[0.04] shadow-[0_1px_8px_rgba(0,0,0,0.2)]'
+              ? 'bg-gradient-to-br from-[#FF6B35] to-[#E85D2C] shadow-[0_1px_8px_rgba(255,107,53,0.12)]'
+              : 'bg-[#14142a] border border-white/[0.06] shadow-[0_1px_8px_rgba(0,0,0,0.2)]'
           }`}
+          style={{
+            borderRadius: isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+          }}
         >
           {isUser ? (
             <p className="whitespace-pre-wrap">{content}</p>
@@ -42,7 +45,7 @@ export function ChatBubble({ role, content, timestamp, isStreaming }: ChatBubble
           )}
           {isStreaming && (
             <span
-              className="inline-block w-[3px] h-[1em] bg-gold/70 rounded-sm ml-0.5 align-text-bottom
+              className="inline-block w-[3px] h-[1em] bg-[#FF6B35]/70 rounded-sm ml-0.5 align-text-bottom
                 animate-cursor-blink"
               aria-hidden="true"
             />

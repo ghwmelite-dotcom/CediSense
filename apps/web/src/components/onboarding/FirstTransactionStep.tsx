@@ -38,8 +38,8 @@ export function FirstTransactionStep({ onComplete, onSkip }: Props) {
         </button>
       </div>
 
-      <div className="bg-ghana-green/10 border border-ghana-green rounded-lg p-3 mt-4 text-left">
-        <div className="text-ghana-green text-xs font-semibold">💡 Tip</div>
+      <div className="bg-[#FF6B35]/10 border border-[#FF6B35] rounded-lg p-3 mt-4 text-left">
+        <div className="text-[#FF6B35] text-xs font-semibold">Tip</div>
         <div className="text-muted text-xs mt-1">
           You can always import more transactions later from Settings → Import SMS
         </div>

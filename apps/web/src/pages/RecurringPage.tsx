@@ -75,8 +75,8 @@ export function RecurringPage() {
       <div className="sticky top-0 z-30 backdrop-blur-xl bg-ghana-dark/95 border-b border-white/[0.04] px-4 py-4">
         <div className="flex items-center justify-between max-w-screen-lg mx-auto">
           <div className="flex items-center gap-2.5">
-            <div className="w-0.5 h-5 rounded-full bg-gold/50" />
-            <h1 className="text-white text-xl font-bold tracking-tight">Recurring &amp; Bills</h1>
+            <div className="w-0.5 h-5 rounded-full bg-[#FF6B35]/50" />
+            <h1 className="text-white text-xl font-bold font-display tracking-tight">Recurring &amp; Bills</h1>
           </div>
           <button
             type="button"

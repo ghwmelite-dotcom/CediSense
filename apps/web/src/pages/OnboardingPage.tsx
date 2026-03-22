@@ -77,7 +77,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
       </div>
 
       {/* Text */}
-      <h1 className="text-3xl sm:text-4xl font-extrabold text-text-primary tracking-[-0.03em] motion-safe:animate-fade-in">
+      <h1 className="text-3xl sm:text-4xl font-extrabold font-display text-text-primary tracking-[-0.03em] motion-safe:animate-fade-in">
         Welcome to CediSense
       </h1>
       <p className="text-muted text-base mt-3 max-w-xs leading-relaxed motion-safe:animate-fade-in" style={{ animationDelay: '150ms', animationFillMode: 'both' }}>
@@ -108,7 +108,7 @@ function IncomeStep({ onNext, onSkip }: { onNext: (income: number) => void; onSk
   return (
     <div className="premium-card rounded-2xl p-6 sm:p-8">
       <div className="text-center">
-        <h2 className="text-xl sm:text-2xl font-bold text-text-primary tracking-[-0.02em]">
+        <h2 className="text-xl sm:text-2xl font-bold font-display text-text-primary tracking-[-0.02em]">
           What&apos;s your monthly income?
         </h2>
         <p className="text-muted text-sm mt-2">This helps us personalize your experience</p>
@@ -191,7 +191,7 @@ function AccountStep({
   return (
     <div className="premium-card rounded-2xl p-6 sm:p-8">
       <div className="text-center">
-        <h2 className="text-xl sm:text-2xl font-bold text-text-primary tracking-[-0.02em]">
+        <h2 className="text-xl sm:text-2xl font-bold font-display text-text-primary tracking-[-0.02em]">
           Where do you keep your money?
         </h2>
         <p className="text-muted text-sm mt-2">Select your primary account type</p>
@@ -301,7 +301,7 @@ function FeatureStep({ onComplete }: { onComplete: (features: FeatureId[]) => vo
   return (
     <div className="premium-card rounded-2xl p-6 sm:p-8">
       <div className="text-center">
-        <h2 className="text-xl sm:text-2xl font-bold text-text-primary tracking-[-0.02em]">
+        <h2 className="text-xl sm:text-2xl font-bold font-display text-text-primary tracking-[-0.02em]">
           What would you like to do first?
         </h2>
         <p className="text-muted text-sm mt-2">Select all that interest you</p>

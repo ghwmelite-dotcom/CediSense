@@ -6,6 +6,7 @@ import { ComparisonCard } from '@/components/insights/ComparisonCard';
 import { CategoryTrendsChart } from '@/components/insights/CategoryTrendsChart';
 import { TopChangesCard } from '@/components/insights/TopChangesCard';
 import { AIReportSection } from '@/components/insights/AIReportSection';
+import { AdinkraWhisper } from '@/components/shared/AdinkraWhisper';
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -55,8 +56,8 @@ export function InsightsPage() {
         {/* Page header */}
         <div className="flex items-center justify-between motion-safe:animate-fade-in">
           <div className="flex items-center gap-2.5">
-            <div className="w-0.5 h-5 rounded-full bg-gold/50" />
-            <h1 className="text-white text-xl font-bold tracking-tight">Insights</h1>
+            <div className="w-0.5 h-5 rounded-full bg-[#FF6B35]/50" />
+            <h1 className="text-white text-xl font-bold font-display tracking-tight">Insights</h1>
           </div>
           <button
             type="button"
@@ -152,6 +153,8 @@ export function InsightsPage() {
             </div>
           </>
         )}
+
+        <AdinkraWhisper symbol="sankofa" className="mt-8 mb-4" />
       </div>
     </div>
   );

@@ -15,24 +15,35 @@ export function TopBar() {
     <header
       className="md:hidden sticky top-0 z-40 px-4 py-3 flex items-center justify-between border-b border-white/5"
       style={{
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        background: 'rgba(17, 17, 17, 0.82)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        background: 'rgba(13, 13, 26, 0.88)',
         boxShadow: '0 1px 0 rgba(255,255,255,0.04)',
       }}
     >
-      {/* Logo */}
+      {/* Logo — flame orange gradient icon with Clash Display brand */}
       <div className="flex items-center gap-2">
-        <span className="text-gold font-extrabold text-xl leading-none">₵</span>
-        <span className="text-white font-semibold text-base tracking-tight">CediSense</span>
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-extrabold text-lg leading-none"
+          style={{
+            background: 'linear-gradient(135deg, #FF6B35, #E85D2C)',
+            boxShadow: '0 2px 8px rgba(255,107,53,0.3)',
+          }}
+        >
+          ₵
+        </div>
+        <span className="text-white font-display font-bold text-base tracking-tight">CediSense</span>
       </div>
 
       {/* Avatar */}
       <button
         type="button"
         aria-label="Open account menu"
-        className="relative w-9 h-9 rounded-full bg-ghana-green flex items-center justify-center text-white text-xs font-semibold ring-2 ring-ghana-green/30 hover:ring-gold/40 transition-all duration-200 focus-visible:outline-none focus-visible:ring-gold/60"
-        style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.08)' }}
+        className="relative w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold transition-all duration-200 focus-visible:outline-none"
+        style={{
+          background: 'linear-gradient(135deg, #FF6B35, #E85D2C)',
+          boxShadow: '0 0 0 2px rgba(255,107,53,0.2), 0 0 0 1px rgba(255,255,255,0.08)',
+        }}
       >
         {initials}
         {/* Online indicator dot */}

@@ -33,7 +33,11 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
         <div className="fixed inset-0 z-[60] md:hidden" onClick={() => setMoreOpen(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div
-            className="absolute bottom-[72px] left-3 right-3 bg-ghana-surface rounded-2xl shadow-card-hover p-3 motion-safe:animate-slide-up"
+            className="absolute bottom-[72px] left-3 right-3 rounded-2xl shadow-card-hover p-3 motion-safe:animate-slide-up"
+            style={{
+              background: '#14142a',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="grid grid-cols-4 gap-1">
@@ -46,7 +50,7 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
                     onClick={() => { navigate(item.to); setMoreOpen(false); }}
                     className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl transition-colors duration-150 relative ${
                       item.highlight
-                        ? 'bg-gold/[0.06] hover:bg-gold/[0.1]'
+                        ? 'bg-flame/[0.06] hover:bg-flame/[0.1]'
                         : 'hover:bg-white/[0.03]'
                     }`}
                   >
@@ -59,12 +63,12 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
                       )}
                     </span>
                     <span className={`text-[10px] font-medium leading-tight text-center ${
-                      item.highlight ? 'text-gold' : 'text-muted'
+                      item.highlight ? 'text-flame' : 'text-muted'
                     }`}>
                       {item.label}
                     </span>
                     {item.highlight && badgeCount === 0 && (
-                      <span className="text-[8px] font-bold uppercase tracking-wider bg-gold/10 text-gold px-1 py-px rounded">New</span>
+                      <span className="text-[8px] font-bold uppercase tracking-wider bg-flame/10 text-flame px-1 py-px rounded">New</span>
                     )}
                   </button>
                 );
@@ -80,7 +84,8 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
         style={{
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          background: 'rgba(12, 12, 20, 0.92)',
+          background: 'rgba(13, 13, 26, 0.92)',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
       >
         {primaryItems.map((item) => (
@@ -90,7 +95,7 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
             end={item.to === '/dashboard'}
             className={({ isActive }) =>
               `flex flex-col items-center gap-0.5 px-3 py-1 relative transition-colors duration-150 min-w-[44px] min-h-[44px] justify-center ${
-                isActive ? 'text-gold' : 'text-muted hover:text-text-primary/70'
+                isActive ? 'text-flame' : 'text-muted hover:text-text-primary/70'
               }`
             }
           >
@@ -99,7 +104,7 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
                 <span className="text-xl leading-none">{item.icon}</span>
                 <span className="text-[10px] font-medium leading-none">{item.label}</span>
                 {isActive && (
-                  <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold" />
+                  <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-flame" />
                 )}
               </>
             )}
@@ -113,10 +118,10 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
           className="flex flex-col items-center -mt-5 group"
         >
           <div
-            className="w-12 h-12 rounded-full flex items-center justify-center text-ghana-dark text-2xl font-bold transition-all duration-200 group-hover:scale-105 group-active:scale-95"
+            className="w-12 h-12 rounded-full flex items-center justify-center text-white text-2xl font-bold transition-all duration-200 group-hover:scale-105 group-active:scale-95"
             style={{
-              background: 'linear-gradient(135deg, #E8C873 0%, #D4A843 50%, #C49A3C 100%)',
-              boxShadow: '0 4px 16px rgba(212, 168, 67, 0.35)',
+              background: 'linear-gradient(135deg, #FF6B35, #E85D2C)',
+              boxShadow: '0 4px 16px rgba(255, 107, 53, 0.35)',
             }}
           >
             +
@@ -129,18 +134,18 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
           type="button"
           onClick={() => setMoreOpen(!moreOpen)}
           className={`flex flex-col items-center gap-0.5 px-3 py-1 relative transition-colors duration-150 min-w-[44px] min-h-[44px] justify-center ${
-            moreOpen ? 'text-gold' : 'text-muted hover:text-text-primary/70'
+            moreOpen ? 'text-flame' : 'text-muted hover:text-text-primary/70'
           }`}
         >
           <span className="text-xl leading-none relative">
             ☰
             {susuUnreadCount > 0 && !moreOpen && (
-              <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-[#0C0C14]" />
+              <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-[#0d0d1a]" />
             )}
           </span>
           <span className="text-[10px] font-medium leading-none">More</span>
           {moreOpen && (
-            <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold" />
+            <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-flame" />
           )}
         </button>
       </nav>

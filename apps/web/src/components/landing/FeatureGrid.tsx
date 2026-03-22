@@ -64,7 +64,7 @@ function DashboardVisual() {
             className="flex-1 rounded-t-sm transition-all duration-300"
             style={{
               height: `${h}%`,
-              background: i === 5 ? '#D4A843' : 'rgba(212,168,67,0.15)',
+              background: i === 5 ? '#FF6B35' : 'rgba(255,107,53,0.15)',
             }}
           />
         ))}
@@ -354,7 +354,7 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
                 <div>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-3xl" role="img" aria-label="handshake">{'\uD83E\uDD1D'}</span>
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-text-primary tracking-tight">
+                    <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary tracking-tight">
                       The Susu Ecosystem
                     </h2>
                   </div>
@@ -415,8 +415,8 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
           {/* Regular features */}
           <div className="text-center mb-16 reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0">
             <p className="section-label mb-4">Features</p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-5">
-              Built for how you <span className="text-gold">actually</span> manage money
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-5">
+              Built for how you <span className="text-flame">actually</span> manage money
             </h2>
             <p className="text-muted text-lg max-w-md mx-auto leading-relaxed">
               Not another Western finance app. This is made for Ghana.
@@ -433,13 +433,13 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
                 <div
                   className="rounded-2xl p-6 h-full border border-white/[0.05] group cursor-default"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(212,168,67,0.04) 0%, rgba(20,20,42,0.95) 40%, rgba(12,12,20,0.98) 100%)',
+                    background: 'linear-gradient(135deg, rgba(255,107,53,0.03) 0%, rgba(20,20,42,0.95) 40%, rgba(12,12,20,0.98) 100%)',
                     transition: 'transform 0.25s ease-out, box-shadow 0.25s ease-out, border-color 0.25s ease-out',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.4), 0 0 40px rgba(212,168,67,0.06)';
-                    e.currentTarget.style.borderColor = 'rgba(212,168,67,0.12)';
+                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.4), 0 0 40px rgba(255,107,53,0.06)';
+                    e.currentTarget.style.borderColor = 'rgba(255,107,53,0.15)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
@@ -466,7 +466,7 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12 reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0">
             <p className="section-label mb-4">Integrations</p>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-3">
+            <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight mb-3">
               Your providers, supported
             </h2>
             <p className="text-muted text-base leading-relaxed">
@@ -500,7 +500,7 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16 reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0">
             <p className="section-label mb-4">How it works</p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-5">
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-5">
               Three steps. Two minutes.
             </h2>
             <p className="text-muted text-lg max-w-md mx-auto leading-relaxed">
@@ -552,7 +552,7 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-12 reveal-on-scroll opacity-0 translate-y-6 transition-all duration-700 ease-out [&.revealed]:opacity-100 [&.revealed]:translate-y-0">
             <p className="section-label mb-4">Pricing</p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-5">
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-5">
               Free. No catch.
             </h2>
             <p className="text-muted text-lg max-w-md mx-auto leading-relaxed">
@@ -599,7 +599,11 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
 
               <button
                 onClick={() => onOpenAuth('register')}
-                className="btn-gold w-full text-center block py-4 text-base"
+                className="w-full text-center block py-4 text-base font-semibold text-white rounded-[14px] transition-all duration-200 active:scale-[0.98]"
+                style={{
+                  background: 'linear-gradient(135deg, #FF6B35, #E85D2C)',
+                  boxShadow: '0 4px 15px rgba(255,107,53,0.25)',
+                }}
               >
                 Get Started Free
               </button>
@@ -607,6 +611,18 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
 
             <p className="text-muted-dim/40 text-sm mt-6 text-center">
               Plus and Pro plans coming soon for power users.
+            </p>
+
+            {/* Akan proverb -- Adinkra Whisper style */}
+            <p
+              className="text-center mt-8 italic"
+              style={{
+                fontSize: '12px',
+                color: 'rgba(212,168,67,0.3)',
+                letterSpacing: '1px',
+              }}
+            >
+              &ldquo;Sika ye mogya&rdquo; &mdash; Money is blood
             </p>
           </div>
         </div>

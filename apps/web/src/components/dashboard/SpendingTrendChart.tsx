@@ -46,7 +46,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   );
 }
 
-/** Empty state — warm, illustration-style, encouraging */
+/** Empty state -- warm, illustration-style, encouraging */
 function ChartEmptyState() {
   const navigate = useNavigate();
   return (
@@ -62,7 +62,7 @@ function ChartEmptyState() {
           {/* Trend line */}
           <path
             d="M 20 60 Q 50 55, 70 42 T 120 30 T 180 18 L 204 14"
-            stroke="#D4A843"
+            stroke="#FF6B35"
             strokeWidth="2.5"
             strokeLinecap="round"
             fill="none"
@@ -75,12 +75,12 @@ function ChartEmptyState() {
             opacity="0.25"
           />
           {/* Dot at end */}
-          <circle cx="204" cy="14" r="4" fill="#D4A843" opacity="0.4" />
-          <circle cx="204" cy="14" r="2" fill="#D4A843" opacity="0.7" />
+          <circle cx="204" cy="14" r="4" fill="#FF6B35" opacity="0.4" />
+          <circle cx="204" cy="14" r="2" fill="#FF6B35" opacity="0.7" />
           <defs>
             <linearGradient id="emptyGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#D4A843" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#D4A843" stopOpacity="0" />
+              <stop offset="0%" stopColor="#FF6B35" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#FF6B35" stopOpacity="0" />
             </linearGradient>
           </defs>
         </svg>
@@ -92,7 +92,7 @@ function ChartEmptyState() {
       <button
         type="button"
         onClick={() => navigate('/transactions/add')}
-        className="text-xs font-medium px-5 py-2 rounded-xl bg-gold/[0.08] text-gold hover:bg-gold/[0.14] transition-colors duration-200"
+        className="text-xs font-medium px-5 py-2 rounded-xl bg-flame/[0.08] text-flame hover:bg-flame/[0.14] transition-colors duration-200"
       >
         Add your first transaction
       </button>
@@ -108,11 +108,11 @@ export function SpendingTrendChart({ data }: SpendingTrendChartProps) {
     <div className="relative premium-card rounded-2xl p-6 overflow-hidden motion-safe:animate-fade-in">
       {/* Subtle glow behind chart area */}
       {hasData && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-gold/[0.02] to-transparent rounded-b-2xl" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-flame/[0.02] to-transparent rounded-b-2xl" />
       )}
 
       {/* Top highlight */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-flame/[0.08] to-transparent" />
 
       <p className="section-label mb-5">Daily Spending</p>
 
@@ -121,13 +121,13 @@ export function SpendingTrendChart({ data }: SpendingTrendChartProps) {
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
               <defs>
-                <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#D4A843" stopOpacity={0.3} />
-                  <stop offset="80%" stopColor="#D4A843" stopOpacity={0.03} />
-                  <stop offset="100%" stopColor="#D4A843" stopOpacity={0} />
+                <linearGradient id="flameGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FF6B35" stopOpacity={0.3} />
+                  <stop offset="80%" stopColor="#FF6B35" stopOpacity={0.03} />
+                  <stop offset="100%" stopColor="#FF6B35" stopOpacity={0} />
                 </linearGradient>
-                <filter id="goldLineShadow" x="-10%" y="-50%" width="120%" height="200%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#D4A843" floodOpacity="0.35" />
+                <filter id="flameLineShadow" x="-10%" y="-50%" width="120%" height="200%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#FF6B35" floodOpacity="0.3" />
                 </filter>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(136,136,168,0.06)" vertical={false} />
@@ -146,17 +146,17 @@ export function SpendingTrendChart({ data }: SpendingTrendChartProps) {
                 tickLine={false}
                 width={70}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(212,168,67,0.12)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,107,53,0.12)', strokeWidth: 1, strokeDasharray: '4 4' }} />
               <Area
                 type="monotone"
                 dataKey="total_pesewas"
-                stroke="#D4A843"
+                stroke="#FF6B35"
                 strokeWidth={2.5}
-                fill="url(#goldGradient)"
+                fill="url(#flameGradient)"
                 isAnimationActive={!prefersReducedMotion}
                 animationDuration={1200}
                 animationEasing="ease-out"
-                filter="url(#goldLineShadow)"
+                filter="url(#flameLineShadow)"
               />
             </AreaChart>
           </ResponsiveContainer>

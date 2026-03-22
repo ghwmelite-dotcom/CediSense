@@ -20,7 +20,7 @@ const TYPE_LABELS: Record<InvestmentType, string> = {
 const TYPE_BADGE: Record<InvestmentType, string> = {
   tbill: 'bg-gold/20 text-gold border-gold/30',
   mutual_fund: 'bg-income/20 text-income border-income/30',
-  fixed_deposit: 'bg-ghana-green/20 text-ghana-green border-ghana-green/30',
+  fixed_deposit: 'bg-[#FF6B35]/20 text-[#FF6B35] border-[#FF6B35]/30',
   other: 'bg-white/10 text-muted border-white/20',
 };
 

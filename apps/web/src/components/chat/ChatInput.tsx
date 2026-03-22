@@ -46,8 +46,8 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
               rounded-xl px-4 py-3 text-white text-sm placeholder:text-muted/50
               transition-all duration-200
               hover:border-white/[0.06]
-              focus:outline-none focus:bg-white/[0.06] focus:border-gold/30
-              focus:shadow-[0_0_0_3px_rgba(212,168,67,0.08)]
+              focus:outline-none focus:bg-white/[0.06] focus:border-[#FF6B35]/30
+              focus:shadow-[0_0_0_3px_rgba(255,107,53,0.08)]
               disabled:opacity-40 disabled:cursor-not-allowed"
           />
           {value.length > 400 && (
@@ -65,10 +65,10 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           aria-label="Send message"
           className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0
             transition-all duration-200 focus-visible:outline-none
-            focus-visible:ring-2 focus-visible:ring-gold/40
+            focus-visible:ring-2 focus-visible:ring-[rgba(255,107,53,0.5)]
             ${
               canSend
-                ? 'btn-gold shadow-gold-glow hover:shadow-gold-glow-lg active:scale-90'
+                ? 'bg-gradient-to-br from-[#FF6B35] to-[#E85D2C] text-white shadow-[0_4px_15px_rgba(255,107,53,0.25)] hover:shadow-[0_6px_20px_rgba(255,107,53,0.35)] active:scale-90'
                 : 'bg-white/[0.05] text-muted/40 cursor-not-allowed'
             }`}
         >

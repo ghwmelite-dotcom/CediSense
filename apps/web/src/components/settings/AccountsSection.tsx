@@ -18,7 +18,7 @@ const TYPE_LABELS: Record<AccountType, string> = {
 
 const TYPE_COLORS: Record<AccountType, string> = {
   momo: 'bg-gold/20 text-gold',
-  bank: 'bg-ghana-green/20 text-income',
+  bank: 'bg-[#FF6B35]/20 text-[#FF6B35]',
   cash: 'bg-white/10 text-muted',
   susu: 'bg-income/20 text-income',
 };

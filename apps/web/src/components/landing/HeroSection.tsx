@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { GhanaFlag } from '@/components/shared/GhanaFlag';
+import { KenteStripe } from '@/components/shared/KenteStripe';
 
 /* ================================================================ */
 /*  PHONE MOCKUP COMPONENT                                           */
@@ -13,11 +15,11 @@ function PhoneMockup() {
 
   return (
     <div className="relative" aria-hidden="true">
-      {/* Animated gold glow behind phone — pulses gently */}
+      {/* Animated orange glow behind phone -- pulses gently */}
       <div
         className="absolute inset-0 -m-12"
         style={{
-          background: 'radial-gradient(ellipse at center, rgba(212,168,67,0.18) 0%, rgba(212,168,67,0.06) 40%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, rgba(255,107,53,0.15) 0%, rgba(255,107,53,0.04) 40%, transparent 70%)',
           filter: 'blur(40px)',
           animation: 'glowPulse 4s ease-in-out infinite',
         }}
@@ -25,24 +27,27 @@ function PhoneMockup() {
 
       {/* Orbiting ring */}
       <div
-        className="absolute inset-0 -m-16 rounded-full border border-gold/[0.06]"
+        className="absolute inset-0 -m-16 rounded-full border border-flame/[0.06]"
         style={{ animation: 'slowSpin 30s linear infinite' }}
       />
       <div
-        className="absolute inset-0 -m-24 rounded-full border border-gold/[0.03]"
+        className="absolute inset-0 -m-24 rounded-full border border-teal/[0.03]"
         style={{ animation: 'slowSpin 45s linear infinite reverse' }}
       />
 
-      {/* Phone frame — entrance animation */}
+      {/* Phone frame -- entrance animation */}
       <div
         className="relative w-64 sm:w-72 h-[460px] sm:h-[520px] rounded-[2.5rem] border-4 border-white/[0.08] overflow-hidden transition-all duration-1000 ease-out"
         style={{
           background: '#14142A',
-          boxShadow: '0 0 60px rgba(212,168,67,0.15), 0 0 120px rgba(212,168,67,0.05), 0 25px 50px rgba(0,0,0,0.5)',
+          boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 50px rgba(255,107,53,0.06)',
           transform: loaded ? 'rotate(-3deg) translateY(0)' : 'rotate(-3deg) translateY(40px)',
           opacity: loaded ? 1 : 0,
         }}
       >
+        {/* KenteStripe at top of phone screen */}
+        <KenteStripe height={2} />
+
         {/* Status bar */}
         <div className="flex items-center justify-between px-6 pt-3 pb-1">
           <span className="text-[10px] text-white/40 font-medium">9:41</span>
@@ -58,7 +63,7 @@ function PhoneMockup() {
         {/* Notch */}
         <div className="mx-auto w-24 h-5 bg-black rounded-b-2xl -mt-0.5 mb-2" />
 
-        {/* Content area — staggered entrance animations */}
+        {/* Content area -- staggered entrance animations */}
         <div className="px-4 space-y-3">
           {/* Greeting */}
           <p
@@ -70,7 +75,7 @@ function PhoneMockup() {
             }}
           >Good evening, Kofi</p>
 
-          {/* Balance — the star of the show */}
+          {/* Balance -- the star of the show */}
           <div
             className="text-center py-2 transition-all duration-700 ease-out"
             style={{
@@ -80,12 +85,12 @@ function PhoneMockup() {
             }}
           >
             <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Total Balance</p>
-            <p className="text-2xl sm:text-3xl font-extrabold text-gold tracking-tight">
-              &#x20B5;12,450<span className="text-lg">.00</span>
+            <p className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              <span className="text-flame/70">&#x20B5;</span>12,450<span className="text-lg text-white/25">.00</span>
             </p>
           </div>
 
-          {/* Income / Expense mini cards — staggered entrance */}
+          {/* Income / Expense mini cards -- teal/rose */}
           <div
             className="grid grid-cols-2 gap-2 transition-all duration-700 ease-out"
             style={{
@@ -94,7 +99,10 @@ function PhoneMockup() {
               transitionDelay: '1000ms',
             }}
           >
-            <div className="rounded-xl bg-income/10 p-2.5">
+            <div
+              className="rounded-xl p-2.5"
+              style={{ background: 'rgba(0,200,150,0.08)', border: '1px solid rgba(0,200,150,0.12)' }}
+            >
               <div className="flex items-center gap-1 mb-1">
                 <svg className="w-3 h-3 text-income" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
@@ -103,7 +111,10 @@ function PhoneMockup() {
               </div>
               <p className="text-white text-sm font-bold">&#x20B5;3,500</p>
             </div>
-            <div className="rounded-xl bg-expense/10 p-2.5">
+            <div
+              className="rounded-xl p-2.5"
+              style={{ background: 'rgba(255,107,138,0.08)', border: '1px solid rgba(255,107,138,0.12)' }}
+            >
               <div className="flex items-center gap-1 mb-1">
                 <svg className="w-3 h-3 text-expense" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
@@ -114,7 +125,7 @@ function PhoneMockup() {
             </div>
           </div>
 
-          {/* Mini bar chart — bars grow on load */}
+          {/* Mini bar chart -- bars grow on load, flame orange */}
           <div
             className="rounded-xl bg-white/[0.03] p-3 transition-all duration-700 ease-out"
             style={{
@@ -132,8 +143,9 @@ function PhoneMockup() {
                   style={{
                     height: `${h}%`,
                     background: i === 3
-                      ? 'linear-gradient(to top, #D4A843, #E8C873)'
-                      : 'rgba(212,168,67,0.2)',
+                      ? 'linear-gradient(to top, #FF6B35, #FFB347)'
+                      : 'rgba(255,107,53,0.2)',
+                    boxShadow: i === 3 ? '0 0 12px rgba(255,107,53,0.2)' : undefined,
                     animation: `growBar 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${i * 80}ms both`,
                   }}
                 />
@@ -141,12 +153,12 @@ function PhoneMockup() {
             </div>
             <div className="flex justify-between mt-1.5">
               {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-                <span key={i} className="text-[7px] text-white/25 flex-1 text-center">{d}</span>
+                <span key={i} className={`text-[7px] flex-1 text-center ${i === 3 ? 'text-flame' : 'text-white/25'}`}>{d}</span>
               ))}
             </div>
           </div>
 
-          {/* Transaction rows — slide in last */}
+          {/* Transaction rows -- slide in last */}
           <div
             className="space-y-2 transition-all duration-700 ease-out"
             style={{
@@ -201,7 +213,7 @@ function FloatingParticles() {
       {particles.map((p, i) => (
         <span
           key={i}
-          className="absolute text-gold/[0.08] font-bold select-none"
+          className="absolute text-flame/[0.08] font-bold select-none"
           style={{
             fontSize: p.size,
             left: p.x,
@@ -230,45 +242,69 @@ export function HeroSection({ onOpenAuth, onScrollToFeatures }: HeroSectionProps
       <FloatingParticles />
 
       <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center py-16 lg:py-0">
-        {/* Left — copy */}
+        {/* Left -- copy */}
         <div className="motion-safe:animate-slide-up max-w-xl">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-gold/[0.08] border border-gold/[0.12] rounded-full px-4 py-1.5 mb-8">
-            <span className="text-[11px] font-semibold text-gold uppercase tracking-wider">Made in Ghana</span>
-            <span className="text-sm" role="img" aria-label="Ghana flag">&#x1F1EC;&#x1F1ED;</span>
+          {/* Badge with animated Ghana flag */}
+          <div className="inline-flex items-center gap-2.5 bg-flame/[0.08] border border-flame/[0.12] rounded-full px-4 py-1.5 mb-8">
+            <GhanaFlag size="md" />
+            <span className="text-[11px] font-semibold text-flame uppercase tracking-wider">Made in Ghana</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.08] mb-6">
-            <span className="text-text-primary">Take Control</span>
-            <br />
-            <span className="text-text-primary">of Your </span>
-            <span className="bg-gradient-to-r from-gold via-gold-light to-gold bg-clip-text text-transparent">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-[1.08] mb-6">
+            <span className="text-text-primary">Your </span>
+            <span className="bg-gradient-to-br from-white via-white to-[#FF6B35] bg-clip-text text-transparent">
               Money
             </span>
+            <span className="text-text-primary">.</span>
+            <br />
+            <span className="text-text-primary">Your </span>
+            <span className="bg-gradient-to-br from-white via-white to-[#FF6B35] bg-clip-text text-transparent">
+              Power
+            </span>
+            <span className="text-text-primary">.</span>
           </h1>
 
-          <p className="text-lg md:text-xl text-muted max-w-lg leading-relaxed mb-10">
+          <p className="text-lg md:text-xl text-muted max-w-lg leading-relaxed mb-4">
             AI-powered personal finance for Ghana. Track Mobile Money, budget smarter, and grow your savings
             &mdash; all in one beautiful app.
+          </p>
+
+          <p className="text-sm text-muted-dim mb-10">
+            No bank login needed &middot; Works with MoMo SMS &middot; Free forever tier
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4">
             <button
               onClick={() => onOpenAuth('register')}
-              className="btn-gold text-base px-8 py-3.5 text-center"
+              className="text-base px-8 py-3.5 text-center text-white font-semibold rounded-[14px] transition-all duration-250 ease-out active:scale-[0.98]"
+              style={{
+                background: 'linear-gradient(135deg, #FF6B35, #E85D2C)',
+                boxShadow: '0 4px 15px rgba(255,107,53,0.25)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(255,107,53,0.35)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(255,107,53,0.25)';
+              }}
             >
-              Start Free &mdash; No Card Needed
+              Start Free &rarr;
             </button>
             <button
               onClick={onScrollToFeatures}
-              className="px-8 py-3.5 rounded-xl text-base font-semibold text-muted hover:text-text-primary bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] transition-all duration-200 active:scale-[0.98]"
+              className="px-8 py-3.5 rounded-[14px] text-base font-semibold text-muted hover:text-text-primary bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] transition-all duration-200 active:scale-[0.98] inline-flex items-center justify-center gap-2"
             >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
               See How It Works
             </button>
           </div>
         </div>
 
-        {/* Right — phone mockup */}
+        {/* Right -- phone mockup */}
         <div className="flex justify-center lg:justify-end motion-safe:animate-slide-up" style={{ animationDelay: '150ms' }}>
           <PhoneMockup />
         </div>

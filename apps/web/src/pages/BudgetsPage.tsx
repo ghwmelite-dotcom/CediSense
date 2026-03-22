@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { BudgetSummaryBar } from '@/components/budgets/BudgetSummaryBar';
 import { BudgetCard } from '@/components/budgets/BudgetCard';
 import { AddBudgetModal } from '@/components/budgets/AddBudgetModal';
+import { AdinkraWhisper } from '@/components/shared/AdinkraWhisper';
 
 export function BudgetsPage() {
   const [budgets, setBudgets] = useState<BudgetWithSpending[]>([]);
@@ -58,8 +59,8 @@ export function BudgetsPage() {
       <div className="sticky top-0 z-30 backdrop-blur-xl bg-ghana-dark/95 border-b border-[#1F1F35]/40 px-4 py-4">
         <div className="flex items-center justify-between max-w-screen-lg mx-auto">
           <div className="flex items-center gap-2.5">
-            <div className="w-0.5 h-5 rounded-full bg-gold/50" />
-            <h1 className="text-text-primary text-xl font-bold tracking-tight">Budgets</h1>
+            <div className="w-0.5 h-5 rounded-full bg-[#FF6B35]/50" />
+            <h1 className="text-text-primary text-xl font-bold font-display tracking-tight">Budgets</h1>
           </div>
           <button
             type="button"
@@ -165,6 +166,8 @@ export function BudgetsPage() {
           </>
         )}
       </div>
+
+      <AdinkraWhisper symbol="dwennimmen" className="mt-8 mb-4" />
 
       {/* Add budget modal */}
       <AddBudgetModal

@@ -37,7 +37,7 @@ export function CategoryBreakdownCard({ data, totalExpenses, month }: CategoryBr
 
       {/* Section title with visual accent */}
       <div className="flex items-center gap-2 mb-5">
-        <div className="w-1 h-4 rounded-full bg-gradient-to-b from-gold to-gold/40" />
+        <div className="w-1 h-4 rounded-full bg-gradient-to-b from-flame to-flame/40" />
         <p className="text-xs text-muted uppercase tracking-widest font-semibold">Spending by Category</p>
       </div>
 

@@ -10,7 +10,7 @@ export function ChatHeader({ onClear, hasHistory }: ChatHeaderProps) {
 
   return (
     <div className="sticky top-0 z-10 bg-ghana-dark/95 backdrop-blur flex items-center justify-between px-4 py-3 border-b border-white/5">
-      <span className="text-white text-lg font-semibold">✨ CediSense AI</span>
+      <span className="text-white text-lg font-semibold font-display">CediSense AI</span>
       {hasHistory && !confirming && (
         <button
           type="button"
