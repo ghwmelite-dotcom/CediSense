@@ -473,3 +473,23 @@ export type CreateCollectorProfileInput = z.infer<typeof createCollectorProfileS
 export type AddCollectorClientInput = z.infer<typeof addCollectorClientSchema>;
 export type RecordDepositInput = z.infer<typeof recordDepositSchema>;
 export type UpdateCollectorClientInput = z.infer<typeof updateCollectorClientSchema>;
+
+// ─── Notification schemas ──────────────────────────────────────────────────
+
+// Notification schemas
+export {
+  notificationTypeSchema,
+  notificationReferenceTypeSchema,
+  notificationPreferencesSchema,
+  pushSubscriptionSchema,
+  notificationQuerySchema,
+} from './notification-types.js';
+
+export type {
+  NotificationType,
+  NotificationReferenceType,
+  Notification,
+  NotificationPreferences,
+  PushSubscriptionPayload,
+  NotificationEvent,
+} from './notification-types.js';

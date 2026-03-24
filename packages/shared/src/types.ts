@@ -51,7 +51,13 @@ export interface Account {
 // API response envelope
 export interface ApiSuccess<T> {
   data: T;
-  meta?: { total?: number; page?: number; limit?: number };
+  meta?: {
+    total?: number;
+    page?: number;
+    limit?: number;
+    cursor?: string | null;
+    has_more?: boolean;
+  };
 }
 
 export interface ApiError {
