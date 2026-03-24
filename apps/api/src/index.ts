@@ -22,6 +22,8 @@ import { susu } from './routes/susu/index.js';
 import { collector } from './routes/collector.js';
 import { notifications } from './routes/notifications.js';
 import { exportRoutes } from './routes/export.js';
+import { admin } from './routes/admin/index.js';
+import { adminMiddleware } from './middleware/admin.js';
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -122,6 +124,9 @@ app.use('/api/v1/notifications/*', authMiddleware, rateLimitMiddleware);
 // Export routes
 app.use('/api/v1/export', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/export/*', authMiddleware, rateLimitMiddleware);
+// Admin portal
+app.use('/api/v1/admin', authMiddleware, rateLimitMiddleware, adminMiddleware);
+app.use('/api/v1/admin/*', authMiddleware, rateLimitMiddleware, adminMiddleware);
 
 app.route('/api/v1/users', users);
 app.route('/api/v1/accounts', accounts);
@@ -142,6 +147,7 @@ app.route('/api/v1/susu', susu);
 app.route('/api/v1/collector', collector);
 app.route('/api/v1/notifications', notifications);
 app.route('/api/v1/export', exportRoutes);
+app.route('/api/v1/admin', admin);
 
 // Health check
 app.get('/api/v1/health', (c) => {
