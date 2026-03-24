@@ -4,12 +4,14 @@ import { generateId, BADGE_NAMES, mapGroup } from './index.js';
 import { recordContributionSchema } from '@cedisense/shared';
 import type { SusuFrequency, SusuVariant } from '@cedisense/shared';
 import { computeTrustScore } from '../../lib/trust-score.js';
+import { withNotification } from '../../lib/with-notification.js';
+import { NotificationService } from '../../lib/notifications.js';
 
 const contributions = new Hono<AppType>();
 
 // ─── POST /groups/:id/contributions — record a contribution (creator only) ───
 
-contributions.post('/groups/:id/contributions', async (c) => {
+contributions.post('/groups/:id/contributions', withNotification(async (c) => {
   const userId = c.get('userId');
   const groupId = c.req.param('id');
 
@@ -250,11 +252,34 @@ contributions.post('/groups/:id/contributions', async (c) => {
       penalty_pesewas,
     },
   }, 201);
-});
+}, (c, data) => {
+  // data = the contribution receipt returned by this handler
+  const groupId = c.req.param('id') ?? '';
+  const actorId = c.get('userId');
+  const d = data as {
+    member_name?: string;
+    amount_pesewas?: number;
+    round?: number;
+    id?: string;
+  };
+  if (!groupId) return null;
+  return {
+    type: 'susu_contribution',
+    groupId,
+    actorId,
+    data: {
+      actorName: d.member_name ?? 'A member',
+      amount_pesewas: d.amount_pesewas,
+      round: d.round,
+      referenceId: d.id,
+      referenceType: 'contribution',
+    },
+  };
+}));
 
 // ─── POST /groups/:id/payouts — record payout for current round (creator only)
 
-contributions.post('/groups/:id/payouts', async (c) => {
+contributions.post('/groups/:id/payouts', withNotification(async (c) => {
   const userId = c.get('userId');
   const groupId = c.req.param('id');
 
@@ -429,7 +454,59 @@ contributions.post('/groups/:id/payouts', async (c) => {
   }
 
   return c.json({ data: payout }, 201);
-});
+}, (c, data) => {
+  // data = payout or distribution object — handle all variant shapes
+  const groupId = c.req.param('id') ?? '';
+  if (!groupId) return null;
+  const actorId = c.get('userId');
+  const d = data as {
+    type?: string;
+    // rotating/bidding path
+    id?: string;
+    amount_pesewas?: number;
+    round?: number;
+    // accumulating/goal path
+    share_per_member?: number;
+    payouts?: Array<{ id: string; amount_pesewas: number; round: number }>;
+    // bulk path
+    payout?: { id: string; amount_pesewas: number; round: number };
+    total_pool?: number;
+  };
+
+  // Derive a sensible amount and referenceId from whichever variant was returned
+  let amount_pesewas: number | undefined;
+  let referenceId: string | undefined;
+  let round: number | undefined;
+
+  if (!d.type) {
+    // Rotating/bidding — plain SusuPayoutRow
+    amount_pesewas = d.amount_pesewas;
+    referenceId = d.id;
+    round = d.round;
+  } else if (d.type === 'bulk_purchase_payment' && d.payout) {
+    amount_pesewas = d.payout.amount_pesewas;
+    referenceId = d.payout.id;
+    round = d.payout.round;
+  } else if (d.payouts && d.payouts.length > 0) {
+    // accumulating or goal — use share per member as amount
+    amount_pesewas = d.share_per_member ?? d.payouts[0]?.amount_pesewas;
+    referenceId = d.payouts[0]?.id;
+    round = d.payouts[0]?.round;
+  }
+
+  return {
+    type: 'susu_payout',
+    groupId,
+    actorId,
+    data: {
+      actorName: 'Group creator',
+      amount_pesewas,
+      round,
+      referenceId,
+      referenceType: 'payout',
+    },
+  };
+}));
 
 // ─── POST /groups/:id/advance-round — advance to next round (creator only) ───
 

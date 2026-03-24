@@ -5,12 +5,13 @@ import {
   joinSusuGroupSchema,
   reorderSusuMembersSchema,
 } from '@cedisense/shared';
+import { withNotification } from '../../lib/with-notification.js';
 
 const members = new Hono<AppType>();
 
 // ─── POST /groups/join — join by invite code ──────────────────────────────────
 
-members.post('/groups/join', async (c) => {
+members.post('/groups/join', withNotification(async (c) => {
   const userId = c.get('userId');
 
   const body = await c.req.json();
@@ -89,7 +90,26 @@ members.post('/groups/join', async (c) => {
   }
 
   return c.json({ data: member }, 201);
-});
+}, (c, data) => {
+  // data = the SusuMemberRow for the newly joined member
+  const d = data as {
+    group_id?: string;
+    display_name?: string;
+    id?: string;
+  };
+  const groupId = d.group_id ?? '';
+  if (!groupId) return null;
+  return {
+    type: 'susu_member_joined',
+    groupId,
+    actorId: c.get('userId'),
+    data: {
+      actorName: d.display_name ?? 'A member',
+      referenceId: d.id,
+      referenceType: 'contribution', // nearest generic type; members have no dedicated referenceType
+    },
+  };
+}));
 
 // ─── POST /groups/:id/leave — leave group (non-creator only) ─────────────────
 
