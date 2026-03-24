@@ -7,6 +7,7 @@ import { ProfileSection } from '@/components/settings/ProfileSection';
 import { AccountsSection } from '@/components/settings/AccountsSection';
 import { CategoriesSection } from '@/components/settings/CategoriesSection';
 import { RulesSection } from '@/components/settings/RulesSection';
+import { NotificationsSection } from '@/components/settings/NotificationsSection';
 
 interface SettingsData {
   user: User;
@@ -201,10 +202,20 @@ export function SettingsPage() {
             </SettingsCard>
           </div>
 
+          {/* Notifications */}
+          <div
+            className="motion-safe:animate-slide-up"
+            style={{ animationDelay: '240ms', animationFillMode: 'both' }}
+          >
+            <SettingsCard accentColor="bg-info">
+              <NotificationsSection />
+            </SettingsCard>
+          </div>
+
           {/* Sign out */}
           <div
             className="pt-4 motion-safe:animate-slide-up"
-            style={{ animationDelay: '240ms', animationFillMode: 'both' }}
+            style={{ animationDelay: '300ms', animationFillMode: 'both' }}
           >
             <div className="h-px bg-[#1F1F35]/40 mb-5" />
             <button
