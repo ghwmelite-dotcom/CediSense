@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { NotificationBell } from '../shared/NotificationBell';
 
 export function TopBar() {
   const { user } = useAuth();
@@ -35,20 +36,25 @@ export function TopBar() {
         <span className="text-white font-display font-bold text-base tracking-tight">CediSense</span>
       </div>
 
-      {/* Avatar */}
-      <button
-        type="button"
-        aria-label="Open account menu"
-        className="relative w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold transition-all duration-200 focus-visible:outline-none"
-        style={{
-          background: 'linear-gradient(135deg, #FF6B35, #E85D2C)',
-          boxShadow: '0 0 0 2px rgba(255,107,53,0.2), 0 0 0 1px rgba(255,255,255,0.08)',
-        }}
-      >
-        {initials}
-        {/* Online indicator dot */}
-        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-income border-2 border-ghana-dark" />
-      </button>
+      {/* Right side: bell + avatar */}
+      <div className="flex items-center gap-2">
+        <NotificationBell />
+
+        {/* Avatar */}
+        <button
+          type="button"
+          aria-label="Open account menu"
+          className="relative w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold transition-all duration-200 focus-visible:outline-none"
+          style={{
+            background: 'linear-gradient(135deg, #FF6B35, #E85D2C)',
+            boxShadow: '0 0 0 2px rgba(255,107,53,0.2), 0 0 0 1px rgba(255,255,255,0.08)',
+          }}
+        >
+          {initials}
+          {/* Online indicator dot */}
+          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-income border-2 border-ghana-dark" />
+        </button>
+      </div>
     </header>
   );
 }
