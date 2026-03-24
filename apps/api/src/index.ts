@@ -20,6 +20,7 @@ import { ious } from './routes/ious.js';
 import { investments } from './routes/investments.js';
 import { susu } from './routes/susu/index.js';
 import { collector } from './routes/collector.js';
+import { notifications } from './routes/notifications.js';
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -118,6 +119,9 @@ app.use('/api/v1/susu/*', authMiddleware, rateLimitMiddleware);
 // Collector (Market Women's Digital Collector)
 app.use('/api/v1/collector', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/collector/*', authMiddleware, rateLimitMiddleware);
+// IMPORTANT: Both bare path AND wildcard required — GET / and GET /unread-count need the first, nested routes need the second.
+app.use('/api/v1/notifications', authMiddleware, rateLimitMiddleware);
+app.use('/api/v1/notifications/*', authMiddleware, rateLimitMiddleware);
 
 app.route('/api/v1/users', users);
 app.route('/api/v1/accounts', accounts);
@@ -136,6 +140,7 @@ app.route('/api/v1/ious', ious);
 app.route('/api/v1/investments', investments);
 app.route('/api/v1/susu', susu);
 app.route('/api/v1/collector', collector);
+app.route('/api/v1/notifications', notifications);
 
 // Health check
 app.get('/api/v1/health', (c) => {
@@ -159,4 +164,12 @@ app.onError((err, c) => {
   );
 });
 
-export default app;
+export default {
+  fetch: (req: Request, env: Env, ctx: ExecutionContext) => app.fetch(req, env, ctx),
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    const { NotificationService } = await import('./lib/notifications.js');
+    const service = new NotificationService(env);
+    const deleted = await service.purgeExpired(30);
+    console.log(`[cron] Purged ${deleted} expired notifications`);
+  },
+};

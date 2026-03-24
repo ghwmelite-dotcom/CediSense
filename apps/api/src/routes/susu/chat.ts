@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { AppType } from './index.js';
 import { generateId } from './index.js';
+import { NotificationService } from '../../lib/notifications.js';
 import {
   susuMessageSchema,
   messageReactionSchema,
@@ -459,6 +460,23 @@ chat.post('/groups/:id/messages', async (c) => {
     attachment_name: null,
     attachment_size: null,
   } : null;
+
+  // Emit chat notification via waitUntil — uses throttle logic inside NotificationService
+  if (message) {
+    c.executionCtx.waitUntil(
+      new NotificationService(c.env).emit({
+        type: 'susu_chat_message',
+        groupId,
+        actorId: userId,
+        data: {
+          actorName: message.sender_name,
+          preview: message.content.slice(0, 80),
+          referenceId: message.id,
+          referenceType: 'message',
+        },
+      }).catch(() => undefined)
+    );
+  }
 
   return c.json({ data: message }, 201);
 });

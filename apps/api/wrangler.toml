@@ -24,3 +24,6 @@ id = "70fe9b86b5f4407dbfa022d6aec53a3f"
 [[r2_buckets]]
 binding = "R2"
 bucket_name = "cedisense-uploads"
+
+[triggers]
+crons = ["0 3 * * *"]

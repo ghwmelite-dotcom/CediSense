@@ -11,12 +11,14 @@ import {
   welfareClaimApproveSchema,
 } from '@cedisense/shared';
 import type { SusuVariant } from '@cedisense/shared';
+import { withNotification } from '../../lib/with-notification.js';
+import { NotificationService } from '../../lib/notifications.js';
 
 const claims = new Hono<AppType>();
 
 // ─── POST /groups/:id/early-payout — request an early payout ─────────────────
 
-claims.post('/groups/:id/early-payout', async (c) => {
+claims.post('/groups/:id/early-payout', withNotification(async (c) => {
   const userId = c.get('userId');
   const groupId = c.req.param('id');
 
@@ -101,7 +103,27 @@ claims.post('/groups/:id/early-payout', async (c) => {
       my_vote: null,
     },
   }, 201);
-});
+}, (c, data) => {
+  // data = early payout request row
+  const groupId = c.req.param('id') ?? '';
+  if (!groupId) return null;
+  const d = data as {
+    id?: string;
+    requester_name?: string;
+    amount_pesewas?: number;
+  };
+  return {
+    type: 'susu_vote_opened',
+    groupId,
+    actorId: c.get('userId'),
+    data: {
+      actorName: d.requester_name ?? 'A member',
+      amount_pesewas: d.amount_pesewas,
+      referenceId: d.id,
+      referenceType: 'early_payout_request',
+    },
+  };
+}));
 
 // ─── GET /groups/:id/early-payout — get active early payout request ──────────
 
@@ -236,16 +258,22 @@ claims.post('/groups/:id/early-payout/:requestId/vote', async (c) => {
   const totalMembers = countRow?.cnt ?? 0;
 
   // Auto-approve if votes_for >= votes_needed
+  let earlyPayoutResolved = false;
+  let earlyPayoutOutcome: string | undefined;
   if (updated.votes_for >= updated.votes_needed) {
     await c.env.DB.prepare(
       `UPDATE early_payout_requests SET status = 'approved', resolved_at = datetime('now') WHERE id = ?`
     ).bind(requestId).run();
+    earlyPayoutResolved = true;
+    earlyPayoutOutcome = 'approved';
   }
   // Auto-deny if it's impossible to reach majority
   else if (updated.votes_against > totalMembers - updated.votes_needed) {
     await c.env.DB.prepare(
       `UPDATE early_payout_requests SET status = 'denied', resolved_at = datetime('now') WHERE id = ?`
     ).bind(requestId).run();
+    earlyPayoutResolved = true;
+    earlyPayoutOutcome = 'denied';
   }
 
   // Return final state
@@ -258,6 +286,24 @@ claims.post('/groups/:id/early-payout/:requestId/vote', async (c) => {
 
   if (!final) {
     return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
+  // Emit vote-resolved notification only when the vote just concluded
+  if (earlyPayoutResolved) {
+    c.executionCtx.waitUntil(
+      new NotificationService(c.env).emit({
+        type: 'susu_vote_resolved',
+        groupId,
+        actorId: userId,
+        data: {
+          actorName: 'Group',
+          outcome: 'Early payout request',
+          status: earlyPayoutOutcome,
+          referenceId: requestId,
+          referenceType: 'early_payout_request',
+        },
+      }).catch(() => undefined)
+    );
   }
 
   return c.json({
@@ -335,7 +381,7 @@ claims.post('/groups/:id/early-payout/:requestId/pay', async (c) => {
 
 // ─── POST /groups/:id/funeral-claim — submit a funeral claim ─────────────────
 
-claims.post('/groups/:id/funeral-claim', async (c) => {
+claims.post('/groups/:id/funeral-claim', withNotification(async (c) => {
   const userId = c.get('userId');
   const groupId = c.req.param('id');
 
@@ -438,7 +484,27 @@ claims.post('/groups/:id/funeral-claim', async (c) => {
       my_vote: null,
     },
   }, 201);
-});
+}, (c, data) => {
+  // data = funeral claim row
+  const groupId = c.req.param('id') ?? '';
+  if (!groupId) return null;
+  const d = data as {
+    id?: string;
+    claimant_name?: string;
+    deceased_name?: string;
+  };
+  return {
+    type: 'susu_claim_filed',
+    groupId,
+    actorId: c.get('userId'),
+    data: {
+      actorName: d.claimant_name ?? 'A member',
+      claimType: 'Funeral',
+      referenceId: d.id,
+      referenceType: 'funeral_claim',
+    },
+  };
+}));
 
 // ─── GET /groups/:id/funeral-claim — get active funeral claim ────────────────
 
@@ -564,16 +630,22 @@ claims.post('/groups/:id/funeral-claim/:claimId/vote', async (c) => {
   const totalMembers = countRow?.cnt ?? 0;
 
   // Auto-approve if approved_by_count >= threshold
+  let funeralClaimResolved = false;
+  let funeralClaimOutcome: string | undefined;
   if (updated.approved_by_count >= updated.approval_threshold) {
     await c.env.DB.prepare(
       `UPDATE funeral_claims SET status = 'approved', resolved_at = datetime('now') WHERE id = ?`
     ).bind(claimId).run();
+    funeralClaimResolved = true;
+    funeralClaimOutcome = 'approved';
   }
   // Auto-deny if it's impossible to reach threshold
   else if (updated.denied_by_count > totalMembers - updated.approval_threshold) {
     await c.env.DB.prepare(
       `UPDATE funeral_claims SET status = 'denied', resolved_at = datetime('now') WHERE id = ?`
     ).bind(claimId).run();
+    funeralClaimResolved = true;
+    funeralClaimOutcome = 'denied';
   }
 
   // Return final state
@@ -586,6 +658,24 @@ claims.post('/groups/:id/funeral-claim/:claimId/vote', async (c) => {
 
   if (!final) {
     return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
+  // Emit vote-resolved notification only when the claim just concluded
+  if (funeralClaimResolved) {
+    c.executionCtx.waitUntil(
+      new NotificationService(c.env).emit({
+        type: 'susu_vote_resolved',
+        groupId,
+        actorId: userId,
+        data: {
+          actorName: 'Group',
+          outcome: 'Funeral claim',
+          status: funeralClaimOutcome,
+          referenceId: claimId,
+          referenceType: 'funeral_claim',
+        },
+      }).catch(() => undefined)
+    );
   }
 
   return c.json({
@@ -777,7 +867,7 @@ claims.post('/groups/:id/guarantee-claim', async (c) => {
 
 // ─── POST /groups/:id/welfare-claim — submit a welfare claim ──────────────────
 
-claims.post('/groups/:id/welfare-claim', async (c) => {
+claims.post('/groups/:id/welfare-claim', withNotification(async (c) => {
   const userId = c.get('userId');
   const groupId = c.req.param('id');
 
@@ -825,7 +915,29 @@ claims.post('/groups/:id/welfare-claim', async (c) => {
   ).bind(claimId).first<WelfareClaimRow & { claimant_name: string }>();
 
   return c.json({ data: claim }, 201);
-});
+}, (c, data) => {
+  // data = welfare claim row
+  const groupId = c.req.param('id') ?? '';
+  if (!groupId) return null;
+  const d = data as {
+    id?: string;
+    claimant_name?: string;
+    claim_type?: string;
+    amount_requested_pesewas?: number;
+  };
+  return {
+    type: 'susu_claim_filed',
+    groupId,
+    actorId: c.get('userId'),
+    data: {
+      actorName: d.claimant_name ?? 'A member',
+      claimType: d.claim_type ?? 'Welfare',
+      amount_pesewas: d.amount_requested_pesewas,
+      referenceId: d.id,
+      referenceType: 'welfare_claim',
+    },
+  };
+}));
 
 // ─── GET /groups/:id/welfare-claims — list all welfare claims ────────────────
 

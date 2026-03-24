@@ -8,6 +8,9 @@ export interface Env {
   AI: Ai;
   JWT_SECRET: string;
   ENVIRONMENT: string;
+  VAPID_PUBLIC_KEY: string;
+  VAPID_PRIVATE_KEY: string;
+  VAPID_CONTACT_EMAIL: string;
 }
 
 // Variables injected by middleware (e.g., auth middleware sets userId)
