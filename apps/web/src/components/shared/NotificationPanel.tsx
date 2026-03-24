@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Notification } from '@cedisense/shared';
+import { usePushSubscription } from '../../hooks/usePushSubscription';
 import { NotificationItem } from './NotificationItem';
 
 interface NotificationPanelProps {
@@ -16,6 +17,43 @@ interface NotificationPanelProps {
 function getDeepLink(notification: Notification): string {
   if (notification.group_id) return `/susu?group=${notification.group_id}`;
   return '/susu';
+}
+
+function PushToggle() {
+  const { isSupported, permission, subscribe, unsubscribe } = usePushSubscription();
+  if (!isSupported) return null;
+
+  if (permission === 'denied') {
+    return <span className="text-[10px] text-white/30">Push blocked</span>;
+  }
+
+  const enabled = permission === 'granted';
+
+  return (
+    <button
+      type="button"
+      onClick={enabled ? unsubscribe : subscribe}
+      className="text-white/50 hover:text-white/70 transition-colors"
+      aria-label={enabled ? 'Disable push notifications' : 'Enable push notifications'}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {enabled ? (
+          <>
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </>
+        ) : (
+          <>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            <path d="M18.63 13A17.89 17.89 0 0 1 18 8" />
+            <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14" />
+            <path d="M18 8a6 6 0 0 0-9.33-5" />
+            <line x1="1" y1="1" x2="23" y2="23" />
+          </>
+        )}
+      </svg>
+    </button>
+  );
 }
 
 export function NotificationPanel({
@@ -73,15 +111,18 @@ export function NotificationPanel({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
         <h2 className="text-sm font-semibold text-white">Notifications</h2>
-        {hasUnread && (
-          <button
-            type="button"
-            onClick={onMarkAllRead}
-            className="text-xs text-info hover:text-info/80 transition-colors"
-          >
-            Mark all read
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {hasUnread && (
+            <button
+              type="button"
+              onClick={onMarkAllRead}
+              className="text-xs text-info hover:text-info/80 transition-colors"
+            >
+              Mark all read
+            </button>
+          )}
+          <PushToggle />
+        </div>
       </div>
 
       {/* List */}
