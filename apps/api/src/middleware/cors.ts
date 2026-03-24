@@ -9,10 +9,16 @@ export function corsMiddleware() {
         'https://cedisense.com',
         'https://www.cedisense.com',
         'https://cedisense.pages.dev',
+        'https://admin.cedisense.pages.dev',
       ];
 
       // Allow Pages preview deploys (valid Cloudflare preview hash: 8 hex chars)
       if (origin?.match(/^https:\/\/[a-f0-9]{8}\.cedisense\.pages\.dev$/)) {
+        return origin;
+      }
+
+      // Allow admin preview deploys
+      if (origin?.match(/^https:\/\/[a-f0-9]{8}\.admin\.cedisense\.pages\.dev$/)) {
         return origin;
       }
 
@@ -27,7 +33,7 @@ export function corsMiddleware() {
 
       return '';
     },
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
     maxAge: 86400,

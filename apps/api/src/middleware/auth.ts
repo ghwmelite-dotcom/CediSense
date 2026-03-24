@@ -30,5 +30,18 @@ export const authMiddleware = createMiddleware<{
   }
 
   c.set('userId', payload.sub);
+
+  // Reject deactivated accounts before processing the request
+  const userRow = await c.env.DB.prepare(
+    'SELECT is_active FROM users WHERE id = ?'
+  ).bind(payload.sub).first<{ is_active: number }>();
+
+  if (userRow?.is_active === 0) {
+    return c.json(
+      { error: { code: 'ACCOUNT_DEACTIVATED', message: 'This account has been deactivated' } },
+      403
+    );
+  }
+
   await next();
 });

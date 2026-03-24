@@ -164,6 +164,17 @@ export function NotificationPanel({
           </>
         )}
       </div>
+
+      {/* See all footer */}
+      <div className="border-t border-white/5 px-4 py-2.5">
+        <button
+          type="button"
+          onClick={() => { navigate('/notifications'); onClose(); }}
+          className="w-full text-center text-xs text-info hover:text-info/80 transition-colors font-medium"
+        >
+          See all notifications
+        </button>
+      </div>
     </div>
   );
 }

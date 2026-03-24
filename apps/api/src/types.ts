@@ -16,6 +16,7 @@ export interface Env {
 // Variables injected by middleware (e.g., auth middleware sets userId)
 export interface Variables {
   userId: string;
+  adminRole?: 'admin' | 'superadmin';
 }
 
 // Hono app type with our bindings and variables
