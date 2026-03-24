@@ -198,9 +198,14 @@ export function SusuPage() {
     frequency: SusuFrequency;
     max_members: number;
   }) {
-    await api.post('/susu/groups', data);
+    const newGroup = await api.post<{ id: string }>('/susu/groups', data);
     setCreateOpen(false);
     await fetchGroups();
+    // Auto-select the newly created group
+    if (newGroup?.id) {
+      const details = await api.get<SusuGroupWithDetails>(`/susu/groups/${newGroup.id}`);
+      setSelectedGroup(details);
+    }
   }
 
   // ── Join ────────────────────────────────────────────────────────────────────
@@ -208,9 +213,14 @@ export function SusuPage() {
   async function handleJoin(inviteCode: string) {
     setJoinError(null);
     try {
-      await api.post('/susu/groups/join', { invite_code: inviteCode });
+      const joined = await api.post<{ group_id: string }>('/susu/groups/join', { invite_code: inviteCode });
       setJoinOpen(false);
       await fetchGroups();
+      // Auto-select the joined group
+      if (joined?.group_id) {
+        const details = await api.get<SusuGroupWithDetails>(`/susu/groups/${joined.group_id}`);
+        setSelectedGroup(details);
+      }
     } catch (err) {
       // Map API error codes to UI error types
       const message = err instanceof Error ? err.message.toLowerCase() : '';
