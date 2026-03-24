@@ -102,7 +102,7 @@ export function AuthModal({ open, onClose, initialMode = 'signin', onSuccess }: 
       role="dialog"
       aria-modal="true"
       aria-label={mode === 'signin' ? 'Sign in to CediSense' : 'Create a CediSense account'}
-      className="fixed inset-0 z-[100] flex items-center justify-center px-4"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center px-0 sm:px-4"
       onClick={handleBackdropClick}
       style={{
         backdropFilter: isIn ? 'blur(12px)' : 'blur(0px)',
@@ -114,12 +114,12 @@ export function AuthModal({ open, onClose, initialMode = 'signin', onSuccess }: 
       {/* Modal card */}
       <div
         ref={modalRef}
-        className="relative w-full max-w-md rounded-2xl overflow-hidden"
+        className="relative w-full max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[95vh] overflow-y-auto"
         style={{
           background: '#14142A',
           border: '1px solid rgba(212,168,67,0.08)',
           boxShadow: '0 0 80px rgba(212,168,67,0.08), 0 25px 60px rgba(0,0,0,0.5)',
-          transform: isIn ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(16px)',
+          transform: isIn ? 'scale(1) translateY(0)' : 'scale(1) translateY(100%)',
           opacity: isIn ? 1 : 0,
           transition: 'transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease-out',
         }}
@@ -136,7 +136,7 @@ export function AuthModal({ open, onClose, initialMode = 'signin', onSuccess }: 
           </svg>
         </button>
 
-        <div className="px-6 pt-8 pb-8 sm:px-8">
+        <div className="px-5 pt-6 pb-6 sm:px-8 sm:pt-8 sm:pb-8">
           {/* Logo */}
           <div className="text-center mb-6">
             <div className="relative inline-flex items-center justify-center w-12 h-12 rounded-xl mb-4">

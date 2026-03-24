@@ -90,17 +90,17 @@ export function RegisterForm({ onSuccess, onSwitchMode }: RegisterFormProps) {
       )}
 
       <div>
-        <label className="section-label block mb-2.5">Full Name</label>
+        <label className="section-label block mb-2">Full Name</label>
         <input ref={nameRef} type="text" placeholder="Kwame Asante" value={name} onChange={(e) => setName(e.target.value)} className="input-premium" required />
       </div>
 
       <div className="space-y-1.5">
-        <label className="section-label block mb-2.5">Phone Number</label>
-        <div className="flex gap-2">
+        <label className="section-label block mb-2">Phone Number</label>
+        <div className="flex flex-col min-[400px]:flex-row gap-2">
           <select
             value={countryCode}
             onChange={(e) => setCountryCode(e.target.value)}
-            className="w-[130px] bg-white/[0.06] border border-white/10 rounded-xl px-3 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold appearance-none cursor-pointer shrink-0"
+            className="w-full min-[400px]:w-[120px] bg-white/[0.06] border border-white/10 rounded-xl px-3 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold appearance-none cursor-pointer shrink-0"
             aria-label="Country code"
           >
             {COUNTRY_CODES.map((cc) => (
@@ -109,25 +109,25 @@ export function RegisterForm({ onSuccess, onSwitchMode }: RegisterFormProps) {
           </select>
           <input type="tel" placeholder={isInternational ? '7123 456789' : '024 123 4567'} value={phone} onChange={(e) => setPhone(e.target.value)} className="input-premium flex-1" required />
         </div>
-        {isInternational && (
-          <p className="text-muted text-xs px-1">International number detected. You can also add an email below.</p>
-        )}
       </div>
 
-      <div>
-        <label className="section-label block mb-2.5">
-          Email {isInternational ? '' : <span className="text-muted/60">(optional)</span>}
-        </label>
-        <input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="input-premium" />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
+      {isInternational && (
         <div>
-          <label className="section-label block mb-2.5">Create PIN</label>
-          <input type="password" inputMode="numeric" maxLength={4} placeholder="----" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} className="input-premium text-center text-xl tracking-[0.4em] placeholder:tracking-[0.2em]" required />
+          <label className="section-label block mb-2">
+            Email <span className="text-muted/60">(optional)</span>
+          </label>
+          <input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="input-premium" />
+          <p className="text-muted text-xs mt-1.5 px-1">For account recovery only</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2.5">
+        <div>
+          <label className="section-label block mb-2">Create PIN</label>
+          <input type="password" inputMode="numeric" maxLength={4} placeholder="----" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} className="input-premium text-center text-lg sm:text-xl tracking-[0.3em] sm:tracking-[0.4em] placeholder:tracking-[0.2em]" required />
         </div>
         <div>
-          <label className="section-label block mb-2.5">Confirm PIN</label>
+          <label className="section-label block mb-2">Confirm PIN</label>
           <input
             type="password"
             inputMode="numeric"
@@ -135,7 +135,7 @@ export function RegisterForm({ onSuccess, onSwitchMode }: RegisterFormProps) {
             placeholder="----"
             value={confirmPin}
             onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            className={`input-premium text-center text-xl tracking-[0.4em] placeholder:tracking-[0.2em] ${
+            className={`input-premium text-center text-lg sm:text-xl tracking-[0.3em] sm:tracking-[0.4em] placeholder:tracking-[0.2em] ${
               pinsMatch ? '!shadow-[0_0_0_2px_rgba(52,211,153,0.2)]' : pinsMismatch ? '!shadow-[0_0_0_2px_rgba(239,68,68,0.2)]' : ''
             }`}
             required

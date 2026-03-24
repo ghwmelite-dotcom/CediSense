@@ -2,31 +2,23 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ApiRequestError } from '@/lib/api';
 
-type LoginMethod = 'phone' | 'email';
-
 interface LoginFormProps {
   onSuccess: () => void;
   onSwitchMode: () => void;
 }
 
 export function LoginForm({ onSuccess, onSwitchMode }: LoginFormProps) {
-  const [loginMethod, setLoginMethod] = useState<LoginMethod>('phone');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const phoneRef = useRef<HTMLInputElement>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      if (loginMethod === 'phone') phoneRef.current?.focus();
-      else emailRef.current?.focus();
-    }, 100);
+    const t = setTimeout(() => phoneRef.current?.focus(), 100);
     return () => clearTimeout(t);
-  }, [loginMethod]);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,9 +26,7 @@ export function LoginForm({ onSuccess, onSwitchMode }: LoginFormProps) {
     setLoading(true);
 
     try {
-      const payload = loginMethod === 'phone'
-        ? { phone: phone.replace(/\s|-/g, ''), pin }
-        : { email, pin };
+      const payload = { phone: phone.replace(/\s|-/g, ''), pin };
       await login(payload);
       onSuccess();
     } catch (err) {
@@ -61,43 +51,14 @@ export function LoginForm({ onSuccess, onSwitchMode }: LoginFormProps) {
         </div>
       )}
 
-      {/* Login method toggle */}
-      <div className="flex rounded-lg bg-white/[0.04] p-0.5">
-        <button
-          type="button"
-          onClick={() => setLoginMethod('phone')}
-          className={`flex-1 py-2 rounded-md text-xs font-semibold transition-all duration-200 ${
-            loginMethod === 'phone' ? 'bg-white/10 text-white shadow-sm' : 'text-muted hover:text-text-primary'
-          }`}
-        >
-          Phone
-        </button>
-        <button
-          type="button"
-          onClick={() => setLoginMethod('email')}
-          className={`flex-1 py-2 rounded-md text-xs font-semibold transition-all duration-200 ${
-            loginMethod === 'email' ? 'bg-white/10 text-white shadow-sm' : 'text-muted hover:text-text-primary'
-          }`}
-        >
-          Email
-        </button>
+      <div>
+        <label className="section-label block mb-2">Phone Number</label>
+        <input ref={phoneRef} type="tel" placeholder="024 123 4567 or +44 7123 456789" value={phone} onChange={(e) => setPhone(e.target.value)} className="input-premium" required />
       </div>
 
-      {loginMethod === 'phone' ? (
-        <div>
-          <label className="section-label block mb-2.5">Phone Number</label>
-          <input ref={phoneRef} type="tel" placeholder="024 123 4567 or +44 7123 456789" value={phone} onChange={(e) => setPhone(e.target.value)} className="input-premium" required />
-        </div>
-      ) : (
-        <div>
-          <label className="section-label block mb-2.5">Email Address</label>
-          <input ref={emailRef} type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="input-premium" required />
-        </div>
-      )}
-
       <div>
-        <label className="section-label block mb-2.5">PIN</label>
-        <input type="password" inputMode="numeric" maxLength={4} placeholder="----" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} className="input-premium text-center text-2xl tracking-[0.5em] placeholder:tracking-[0.3em]" required />
+        <label className="section-label block mb-2">PIN</label>
+        <input type="password" inputMode="numeric" maxLength={4} placeholder="----" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} className="input-premium text-center text-xl sm:text-2xl tracking-[0.4em] sm:tracking-[0.5em] placeholder:tracking-[0.3em]" required />
       </div>
 
       <button type="submit" disabled={loading || pin.length < 4} className="btn-primary w-full mt-1">
