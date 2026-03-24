@@ -27,6 +27,7 @@ const NEVER_CACHE = [
   '/api/v1/auth',
   '/api/v1/ai',
   '/api/v1/export',
+  '/api/v1/notifications',
 ];
 
 // ── INSTALL ──────────────────────────────────────────
@@ -55,6 +56,54 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+});
+
+// ── PUSH (Web Push notifications) ───────────────────────
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = { title: 'CediSense', body: event.data.text() };
+  }
+
+  const options = {
+    body: payload.body || '',
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/icon-72x72.png',
+    data: payload.data || {},
+    vibrate: [100, 50, 100],
+    tag: payload.data?.notificationId || 'cedisense-notification',
+    renotify: true,
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title || 'CediSense', options)
+  );
+});
+
+// ── NOTIFICATION CLICK (deep-link navigation) ───────────
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const url = event.notification.data?.url || '/';
+  const fullUrl = new URL(url, self.location.origin).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          return client.focus().then((focused) => {
+            if (focused) focused.navigate(fullUrl);
+            return focused;
+          });
+        }
+      }
+      return clients.openWindow(fullUrl);
+    })
+  );
 });
 
 // ── FETCH ────────────────────────────────────────────
