@@ -43,7 +43,11 @@ export function LandingPage() {
 
   const handleAuthSuccess = useCallback(() => {
     setAuthOpen(false);
-    navigate('/dashboard');
+    // Delay navigation to let React flush the auth state update
+    // Without this, ProtectedRoute sees isAuthenticated=false and redirects back to /login
+    requestAnimationFrame(() => {
+      navigate('/dashboard');
+    });
   }, [navigate]);
 
   const scrollToFeatures = useCallback(() => {

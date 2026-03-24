@@ -47,16 +47,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchUser]);
 
   const login = useCallback(async (input: LoginInput) => {
-    const { accessToken, user: publicUser } = await api.post<AuthResponse>('/auth/login', input);
+    const { accessToken } = await api.post<AuthResponse>('/auth/login', input);
     setAccessToken(accessToken);
-    await fetchUser();
-  }, [fetchUser]);
+    // Fetch full user and set state directly — don't rely on fetchUser
+    // to avoid race condition where navigation happens before state propagates
+    const userData = await api.get<User>('/users/me');
+    setUser(userData);
+  }, []);
 
   const register = useCallback(async (input: RegisterInput) => {
-    const { accessToken, user: publicUser } = await api.post<AuthResponse>('/auth/register', input);
+    const { accessToken } = await api.post<AuthResponse>('/auth/register', input);
     setAccessToken(accessToken);
-    await fetchUser();
-  }, [fetchUser]);
+    const userData = await api.get<User>('/users/me');
+    setUser(userData);
+  }, []);
 
   const logout = useCallback(async () => {
     try {
