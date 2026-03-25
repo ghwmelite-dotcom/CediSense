@@ -13,6 +13,7 @@ import {
 import type { SusuVariant } from '@cedisense/shared';
 import { withNotification } from '../../lib/with-notification.js';
 import { NotificationService } from '../../lib/notifications.js';
+import { logAuditAction } from '../../lib/audit.js';
 
 const claims = new Hono<AppType>();
 
@@ -290,6 +291,12 @@ claims.post('/groups/:id/early-payout/:requestId/vote', async (c) => {
 
   // Emit vote-resolved notification only when the vote just concluded
   if (earlyPayoutResolved) {
+    void logAuditAction(c.env.DB, {
+      adminId: userId, action: `claim.${earlyPayoutOutcome}`,
+      targetType: 'claim', targetId: requestId,
+      details: { group_id: groupId, claim_type: 'early_payout' },
+    });
+
     c.executionCtx.waitUntil(
       new NotificationService(c.env).emit({
         type: 'susu_vote_resolved',
@@ -662,6 +669,12 @@ claims.post('/groups/:id/funeral-claim/:claimId/vote', async (c) => {
 
   // Emit vote-resolved notification only when the claim just concluded
   if (funeralClaimResolved) {
+    void logAuditAction(c.env.DB, {
+      adminId: userId, action: `claim.${funeralClaimOutcome}`,
+      targetType: 'claim', targetId: claimId,
+      details: { group_id: groupId, claim_type: 'funeral' },
+    });
+
     c.executionCtx.waitUntil(
       new NotificationService(c.env).emit({
         type: 'susu_vote_resolved',
@@ -1022,6 +1035,12 @@ claims.post('/groups/:id/welfare-claim/:claimId/approve', async (c) => {
      WHERE wc.id = ?`
   ).bind(claimId).first<WelfareClaimRow & { claimant_name: string }>();
 
+  void logAuditAction(c.env.DB, {
+    adminId: userId, action: `claim.${status}`,
+    targetType: 'claim', targetId: claimId,
+    details: { group_id: groupId, claim_type: 'welfare' },
+  });
+
   return c.json({ data: updated });
 });
 
@@ -1066,6 +1085,12 @@ claims.post('/groups/:id/welfare-claim/:claimId/deny', async (c) => {
      INNER JOIN susu_members sm ON sm.id = wc.claimant_member_id
      WHERE wc.id = ?`
   ).bind(claimId).first<WelfareClaimRow & { claimant_name: string }>();
+
+  void logAuditAction(c.env.DB, {
+    adminId: userId, action: 'claim.denied',
+    targetType: 'claim', targetId: claimId,
+    details: { group_id: groupId, claim_type: 'welfare' },
+  });
 
   return c.json({ data: updated });
 });

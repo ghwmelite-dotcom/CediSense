@@ -149,7 +149,12 @@ contributions.post('/groups/:id/contributions', withNotification(async (c) => {
 
     // Execute batch transaction for all writes so far
     if (batchStatements.length > 0) {
-      await c.env.DB.batch(batchStatements);
+      try {
+        await c.env.DB.batch(batchStatements);
+      } catch (err) {
+        console.error(JSON.stringify({ type: 'batch_error', action: 'contribution', groupId, error: err instanceof Error ? err.message : String(err) }));
+        return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to record contribution' } }, 500);
+      }
     }
 
     // Recompute score from current stats and fetch streak for badge checks

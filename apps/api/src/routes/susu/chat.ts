@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { AppType } from './index.js';
 import { generateId } from './index.js';
 import { NotificationService } from '../../lib/notifications.js';
+import { logAuditAction } from '../../lib/audit.js';
 import {
   susuMessageSchema,
   messageReactionSchema,
@@ -96,55 +97,62 @@ chat.get('/groups/:id/messages', async (c) => {
   // Reverse so oldest-first
   const rawMessages = [...results].reverse();
 
-  // Enrich with reactions and read_by_count
-  const messages = [];
+  // Batch fetch reactions and read counts for all messages (avoid N+1)
+  const messageIds = rawMessages.map(m => m.id);
+  const reactionsMap = new Map<string, Array<{emoji: string, count: number, reacted_by_me: boolean}>>();
+  const readCountMap = new Map<string, number>();
 
-  // Get total member count for read receipt calculation
-  const memberCountRow = await c.env.DB.prepare(
-    `SELECT COUNT(*) AS cnt FROM susu_members WHERE group_id = ?`
-  ).bind(groupId).first<{ cnt: number }>();
-  const totalMembers = memberCountRow?.cnt ?? 0;
+  if (messageIds.length > 0) {
+    const placeholders = messageIds.map(() => '?').join(',');
 
-  for (const msg of rawMessages) {
-    // Get reactions for this message
-    const { results: reactionRows } = await c.env.DB.prepare(
-      `SELECT emoji, COUNT(*) AS count,
+    const { results: allReactions } = await c.env.DB.prepare(
+      `SELECT message_id, emoji, COUNT(*) AS count,
               MAX(CASE WHEN member_id = ? THEN 1 ELSE 0 END) AS reacted_by_me
        FROM message_reactions
-       WHERE message_id = ?
-       GROUP BY emoji`
-    ).bind(myMember.id, msg.id).all<{ emoji: string; count: number; reacted_by_me: number }>();
+       WHERE message_id IN (${placeholders})
+       GROUP BY message_id, emoji`
+    ).bind(myMember.id, ...messageIds).all<{ message_id: string; emoji: string; count: number; reacted_by_me: number }>();
 
-    // Count how many members have read up to or past this message
-    const readCountRow = await c.env.DB.prepare(
-      `SELECT COUNT(*) AS cnt FROM chat_read_receipts crr
-       WHERE crr.group_id = ? AND crr.last_read_message_id IS NOT NULL
-       AND (SELECT rowid FROM susu_messages WHERE id = crr.last_read_message_id) >= (SELECT rowid FROM susu_messages WHERE id = ?)`
-    ).bind(groupId, msg.id).first<{ cnt: number }>();
+    const { results: allReadCounts } = await c.env.DB.prepare(
+      `SELECT last_read_message_id AS message_id, COUNT(*) AS cnt
+       FROM chat_read_receipts
+       WHERE group_id = ? AND last_read_message_id IN (${placeholders})
+       GROUP BY last_read_message_id`
+    ).bind(groupId, ...messageIds).all<{ message_id: string; cnt: number }>();
 
-    messages.push({
-      id: msg.id,
-      content: msg.deleted_at ? '' : msg.content,
-      sender_name: msg.sender_name,
-      sender_user_id: msg.sender_user_id,
-      created_at: msg.created_at,
-      reply_to_id: msg.reply_to_id,
-      reply_to_content: msg.reply_to_content ? (msg.reply_to_content.length > 100 ? msg.reply_to_content.slice(0, 100) + '...' : msg.reply_to_content) : null,
-      reply_to_sender: msg.reply_to_sender,
-      edited_at: msg.edited_at,
-      is_deleted: msg.deleted_at !== null,
-      reactions: reactionRows.map((r) => ({
+    for (const r of allReactions ?? []) {
+      const msgId = r.message_id;
+      if (!reactionsMap.has(msgId)) reactionsMap.set(msgId, []);
+      reactionsMap.get(msgId)!.push({
         emoji: r.emoji,
         count: r.count,
         reacted_by_me: r.reacted_by_me === 1,
-      })),
-      read_by_count: readCountRow?.cnt ?? 0,
-      attachment_url: msg.attachment_key ? `/susu/groups/${groupId}/messages/${msg.id}/attachment` : null,
-      attachment_type: msg.attachment_type,
-      attachment_name: msg.attachment_name,
-      attachment_size: msg.attachment_size,
-    });
+      });
+    }
+
+    for (const r of allReadCounts ?? []) {
+      readCountMap.set(r.message_id, r.cnt);
+    }
   }
+
+  const messages = rawMessages.map((msg) => ({
+    id: msg.id,
+    content: msg.deleted_at ? '' : msg.content,
+    sender_name: msg.sender_name,
+    sender_user_id: msg.sender_user_id,
+    created_at: msg.created_at,
+    reply_to_id: msg.reply_to_id,
+    reply_to_content: msg.reply_to_content ? (msg.reply_to_content.length > 100 ? msg.reply_to_content.slice(0, 100) + '...' : msg.reply_to_content) : null,
+    reply_to_sender: msg.reply_to_sender,
+    edited_at: msg.edited_at,
+    is_deleted: msg.deleted_at !== null,
+    reactions: reactionsMap.get(msg.id) ?? [],
+    read_by_count: readCountMap.get(msg.id) ?? 0,
+    attachment_url: msg.attachment_key ? `/susu/groups/${groupId}/messages/${msg.id}/attachment` : null,
+    attachment_type: msg.attachment_type,
+    attachment_name: msg.attachment_name,
+    attachment_size: msg.attachment_size,
+  }));
 
   return c.json({ data: messages });
 });
@@ -214,46 +222,62 @@ chat.get('/groups/:id/messages/poll', async (c) => {
   for (let i = 0; i < maxChecks; i++) {
     const newMsgs = await checkForNew();
     if (newMsgs.length > 0) {
-      // Enrich with reactions and read_by_count
-      const enriched = [];
-      for (const msg of newMsgs) {
-        const { results: reactionRows } = await c.env.DB.prepare(
-          `SELECT emoji, COUNT(*) AS count,
+      // Batch fetch reactions and read counts (avoid N+1)
+      const pollMessageIds = newMsgs.map(m => m.id);
+      const pollReactionsMap = new Map<string, Array<{emoji: string, count: number, reacted_by_me: boolean}>>();
+      const pollReadCountMap = new Map<string, number>();
+
+      if (pollMessageIds.length > 0) {
+        const placeholders = pollMessageIds.map(() => '?').join(',');
+
+        const { results: allReactions } = await c.env.DB.prepare(
+          `SELECT message_id, emoji, COUNT(*) AS count,
                   MAX(CASE WHEN member_id = ? THEN 1 ELSE 0 END) AS reacted_by_me
            FROM message_reactions
-           WHERE message_id = ?
-           GROUP BY emoji`
-        ).bind(myMember.id, msg.id).all<{ emoji: string; count: number; reacted_by_me: number }>();
+           WHERE message_id IN (${placeholders})
+           GROUP BY message_id, emoji`
+        ).bind(myMember.id, ...pollMessageIds).all<{ message_id: string; emoji: string; count: number; reacted_by_me: number }>();
 
-        const readCountRow = await c.env.DB.prepare(
-          `SELECT COUNT(*) AS cnt FROM chat_read_receipts crr
-           WHERE crr.group_id = ? AND crr.last_read_message_id IS NOT NULL
-           AND (SELECT rowid FROM susu_messages WHERE id = crr.last_read_message_id) >= (SELECT rowid FROM susu_messages WHERE id = ?)`
-        ).bind(groupId, msg.id).first<{ cnt: number }>();
+        const { results: allReadCounts } = await c.env.DB.prepare(
+          `SELECT last_read_message_id AS message_id, COUNT(*) AS cnt
+           FROM chat_read_receipts
+           WHERE group_id = ? AND last_read_message_id IN (${placeholders})
+           GROUP BY last_read_message_id`
+        ).bind(groupId, ...pollMessageIds).all<{ message_id: string; cnt: number }>();
 
-        enriched.push({
-          id: msg.id,
-          content: msg.deleted_at ? '' : msg.content,
-          sender_name: msg.sender_name,
-          sender_user_id: msg.sender_user_id,
-          created_at: msg.created_at,
-          reply_to_id: msg.reply_to_id,
-          reply_to_content: msg.reply_to_content ? (msg.reply_to_content.length > 100 ? msg.reply_to_content.slice(0, 100) + '...' : msg.reply_to_content) : null,
-          reply_to_sender: msg.reply_to_sender,
-          edited_at: msg.edited_at,
-          is_deleted: msg.deleted_at !== null,
-          reactions: reactionRows.map((r) => ({
+        for (const r of allReactions ?? []) {
+          const msgId = r.message_id;
+          if (!pollReactionsMap.has(msgId)) pollReactionsMap.set(msgId, []);
+          pollReactionsMap.get(msgId)!.push({
             emoji: r.emoji,
             count: r.count,
             reacted_by_me: r.reacted_by_me === 1,
-          })),
-          read_by_count: readCountRow?.cnt ?? 0,
-          attachment_url: msg.attachment_key ? `/susu/groups/${groupId}/messages/${msg.id}/attachment` : null,
-          attachment_type: msg.attachment_type,
-          attachment_name: msg.attachment_name,
-          attachment_size: msg.attachment_size,
-        });
+          });
+        }
+
+        for (const r of allReadCounts ?? []) {
+          pollReadCountMap.set(r.message_id, r.cnt);
+        }
       }
+
+      const enriched = newMsgs.map((msg) => ({
+        id: msg.id,
+        content: msg.deleted_at ? '' : msg.content,
+        sender_name: msg.sender_name,
+        sender_user_id: msg.sender_user_id,
+        created_at: msg.created_at,
+        reply_to_id: msg.reply_to_id,
+        reply_to_content: msg.reply_to_content ? (msg.reply_to_content.length > 100 ? msg.reply_to_content.slice(0, 100) + '...' : msg.reply_to_content) : null,
+        reply_to_sender: msg.reply_to_sender,
+        edited_at: msg.edited_at,
+        is_deleted: msg.deleted_at !== null,
+        reactions: pollReactionsMap.get(msg.id) ?? [],
+        read_by_count: pollReadCountMap.get(msg.id) ?? 0,
+        attachment_url: msg.attachment_key ? `/susu/groups/${groupId}/messages/${msg.id}/attachment` : null,
+        attachment_type: msg.attachment_type,
+        attachment_name: msg.attachment_name,
+        attachment_size: msg.attachment_size,
+      }));
 
       return c.json({ data: enriched, has_more: newMsgs.length === 50 });
     }
@@ -693,6 +717,15 @@ chat.delete('/groups/:id/messages/:messageId', async (c) => {
   await c.env.DB.prepare(
     `UPDATE susu_messages SET deleted_at = datetime('now') WHERE id = ?`
   ).bind(messageId).run();
+
+  // Log audit when a moderator (creator) deletes another member's message
+  if (msg.member_id !== myMember.id && group?.creator_id === userId) {
+    void logAuditAction(c.env.DB, {
+      adminId: userId, action: 'message.delete',
+      targetType: 'message', targetId: messageId,
+      details: { group_id: groupId },
+    });
+  }
 
   return c.body(null, 204);
 });

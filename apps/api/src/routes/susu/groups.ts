@@ -7,6 +7,7 @@ import {
 } from '@cedisense/shared';
 import type { SusuVariant, AgriculturalPhase } from '@cedisense/shared';
 import { getTrustLabel } from '../../lib/trust-score.js';
+import { logAuditAction } from '../../lib/audit.js';
 
 const groups = new Hono<AppType>();
 
@@ -718,8 +719,8 @@ groups.delete('/groups/:id', async (c) => {
   const groupId = c.req.param('id');
 
   const group = await c.env.DB.prepare(
-    `SELECT id, creator_id FROM susu_groups WHERE id = ?`
-  ).bind(groupId).first<{ id: string; creator_id: string }>();
+    `SELECT id, name, creator_id FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; name: string; creator_id: string }>();
 
   if (!group) {
     return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
@@ -732,6 +733,12 @@ groups.delete('/groups/:id', async (c) => {
   await c.env.DB.prepare(
     `DELETE FROM susu_groups WHERE id = ?`
   ).bind(groupId).run();
+
+  void logAuditAction(c.env.DB, {
+    adminId: userId, action: 'group.delete',
+    targetType: 'group', targetId: groupId,
+    details: { group_name: group.name },
+  });
 
   return c.body(null, 204);
 });

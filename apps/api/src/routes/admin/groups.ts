@@ -100,10 +100,12 @@ groups.get('/groups', async (c) => {
   binds.push(fetchLimit);
 
   const sql = `
-    SELECT g.*,
-      (SELECT COUNT(*) FROM susu_members WHERE group_id = g.id) as member_count
+    SELECT g.id, g.name, g.variant, g.is_active, g.creator_id, g.created_at, g.max_members,
+           COUNT(sm.id) as member_count
     FROM susu_groups g
+    LEFT JOIN susu_members sm ON sm.group_id = g.id
     WHERE ${conditions.join(' AND ')}
+    GROUP BY g.id
     ORDER BY g.created_at DESC, g.id DESC
     LIMIT ?
   `;

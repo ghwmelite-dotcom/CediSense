@@ -83,9 +83,15 @@ gamification.get('/groups/:id/leaderboard', async (c) => {
        COALESCE(ts.score, 50) AS trust_score,
        COALESCE(ts.current_streak, 0) AS current_streak,
        COALESCE(ts.total_contributions, 0) AS total_contributions,
-       (SELECT COUNT(*) FROM susu_badges b WHERE b.user_id = sm.user_id AND b.group_id = ?) AS badges_count
+       COALESCE(badge_counts.cnt, 0) AS badges_count
      FROM susu_members sm
      LEFT JOIN trust_scores ts ON ts.user_id = sm.user_id
+     LEFT JOIN (
+       SELECT user_id, COUNT(*) AS cnt
+       FROM susu_badges
+       WHERE group_id = ?
+       GROUP BY user_id
+     ) badge_counts ON badge_counts.user_id = sm.user_id
      WHERE sm.group_id = ?
      ORDER BY trust_score DESC, current_streak DESC, total_contributions DESC`
   ).bind(groupId, groupId).all<{

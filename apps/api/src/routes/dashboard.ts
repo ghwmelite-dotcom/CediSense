@@ -112,6 +112,8 @@ dashboard.get('/', async (c) => {
     total_pesewas: dailyMap.get(date) ?? 0,
   }));
 
+  c.header('Cache-Control', 'private, max-age=60, stale-while-revalidate=300');
+
   return c.json({
     data: {
       month,
