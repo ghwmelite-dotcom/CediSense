@@ -498,6 +498,7 @@ export interface SusuMember {
   user_id: string;
   display_name: string;
   payout_order: number;
+  pre_paid: boolean;
   joined_at: string;
 }
 

@@ -173,6 +173,11 @@ chat.get('/groups/:id/messages/poll', async (c) => {
     return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
   }
 
+  // Update presence on each poll (keeps last_active_at fresh while chat is open)
+  await c.env.DB.prepare(
+    `UPDATE chat_read_receipts SET last_active_at = datetime('now') WHERE member_id = ? AND group_id = ?`
+  ).bind(myMember.id, groupId).run();
+
   const afterId = c.req.query('after');
   const timeoutSec = Math.min(parseInt(c.req.query('timeout') ?? '25', 10) || 25, 25);
 
@@ -359,6 +364,27 @@ chat.get('/groups/:id/typing', async (c) => {
   return c.json({ data: typingUsers });
 });
 
+// ─── GET /groups/:id/presence — get chat presence for requesting member ──────
+
+chat.get('/groups/:id/presence', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  const row = await c.env.DB.prepare(
+    `SELECT last_active_at FROM chat_read_receipts WHERE member_id = ? AND group_id = ?`
+  ).bind(myMember.id, groupId).first<{ last_active_at: string | null }>();
+
+  return c.json({ data: { last_active_at: row?.last_active_at ?? null } });
+});
+
 // ─── POST /groups/:id/messages/read — mark messages as read ─────────────────
 
 chat.post('/groups/:id/messages/read', async (c) => {
@@ -394,10 +420,10 @@ chat.post('/groups/:id/messages/read', async (c) => {
   }
 
   await c.env.DB.prepare(
-    `INSERT INTO chat_read_receipts (member_id, group_id, last_read_message_id, last_read_at)
-     VALUES (?, ?, ?, datetime('now'))
+    `INSERT INTO chat_read_receipts (member_id, group_id, last_read_message_id, last_read_at, last_active_at)
+     VALUES (?, ?, ?, datetime('now'), datetime('now'))
      ON CONFLICT(member_id, group_id)
-     DO UPDATE SET last_read_message_id = excluded.last_read_message_id, last_read_at = excluded.last_read_at`
+     DO UPDATE SET last_read_message_id = excluded.last_read_message_id, last_read_at = excluded.last_read_at, last_active_at = datetime('now')`
   ).bind(myMember.id, groupId, body.last_message_id).run();
 
   return c.body(null, 204);

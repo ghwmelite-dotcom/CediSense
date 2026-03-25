@@ -62,6 +62,7 @@ export interface SusuMemberRow {
   user_id: string;
   display_name: string;
   payout_order: number;
+  pre_paid: number;
   joined_at: string;
 }
 

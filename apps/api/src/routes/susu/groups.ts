@@ -253,7 +253,7 @@ groups.get('/groups/:id', async (c) => {
   }
 
   const { results: members } = await c.env.DB.prepare(
-    `SELECT sm.id, sm.group_id, sm.user_id, sm.display_name, sm.payout_order, sm.joined_at,
+    `SELECT sm.id, sm.group_id, sm.user_id, sm.display_name, sm.payout_order, sm.pre_paid, sm.joined_at,
             COALESCE(ts.score, 50) AS trust_score
      FROM susu_members sm
      LEFT JOIN trust_scores ts ON ts.user_id = sm.user_id
@@ -280,6 +280,7 @@ groups.get('/groups/:id', async (c) => {
 
   const membersWithContrib = members.map((m) => ({
     ...m,
+    pre_paid: m.pre_paid === 1,
     has_contributed_this_round: contributedSet.has(m.id),
     trust_score: m.trust_score,
     trust_label: getTrustLabel(m.trust_score),

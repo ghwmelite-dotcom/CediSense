@@ -81,7 +81,7 @@ members.post('/groups/join', withNotification(async (c) => {
   ).bind(memberId, group.id, userId, user?.name ?? 'Member', payout_order).run();
 
   const member = await c.env.DB.prepare(
-    `SELECT id, group_id, user_id, display_name, payout_order, joined_at
+    `SELECT id, group_id, user_id, display_name, payout_order, pre_paid, joined_at
      FROM susu_members WHERE id = ?`
   ).bind(memberId).first<SusuMemberRow>();
 
@@ -89,7 +89,7 @@ members.post('/groups/join', withNotification(async (c) => {
     return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
   }
 
-  return c.json({ data: member }, 201);
+  return c.json({ data: { ...member, pre_paid: member.pre_paid === 1 } }, 201);
 }, (c, data) => {
   // data = the SusuMemberRow for the newly joined member
   const d = data as {
@@ -153,6 +153,64 @@ members.post('/groups/:id/leave', async (c) => {
   }
 
   return c.body(null, 204);
+});
+
+// ─── PATCH /groups/:id/members/:memberId/pre-paid — toggle pre-paid (creator only) ──
+
+members.patch('/groups/:id/members/:memberId/pre-paid', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const memberId = c.req.param('memberId');
+
+  // Verify requesting user is the group creator
+  const group = await c.env.DB.prepare(
+    `SELECT id, creator_id FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; creator_id: string }>();
+
+  if (!group) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  if (group.creator_id !== userId) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only the group creator can toggle pre-paid status' } }, 403);
+  }
+
+  let body: { pre_paid: boolean };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: { code: 'INVALID_JSON', message: 'Invalid JSON body' } }, 400);
+  }
+
+  if (typeof body.pre_paid !== 'boolean') {
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: 'pre_paid must be a boolean' } }, 422);
+  }
+
+  // Update the member's pre_paid status
+  const result = await c.env.DB.prepare(
+    `UPDATE susu_members SET pre_paid = ? WHERE id = ? AND group_id = ?`
+  ).bind(body.pre_paid ? 1 : 0, memberId, groupId).run();
+
+  if (!result.meta.changes) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Member not found in this group' } }, 404);
+  }
+
+  // Return the updated member
+  const updated = await c.env.DB.prepare(
+    `SELECT id, group_id, user_id, display_name, payout_order, pre_paid, joined_at
+     FROM susu_members WHERE id = ? AND group_id = ?`
+  ).bind(memberId, groupId).first<SusuMemberRow>();
+
+  if (!updated) {
+    return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch updated member' } }, 500);
+  }
+
+  return c.json({
+    data: {
+      ...updated,
+      pre_paid: updated.pre_paid === 1,
+    },
+  });
 });
 
 // ─── PUT /groups/:id/reorder — reorder payout positions (creator only) ────────
@@ -221,11 +279,11 @@ members.put('/groups/:id/reorder', async (c) => {
 
   // Return updated members
   const { results: updated } = await c.env.DB.prepare(
-    `SELECT id, group_id, user_id, display_name, payout_order, joined_at
+    `SELECT id, group_id, user_id, display_name, payout_order, pre_paid, joined_at
      FROM susu_members WHERE group_id = ? ORDER BY payout_order ASC`
   ).bind(groupId).all<SusuMemberRow>();
 
-  return c.json({ data: updated });
+  return c.json({ data: updated.map((m) => ({ ...m, pre_paid: m.pre_paid === 1 })) });
 });
 
 export default members;
