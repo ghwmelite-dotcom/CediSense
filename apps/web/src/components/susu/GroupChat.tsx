@@ -68,6 +68,9 @@ export function GroupChat({ groupId, currentUserId, isCreator = false, members =
   // Unread separator
   const [lastReadId, setLastReadId] = useState<string | null>(null);
 
+  // Presence: last active timestamp
+  const [lastActiveAt, setLastActiveAt] = useState<string | null>(null);
+
   // Voice recording state
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
 
@@ -488,6 +491,13 @@ export function GroupChat({ groupId, currentUserId, isCreator = false, members =
       .catch(() => {});
   }, [groupId]);
 
+  // ─── Fetch presence (last active timestamp) ────────────────────────────
+  useEffect(() => {
+    api.get<{ last_active_at: string | null }>(`/susu/groups/${groupId}/presence`)
+      .then((data) => setLastActiveAt(data.last_active_at))
+      .catch(() => {});
+  }, [groupId]);
+
   // ─── Pin / Unpin handlers ─────────────────────────────────────────────
   async function handlePin(messageId: string) {
     try {
@@ -644,8 +654,24 @@ export function GroupChat({ groupId, currentUserId, isCreator = false, members =
             const isOwn = msg.sender_user_id === currentUserId;
             const prevMsg = messages[i - 1] ?? null;
 
+            // Show "while you were away" separator at the boundary
+            const showAwaySeparator = lastActiveAt && prevMsg
+              && prevMsg.sender_user_id !== currentUserId
+              && msg.sender_user_id !== currentUserId
+              && new Date(prevMsg.created_at) <= new Date(lastActiveAt)
+              && new Date(msg.created_at) > new Date(lastActiveAt);
+
             return (
               <div key={msg.id}>
+                {/* While you were away separator */}
+                {showAwaySeparator && (
+                  <div className="flex items-center gap-3 py-3 px-4">
+                    <div className="flex-1 h-px bg-gold/20" />
+                    <span className="text-gold/60 text-[11px] font-medium whitespace-nowrap">While you were away</span>
+                    <div className="flex-1 h-px bg-gold/20" />
+                  </div>
+                )}
+
                 {/* Unread separator */}
                 {lastReadId && prevMsg?.id === lastReadId && msg.id !== lastReadId && (
                   <div className="flex items-center gap-3 py-2 px-4">

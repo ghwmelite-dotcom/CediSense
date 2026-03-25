@@ -4,6 +4,7 @@ import { MarkdownContent } from './MarkdownContent';
 import { LinkPreviewCard } from './LinkPreviewCard';
 import { VoicePlayer } from './VoicePlayer';
 import { EmojiPicker } from './EmojiPicker';
+import { getMemberColor } from './chatColors';
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -83,7 +84,10 @@ export function ChatMessage({
     >
       {/* Sender name (others only, hidden when grouped) */}
       {!isOwn && !isGrouped && (
-        <span className="text-[11px] text-muted font-medium px-1">
+        <span
+          className="text-[11px] font-semibold px-1"
+          style={{ color: getMemberColor(msg.sender_user_id) }}
+        >
           {msg.sender_name}
         </span>
       )}
@@ -144,8 +148,9 @@ export function ChatMessage({
                 ? 'bg-white/5 text-muted italic rounded-2xl border border-white/[0.06] py-2.5 px-4'
                 : isOwn
                   ? `bg-gold/15 text-white rounded-2xl rounded-br-md ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'}`
-                  : `bg-[#1D1D30] text-white rounded-2xl rounded-bl-md border border-white/[0.08] ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'}`
+                  : `bg-[#1D1D30] text-white rounded-2xl rounded-bl-md border border-white/[0.08] ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'} border-l-[3px]`
               }`}
+            style={!isOwn && !msg.is_deleted ? { borderLeftColor: getMemberColor(msg.sender_user_id) } : undefined}
           >
             {msg.is_deleted ? (
               'This message was deleted'
