@@ -87,13 +87,24 @@ export function NotificationsSection() {
           ) : (
             <>
               {/* Push notification master toggle */}
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-white text-sm font-medium">Push Notifications</p>
-                  <p className="text-muted text-xs mt-0.5">Get alerts on your device</p>
+              {typeof window !== 'undefined' && 'PushManager' in window ? (
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-white text-sm font-medium">Push Notifications</p>
+                    <p className="text-muted text-xs mt-0.5">Get alerts on your device</p>
+                  </div>
+                  <ToggleSwitch value={prefs.push_enabled} onToggle={togglePush} label="Push notifications" />
                 </div>
-                <ToggleSwitch value={prefs.push_enabled} onToggle={togglePush} />
-              </div>
+              ) : (
+                <div className="flex items-center gap-3 py-1">
+                  <div>
+                    <p className="text-white text-sm font-medium">Push Notifications</p>
+                    <p className="text-white/30 text-xs mt-0.5">
+                      Not available on this device. Use in-app notifications via the bell icon instead.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Group notifications */}
               {groups.length > 0 && (
@@ -111,6 +122,7 @@ export function NotificationsSection() {
                           <ToggleSwitch
                             value={!isMuted}
                             onToggle={() => toggleGroupMute(group.id)}
+                            label={`Notifications for ${group.name}`}
                           />
                         </div>
                       );
@@ -136,12 +148,13 @@ export function NotificationsSection() {
   );
 }
 
-function ToggleSwitch({ value, onToggle }: { value: boolean; onToggle: () => void }) {
+function ToggleSwitch({ value, onToggle, label }: { value: boolean; onToggle: () => void; label: string }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={value}
+      aria-label={label}
       onClick={onToggle}
       className={`relative w-10 h-6 rounded-full transition-colors min-w-[40px] ${
         value ? 'bg-income' : 'bg-white/10'

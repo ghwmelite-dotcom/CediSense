@@ -16,7 +16,7 @@ export function NotificationBell() {
   } = useNotifications();
 
   return (
-    <div className="relative">
+    <>
       <button
         type="button"
         onClick={toggle}
@@ -47,17 +47,29 @@ export function NotificationBell() {
         )}
       </button>
 
+      {/* Full-screen overlay — escapes all stacking contexts */}
       {isOpen && (
-        <NotificationPanel
-          notifications={notifications}
-          isLoading={isLoading}
-          hasMore={hasMore}
-          onMarkRead={markRead}
-          onMarkAllRead={markAllRead}
-          onLoadMore={loadMore}
-          onClose={close}
-        />
+        <div className="fixed inset-0 z-[9999]" onClick={close}>
+          {/* Scrim */}
+          <div className="absolute inset-0 bg-black/40" />
+
+          {/* Panel — centered on mobile, top-right on desktop */}
+          <div
+            className="absolute md:top-16 md:right-4 inset-x-4 top-4 bottom-auto md:inset-x-auto md:w-[380px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <NotificationPanel
+              notifications={notifications}
+              isLoading={isLoading}
+              hasMore={hasMore}
+              onMarkRead={markRead}
+              onMarkAllRead={markAllRead}
+              onLoadMore={loadMore}
+              onClose={close}
+            />
+          </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }

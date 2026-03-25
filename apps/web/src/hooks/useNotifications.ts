@@ -38,7 +38,7 @@ export function useNotifications(): UseNotificationsReturn {
     };
 
     fetchCount();
-    const interval = setInterval(fetchCount, 30000);
+    const interval = setInterval(fetchCount, 120000);
 
     return () => {
       mountedRef.current = false;

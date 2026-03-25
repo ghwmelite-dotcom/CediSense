@@ -64,9 +64,10 @@ export function NotificationsPage() {
     setIsLoading(true);
 
     try {
-      let url = `/notifications?limit=30`;
-      if (cursorParam) url += `&cursor=${cursorParam}`;
-      if (filter === 'unread') url += `&unread_only=1`;
+      const params = new URLSearchParams({ limit: '30' });
+      if (cursorParam) params.set('cursor', cursorParam);
+      if (filter === 'unread') params.set('unread_only', '1');
+      const url = `/notifications?${params}`;
 
       const data = await api.get<NotificationsResponse>(url);
       setNotifications(prev => cursorParam ? [...prev, ...data.items] : data.items);
@@ -144,9 +145,9 @@ export function NotificationsPage() {
   const hasUnread = notifications.some(n => n.is_read === 0);
 
   return (
-    <div className="pb-24 motion-safe:animate-fade-in">
+    <div className="pb-24 px-4 md:px-6 motion-safe:animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-5 pt-5">
         <div className="flex items-center gap-2.5">
           <div className="w-0.5 h-5 rounded-full bg-[#FF6B35]/50" />
           <h1 className="text-text-primary text-xl font-bold font-display tracking-tight">
@@ -157,7 +158,7 @@ export function NotificationsPage() {
           <button
             type="button"
             onClick={handleMarkAllRead}
-            className="text-xs text-info hover:text-info/80 transition-colors font-medium"
+            className="text-xs text-info hover:text-info/80 transition-colors font-medium min-h-[44px] flex items-center"
           >
             Mark all read
           </button>
@@ -170,7 +171,7 @@ export function NotificationsPage() {
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+            className={`px-3 py-2.5 min-h-[44px] rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
               filter === f.key
                 ? 'bg-gold/20 text-gold'
                 : 'bg-white/[0.04] text-muted hover:text-text-primary'
@@ -197,8 +198,15 @@ export function NotificationsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-white/30">
-            <span className="text-3xl mb-2">🔔</span>
-            <p className="text-sm">No notifications yet</p>
+            <svg className="w-8 h-8 mb-3 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <p className="text-sm">
+              {filter !== 'all' && filter !== 'unread' && notifications.length > 0
+                ? 'No matching notifications for this filter'
+                : 'No notifications yet'}
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-white/5">
