@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Notification } from '@cedisense/shared';
 import { usePushSubscription } from '../../hooks/usePushSubscription';
@@ -69,6 +69,18 @@ export function NotificationPanel({
   onClose,
 }: NotificationPanelProps) {
   const navigate = useNavigate();
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [onClose]);
 
   // Close on Escape
   useEffect(() => {
@@ -89,9 +101,10 @@ export function NotificationPanel({
 
   return (
     <div
+      ref={panelRef}
       role="dialog"
       aria-label="Notifications"
-      className="w-full max-h-[480px] rounded-2xl border border-white/5 overflow-hidden motion-safe:animate-fadeIn"
+      className="absolute top-full right-0 mt-2 w-[min(380px,calc(100vw-2rem))] max-h-[480px] rounded-2xl border border-white/5 overflow-hidden motion-safe:animate-fadeIn z-50"
       style={{
         background: 'rgba(20, 20, 42, 0.98)',
         backdropFilter: 'blur(20px)',
