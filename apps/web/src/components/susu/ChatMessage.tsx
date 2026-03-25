@@ -90,7 +90,7 @@ export function ChatMessage({
 
       {/* Reply preview */}
       {msg.reply_to_id && msg.reply_to_content && (
-        <div className={`max-w-[75%] text-[11px] text-muted/80 px-3 py-1 rounded-lg
+        <div className={`max-w-[85%] md:max-w-[75%] text-[11px] text-muted/80 px-3 py-1 rounded-lg
           ${isOwn ? 'bg-gold/8 border-l-2 border-gold/40' : 'bg-white/5 border-l-2 border-white/20'}`}>
           <span className="font-medium">{msg.reply_to_sender}</span>
           <p className="truncate">{msg.reply_to_content}</p>
@@ -98,7 +98,7 @@ export function ChatMessage({
       )}
 
       {/* Message bubble + action row */}
-      <div className={`relative flex items-center gap-1 max-w-[85%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+      <div className={`relative flex items-center gap-1 max-w-[85%] md:max-w-[75%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
         {/* Message bubble */}
         {isEditing ? (
           <div className="flex flex-col gap-1.5 w-full max-w-[75%]">
@@ -139,12 +139,12 @@ export function ChatMessage({
           </div>
         ) : (
           <div
-            className={`text-sm leading-relaxed break-words overflow-hidden
+            className={`text-[15px] leading-relaxed break-words overflow-hidden
               ${msg.is_deleted
-                ? 'bg-white/5 text-muted italic rounded-2xl border border-white/[0.06] py-2 px-3'
+                ? 'bg-white/5 text-muted italic rounded-2xl border border-white/[0.06] py-2.5 px-4'
                 : isOwn
-                  ? `bg-gold/15 text-white rounded-2xl rounded-br-md ${msg.attachment_url ? 'p-1' : 'py-2 px-3'}`
-                  : `bg-[#1D1D30] text-white rounded-2xl rounded-bl-md border border-white/[0.08] ${msg.attachment_url ? 'p-1' : 'py-2 px-3'}`
+                  ? `bg-gold/15 text-white rounded-2xl rounded-br-md ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'}`
+                  : `bg-[#1D1D30] text-white rounded-2xl rounded-bl-md border border-white/[0.08] ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'}`
               }`}
           >
             {msg.is_deleted ? (
@@ -210,8 +210,8 @@ export function ChatMessage({
                 )}
                 {/* Text content */}
                 {msg.content && (
-                  <span className={msg.attachment_url ? 'block px-2 py-1.5 text-sm' : ''}>
-                    <MarkdownContent content={msg.content} className="text-sm" />
+                  <span className={msg.attachment_url ? 'block px-2 py-1.5 text-[15px]' : ''}>
+                    <MarkdownContent content={msg.content} className="text-[15px]" />
                   </span>
                 )}
                 {/* Link preview for first URL in content */}

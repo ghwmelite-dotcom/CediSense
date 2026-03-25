@@ -555,7 +555,7 @@ export function GroupChat({ groupId, currentUserId, isCreator = false, members =
   }
 
   return (
-    <div className="flex flex-col h-[520px] rounded-2xl overflow-hidden border border-white/10 bg-ghana-surface">
+    <div className="flex flex-col h-[calc(100vh-200px)] md:h-[calc(100vh-180px)] min-h-[400px] rounded-2xl overflow-hidden border border-white/10 bg-ghana-surface">
       {/* Search bar */}
       <ChatSearchBar
         searchOpen={searchOpen}
@@ -583,7 +583,7 @@ export function GroupChat({ groupId, currentUserId, isCreator = false, members =
       {/* Message list */}
       <div
         ref={listRef}
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-3 overscroll-contain"
+        className="flex-1 overflow-y-auto px-4 md:px-6 py-5 space-y-1 overscroll-contain"
       >
         {/* Load older button */}
         {hasOlder && !loading && (

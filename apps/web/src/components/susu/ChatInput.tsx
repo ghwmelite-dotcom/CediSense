@@ -85,7 +85,7 @@ export function ChatInput({
     <>
       {/* Reply preview bar */}
       {replyTo && (
-        <div className="px-4 py-2 border-t border-white/10 bg-ghana-surface/90 flex items-center gap-2">
+        <div className="px-4 md:px-5 py-3 border-t border-white/10 bg-ghana-surface/90 flex items-center gap-2">
           <div className="flex-1 border-l-2 border-gold/50 pl-2 min-w-0">
             <p className="text-[11px] text-gold font-medium">Replying to {replyTo.sender_name}</p>
             <p className="text-[11px] text-muted truncate">{replyTo.content}</p>
@@ -114,7 +114,7 @@ export function ChatInput({
       )}
 
       {/* Input bar */}
-      <div className="sticky bottom-0 border-t border-white/10 bg-ghana-surface/80 backdrop-blur-md px-4 py-3">
+      <div className="sticky bottom-0 border-t border-white/10 bg-ghana-surface/80 backdrop-blur-md px-3 md:px-5 py-3 md:py-4">
         {/* Hidden file input */}
         <input
           ref={fileInputRef}
@@ -123,7 +123,7 @@ export function ChatInput({
           className="hidden"
           onChange={(e) => void onFileSelect(e)}
         />
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-1.5 md:gap-2.5">
           {/* Search icon */}
           <button
             type="button"
@@ -141,13 +141,13 @@ export function ChatInput({
             value={content}
             onChange={handleInputChangeWithMention}
             onKeyDown={onKeyDown}
-            placeholder="Message the group\u2026"
-            rows={1}
+            placeholder="Type a message"
+            rows={2}
             maxLength={500}
             aria-label="Chat message"
-            className="flex-1 resize-none rounded-xl bg-white/5 border border-white/15 text-white
-              placeholder:text-muted text-sm px-3 py-2.5 focus:outline-none focus:border-gold/50
-              focus:ring-1 focus:ring-gold/30 transition-all min-h-[44px] max-h-[120px]"
+            className="flex-1 resize-none rounded-2xl bg-white/5 border border-white/15 text-white
+              placeholder:text-muted text-[15px] px-4 py-3 focus:outline-none focus:border-gold/50
+              focus:ring-1 focus:ring-gold/30 transition-all min-h-[48px] max-h-[160px]"
           />
           {/* Paperclip / attach file button */}
           <button
@@ -156,7 +156,7 @@ export function ChatInput({
             disabled={uploading}
             aria-label="Attach file"
             title="Attach image or PDF"
-            className="w-11 h-11 flex items-center justify-center rounded-xl text-muted hover:text-gold
+            className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center rounded-xl text-muted hover:text-gold
               hover:bg-white/5 active:scale-95 transition-all disabled:opacity-40 shrink-0"
           >
             {uploading ? (
@@ -191,7 +191,7 @@ export function ChatInput({
             onClick={onSend}
             disabled={!content.trim() || sending}
             aria-label="Send message"
-            className="w-11 h-11 flex items-center justify-center rounded-xl bg-gold text-ghana-dark
+            className="w-12 h-12 flex items-center justify-center rounded-xl bg-gold text-ghana-dark
               font-bold hover:brightness-110 active:scale-95 transition-all
               disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 shrink-0"
           >
