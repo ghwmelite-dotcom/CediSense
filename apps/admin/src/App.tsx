@@ -2,15 +2,12 @@ import { Routes, Route } from 'react-router-dom';
 import { AdminShell } from '@/components/layout/AdminShell';
 import { AdminProtectedRoute } from '@/components/layout/AdminProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
-
-// Placeholder pages for now
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-white">{title}</h1>
-    </div>
-  );
-}
+import { AuditLogPage } from '@/pages/AuditLogPage';
+import { DashboardPage } from '@/pages/DashboardPage';
+import { UsersPage } from '@/pages/UsersPage';
+import { UserDetailPage } from '@/pages/UserDetailPage';
+import { GroupsPage } from '@/pages/GroupsPage';
+import { GroupDetailPage } from '@/pages/GroupDetailPage';
 
 export default function App() {
   return (
@@ -23,12 +20,12 @@ export default function App() {
           </AdminProtectedRoute>
         }
       >
-        <Route index element={<PlaceholderPage title="Dashboard" />} />
-        <Route path="users" element={<PlaceholderPage title="Users" />} />
-        <Route path="users/:id" element={<PlaceholderPage title="User Detail" />} />
-        <Route path="groups" element={<PlaceholderPage title="Groups" />} />
-        <Route path="groups/:id" element={<PlaceholderPage title="Group Detail" />} />
-        <Route path="audit-log" element={<PlaceholderPage title="Audit Log" />} />
+        <Route index element={<DashboardPage />} />
+        <Route path="users" element={<UsersPage />} />
+        <Route path="users/:id" element={<UserDetailPage />} />
+        <Route path="groups" element={<GroupsPage />} />
+        <Route path="groups/:id" element={<GroupDetailPage />} />
+        <Route path="audit-log" element={<AuditLogPage />} />
       </Route>
     </Routes>
   );
