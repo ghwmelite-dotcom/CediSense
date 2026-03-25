@@ -76,7 +76,7 @@ export function TopBar() {
         <button
           type="button"
           aria-label="Open account menu"
-          className="relative w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
+          className="relative w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
           style={{
             background: 'linear-gradient(135deg, #FF6B35, #E85D2C)',
             boxShadow: '0 0 0 2px rgba(255,107,53,0.2), 0 0 0 1px rgba(255,255,255,0.08)',

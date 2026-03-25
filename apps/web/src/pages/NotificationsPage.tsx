@@ -158,7 +158,7 @@ export function NotificationsPage() {
           <button
             type="button"
             onClick={handleMarkAllRead}
-            className="text-xs text-info hover:text-info/80 transition-colors font-medium min-h-[44px] flex items-center"
+            className="text-xs text-info hover:text-info/80 transition-colors font-medium py-2 flex items-center"
           >
             Mark all read
           </button>

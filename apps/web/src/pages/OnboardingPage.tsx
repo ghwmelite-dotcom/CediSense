@@ -207,7 +207,7 @@ function AccountStep({
                 setSelected(option.id);
                 setAccountName('');
               }}
-              className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 min-h-[100px] ${
+              className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 min-h-[80px] sm:min-h-[100px] ${
                 isSelected
                   ? 'border-gold bg-gold/[0.06] shadow-gold-glow'
                   : 'border-ghana-surface bg-ghana-surface hover:border-muted-dim/30'
@@ -345,7 +345,7 @@ function FeatureStep({ onComplete }: { onComplete: (features: FeatureId[]) => vo
                   {isStar && <span className="mr-1">&#11088;</span>}
                   {feature.name}
                 </div>
-                <p className={`text-muted mt-0.5 leading-relaxed ${isStar ? 'text-sm' : 'text-xs'}`}>
+                <p className={`text-muted mt-0.5 leading-relaxed ${isStar ? 'text-xs sm:text-sm' : 'text-xs'}`}>
                   {feature.description}
                 </p>
               </div>

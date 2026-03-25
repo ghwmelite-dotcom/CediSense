@@ -126,7 +126,7 @@ export function DashboardPage() {
         {/* Greeting -- generous, clean, with date */}
         <div className="motion-safe:animate-fade-in" style={stagger(0, 60)}>
           <p className="section-label">{greeting}</p>
-          <h1 className="text-3xl md:text-4xl font-display font-bold text-text-primary mt-2 tracking-[-0.02em]">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-text-primary mt-2 tracking-[-0.02em]">
             {firstName ? (
               <>
                 {firstName}

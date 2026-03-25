@@ -99,7 +99,7 @@ export function LandingPage() {
           borderBottom: '1px solid rgba(255,255,255,0.04)',
         }}
       >
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-flame font-extrabold text-2xl leading-none">&#x20B5;</span>
             <span className="text-text-primary font-display font-semibold text-lg tracking-[-0.02em]">CediSense</span>

@@ -179,7 +179,7 @@ export function NewUserWelcome({ userName, onDismiss }: Props) {
           </div>
 
           {/* CTAs */}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <button
               onClick={() => handleNavigate('/susu')}
               className="min-h-[44px] px-6 py-2.5 bg-gold text-ghana-dark text-sm font-semibold rounded-xl shadow-gold-btn hover:shadow-gold-glow active:scale-[0.97] transition-all duration-200"
