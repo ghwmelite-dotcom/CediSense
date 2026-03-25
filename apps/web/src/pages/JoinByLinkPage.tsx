@@ -57,12 +57,13 @@ export function JoinByLinkPage() {
     async function attemptJoin() {
       setStatus('joining');
       try {
-        await api.post('/susu/groups/join', { invite_code: code });
+        const result = await api.post<{ group_id: string }>('/susu/groups/join', { invite_code: code });
         if (!cancelled) {
+          const groupId = result?.group_id;
           setStatus('success');
-          // Navigate to susu page after brief delay
+          // Navigate to the specific susu group after brief delay
           setTimeout(() => {
-            if (!cancelled) navigate('/susu', { replace: true });
+            if (!cancelled) navigate(groupId ? `/susu?group=${groupId}` : '/susu', { replace: true });
           }, 1500);
         }
       } catch (err) {
@@ -104,9 +105,9 @@ export function JoinByLinkPage() {
           </div>
 
           <div className="space-y-1">
-            <h1 className="text-white text-xl font-bold">Join a Susu Group</h1>
-            <p className="text-muted text-sm">
-              Sign in to join this susu group on CediSense.
+            <h1 className="text-white text-xl font-bold">You've been invited!</h1>
+            <p className="text-muted text-sm mt-2">
+              Create a free account to join this Susu group. You'll be added automatically after signing up.
             </p>
             {code && (
               <p className="text-gold font-mono text-xs mt-2">
@@ -117,20 +118,20 @@ export function JoinByLinkPage() {
 
           <div className="flex flex-col gap-3">
             <Link
-              to={`/login?returnTo=${encodeURIComponent(returnUrl)}`}
+              to={`/register?returnTo=${encodeURIComponent(returnUrl)}`}
               className="w-full flex items-center justify-center px-4 py-3 rounded-xl
                 bg-gold text-ghana-dark font-semibold text-sm hover:brightness-110
                 active:scale-95 transition-all min-h-[44px]"
             >
-              Sign In
+              Create Account
             </Link>
             <Link
-              to={`/register?returnTo=${encodeURIComponent(returnUrl)}`}
+              to={`/login?returnTo=${encodeURIComponent(returnUrl)}`}
               className="w-full flex items-center justify-center px-4 py-3 rounded-xl
                 border border-white/20 text-white font-semibold text-sm
                 hover:bg-white/10 active:scale-95 transition-all min-h-[44px]"
             >
-              Create Account
+              Sign In
             </Link>
           </div>
         </div>

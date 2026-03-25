@@ -18,6 +18,7 @@ export function LandingPage() {
 
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'register'>('signin');
+  const [returnTo, setReturnTo] = useState<string | null>(null);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -29,9 +30,11 @@ export function LandingPage() {
   // Check URL params for auth modal
   useEffect(() => {
     const auth = searchParams.get('auth');
+    const returnParam = searchParams.get('returnTo');
     if (auth === 'signin' || auth === 'register') {
       setAuthMode(auth);
       setAuthOpen(true);
+      if (returnParam) setReturnTo(returnParam);
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
@@ -43,12 +46,14 @@ export function LandingPage() {
 
   const handleAuthSuccess = useCallback(() => {
     setAuthOpen(false);
+    const destination = returnTo || '/dashboard';
+    setReturnTo(null);
     // Delay navigation to let React flush the auth state update
     // Without this, ProtectedRoute sees isAuthenticated=false and redirects back to /login
     requestAnimationFrame(() => {
-      navigate('/dashboard');
+      navigate(destination);
     });
-  }, [navigate]);
+  }, [navigate, returnTo]);
 
   const scrollToFeatures = useCallback(() => {
     document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
