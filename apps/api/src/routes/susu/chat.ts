@@ -7,6 +7,7 @@ import {
   susuMessageSchema,
   messageReactionSchema,
   editMessageSchema,
+  pinMessageSchema,
 } from '@cedisense/shared';
 
 const chat = new Hono<AppType>();
@@ -152,6 +153,7 @@ chat.get('/groups/:id/messages', async (c) => {
     attachment_type: msg.attachment_type,
     attachment_name: msg.attachment_name,
     attachment_size: msg.attachment_size,
+    mentions: [] as string[],
   }));
 
   return c.json({ data: messages });
@@ -277,6 +279,7 @@ chat.get('/groups/:id/messages/poll', async (c) => {
         attachment_type: msg.attachment_type,
         attachment_name: msg.attachment_name,
         attachment_size: msg.attachment_size,
+        mentions: [] as string[],
       }));
 
       return c.json({ data: enriched, has_more: newMsgs.length === 50 });
@@ -466,6 +469,21 @@ chat.post('/groups/:id/messages', async (c) => {
     deleted_at: string | null;
   }>();
 
+  // Parse @mentions from content
+  const mentionPattern = /@(\w[\w\s]{0,29})/g;
+  const mentionNames = [...parsed.data.content.matchAll(mentionPattern)].map(m => m[1].trim());
+  let mentionedUserIds: string[] = [];
+
+  if (mentionNames.length > 0) {
+    // Look up matching members in the group by display_name
+    const namePlaceholders = mentionNames.map(() => '?').join(',');
+    const { results: mentionedMembers } = await c.env.DB.prepare(
+      `SELECT user_id, display_name FROM susu_members WHERE group_id = ? AND display_name IN (${namePlaceholders})`
+    ).bind(groupId, ...mentionNames).all<{ user_id: string; display_name: string }>();
+
+    mentionedUserIds = mentionedMembers.map(m => m.user_id);
+  }
+
   const message = row ? {
     id: row.id,
     content: row.content,
@@ -483,12 +501,15 @@ chat.post('/groups/:id/messages', async (c) => {
     attachment_type: null,
     attachment_name: null,
     attachment_size: null,
+    mentions: mentionedUserIds,
   } : null;
 
   // Emit chat notification via waitUntil — uses throttle logic inside NotificationService
   if (message) {
+    const notificationService = new NotificationService(c.env);
+
     c.executionCtx.waitUntil(
-      new NotificationService(c.env).emit({
+      notificationService.emit({
         type: 'susu_chat_message',
         groupId,
         actorId: userId,
@@ -500,6 +521,27 @@ chat.post('/groups/:id/messages', async (c) => {
         },
       }).catch(() => undefined)
     );
+
+    // Send targeted mention notifications (separate from general chat notification)
+    if (mentionedUserIds.length > 0) {
+      const mentionNotifications = mentionedUserIds
+        .filter(uid => uid !== userId) // Don't notify yourself
+        .map(uid =>
+          notificationService.emit({
+            type: 'susu_chat_mention',
+            groupId,
+            actorId: userId,
+            data: {
+              actorName: message.sender_name,
+              preview: message.content.slice(0, 80),
+              referenceId: message.id,
+              referenceType: 'message',
+              targetUserId: uid,
+            },
+          }).catch(() => undefined)
+        );
+      c.executionCtx.waitUntil(Promise.all(mentionNotifications));
+    }
   }
 
   return c.json({ data: message }, 201);
@@ -677,6 +719,7 @@ chat.put('/groups/:id/messages/:messageId', async (c) => {
       attachment_type: row.attachment_type,
       attachment_name: row.attachment_name,
       attachment_size: row.attachment_size,
+      mentions: [] as string[],
     },
   });
 });
@@ -793,6 +836,7 @@ chat.get('/groups/:id/messages/search', async (c) => {
       attachment_type: msg.attachment_type,
       attachment_name: msg.attachment_name,
       attachment_size: msg.attachment_size,
+      mentions: [] as string[],
     });
   }
 
@@ -806,8 +850,11 @@ const ALLOWED_ATTACHMENT_TYPES = new Set([
   'image/png',
   'image/gif',
   'application/pdf',
+  'audio/webm',
+  'audio/mp4',
+  'audio/ogg',
+  'audio/mpeg',
 ]);
-const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5 MB
 
 chat.post('/groups/:id/messages/upload', async (c) => {
   const userId = c.get('userId');
@@ -836,11 +883,13 @@ chat.post('/groups/:id/messages/upload', async (c) => {
   }
 
   if (!ALLOWED_ATTACHMENT_TYPES.has(file.type)) {
-    return c.json({ error: { code: 'VALIDATION_ERROR', message: 'File type not allowed. Accepted: JPEG, PNG, GIF, PDF' } }, 400);
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: 'File type not allowed. Accepted: JPEG, PNG, GIF, PDF, audio (WebM, MP4, OGG, MPEG)' } }, 400);
   }
 
-  if (file.size > MAX_ATTACHMENT_SIZE) {
-    return c.json({ error: { code: 'VALIDATION_ERROR', message: 'File too large. Maximum size is 5 MB' } }, 400);
+  const maxSize = file.type.startsWith('audio/') ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    const limitLabel = file.type.startsWith('audio/') ? '10 MB' : '5 MB';
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: `File too large. Maximum size is ${limitLabel}` } }, 400);
   }
 
   const messageId = generateId();
@@ -896,6 +945,7 @@ chat.post('/groups/:id/messages/upload', async (c) => {
     attachment_type: row.attachment_type,
     attachment_name: row.attachment_name,
     attachment_size: row.attachment_size,
+    mentions: [] as string[],
   } : null;
 
   return c.json({ data: message }, 201);
@@ -983,6 +1033,170 @@ chat.get('/unread-total', async (c) => {
   }
 
   return c.json({ data: { total } });
+});
+
+// ─── POST /groups/:id/pin — pin a message (group creator only) ───────────────
+
+chat.post('/groups/:id/pin', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Only group creator can pin
+  const group = await c.env.DB.prepare(
+    `SELECT creator_id FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ creator_id: string }>();
+
+  if (group?.creator_id !== userId) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only the group creator can pin messages' } }, 403);
+  }
+
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: { code: 'INVALID_JSON', message: 'Invalid JSON body' } }, 400);
+  }
+
+  const parsed = pinMessageSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid input' } }, 422);
+  }
+
+  const { message_id } = parsed.data;
+
+  // Verify message belongs to this group
+  const msg = await c.env.DB.prepare(
+    `SELECT id FROM susu_messages WHERE id = ? AND group_id = ? AND deleted_at IS NULL`
+  ).bind(message_id, groupId).first<{ id: string }>();
+
+  if (!msg) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Message not found in this group' } }, 404);
+  }
+
+  // Check max 10 pins per group
+  const pinCount = await c.env.DB.prepare(
+    `SELECT COUNT(*) AS cnt FROM pinned_messages WHERE group_id = ?`
+  ).bind(groupId).first<{ cnt: number }>();
+
+  if ((pinCount?.cnt ?? 0) >= 10) {
+    return c.json({ error: { code: 'LIMIT_REACHED', message: 'Maximum 10 pinned messages per group' } }, 400);
+  }
+
+  // Check if already pinned
+  const existing = await c.env.DB.prepare(
+    `SELECT id FROM pinned_messages WHERE group_id = ? AND message_id = ?`
+  ).bind(groupId, message_id).first<{ id: string }>();
+
+  if (existing) {
+    return c.json({ error: { code: 'ALREADY_PINNED', message: 'Message is already pinned' } }, 409);
+  }
+
+  const pinId = generateId();
+  await c.env.DB.prepare(
+    `INSERT INTO pinned_messages (id, group_id, message_id, pinned_by) VALUES (?, ?, ?, ?)`
+  ).bind(pinId, groupId, message_id, myMember.id).run();
+
+  // Fetch the pinned message with content and sender info
+  const pinned = await c.env.DB.prepare(
+    `SELECT pm.id, pm.message_id, pm.group_id, pm.pinned_by, pm.pinned_at,
+            sm_pinner.display_name AS pinned_by_name,
+            m.content AS message_content,
+            sm_sender.display_name AS message_sender
+     FROM pinned_messages pm
+     JOIN susu_members sm_pinner ON pm.pinned_by = sm_pinner.id
+     JOIN susu_messages m ON pm.message_id = m.id
+     JOIN susu_members sm_sender ON m.member_id = sm_sender.id
+     WHERE pm.id = ?`
+  ).bind(pinId).first<{
+    id: string; message_id: string; group_id: string; pinned_by: string; pinned_at: string;
+    pinned_by_name: string; message_content: string; message_sender: string;
+  }>();
+
+  return c.json({ data: pinned }, 201);
+});
+
+// ─── DELETE /groups/:id/pin/:pinId — unpin a message (group creator only) ────
+
+chat.delete('/groups/:id/pin/:pinId', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+  const pinId = c.req.param('pinId');
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  // Only group creator can unpin
+  const group = await c.env.DB.prepare(
+    `SELECT creator_id FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ creator_id: string }>();
+
+  if (group?.creator_id !== userId) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only the group creator can unpin messages' } }, 403);
+  }
+
+  // Verify pin exists in this group
+  const pin = await c.env.DB.prepare(
+    `SELECT id FROM pinned_messages WHERE id = ? AND group_id = ?`
+  ).bind(pinId, groupId).first<{ id: string }>();
+
+  if (!pin) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Pinned message not found' } }, 404);
+  }
+
+  await c.env.DB.prepare(
+    `DELETE FROM pinned_messages WHERE id = ?`
+  ).bind(pinId).run();
+
+  return c.body(null, 204);
+});
+
+// ─── GET /groups/:id/pins — get pinned messages ─────────────────────────────
+
+chat.get('/groups/:id/pins', async (c) => {
+  const userId = c.get('userId');
+  const groupId = c.req.param('id');
+
+  // Verify membership
+  const myMember = await c.env.DB.prepare(
+    `SELECT id FROM susu_members WHERE group_id = ? AND user_id = ?`
+  ).bind(groupId, userId).first<{ id: string }>();
+
+  if (!myMember) {
+    return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
+  }
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT pm.id, pm.message_id, pm.group_id, pm.pinned_by, pm.pinned_at,
+            sm_pinner.display_name AS pinned_by_name,
+            m.content AS message_content,
+            sm_sender.display_name AS message_sender
+     FROM pinned_messages pm
+     JOIN susu_members sm_pinner ON pm.pinned_by = sm_pinner.id
+     JOIN susu_messages m ON pm.message_id = m.id
+     JOIN susu_members sm_sender ON m.member_id = sm_sender.id
+     WHERE pm.group_id = ?
+     ORDER BY pm.pinned_at DESC`
+  ).bind(groupId).all<{
+    id: string; message_id: string; group_id: string; pinned_by: string; pinned_at: string;
+    pinned_by_name: string; message_content: string; message_sender: string;
+  }>();
+
+  return c.json({ data: results });
 });
 
 export default chat;

@@ -774,6 +774,18 @@ export interface SusuMessage {
   attachment_type: string | null;
   attachment_name: string | null;
   attachment_size: number | null;
+  mentions: string[]; // array of user_ids mentioned in message
+}
+
+export interface PinnedMessage {
+  id: string;
+  message_id: string;
+  group_id: string;
+  pinned_by: string;
+  pinned_by_name: string;
+  message_content: string;
+  message_sender: string;
+  pinned_at: string;
 }
 
 export interface TypingUser {

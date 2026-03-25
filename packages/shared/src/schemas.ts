@@ -397,9 +397,14 @@ export const editMessageSchema = z.object({
   content: z.string().min(1).max(500),
 });
 
+export const pinMessageSchema = z.object({
+  message_id: z.string().min(1),
+});
+
 export type SusuMessageInput = z.infer<typeof susuMessageSchema>;
 export type MessageReactionInput = z.infer<typeof messageReactionSchema>;
 export type EditMessageInput = z.infer<typeof editMessageSchema>;
+export type PinMessageInput = z.infer<typeof pinMessageSchema>;
 
 // ─── Funeral Fund schemas ────────────────────────────────────────────────────
 

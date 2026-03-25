@@ -8,6 +8,7 @@ export const notificationTypeSchema = z.enum([
   'susu_vote_resolved',
   'susu_member_joined',
   'susu_chat_message',
+  'susu_chat_mention',
   'susu_claim_filed',
 ]);
 export type NotificationType = z.infer<typeof notificationTypeSchema>;

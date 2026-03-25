@@ -352,6 +352,8 @@ function buildNotificationBody(
       return { title: 'New Member', body: `${actorName} joined ${groupName}` };
     case 'susu_chat_message':
       return { title: 'New Message', body: `${actorName} in ${groupName}: ${(data.preview as string) ?? ''}`.slice(0, 120) };
+    case 'susu_chat_mention':
+      return { title: 'You were mentioned', body: `${actorName} mentioned you in ${groupName}: ${(data.preview as string) ?? ''}`.slice(0, 120) };
     case 'susu_claim_filed':
       return { title: 'Claim Filed', body: `${(data.claimType as string) ?? 'A'} claim filed in ${groupName} — review needed` };
     default:
