@@ -9,7 +9,7 @@ export function corsMiddleware() {
         'https://cedisense.com',
         'https://www.cedisense.com',
         'https://cedisense.pages.dev',
-        'https://admin.cedisense.pages.dev',
+        'https://cedisense-admin.pages.dev',
       ];
 
       // Allow Pages preview deploys (valid Cloudflare preview hash: 8 hex chars)
@@ -18,7 +18,7 @@ export function corsMiddleware() {
       }
 
       // Allow admin preview deploys
-      if (origin?.match(/^https:\/\/[a-f0-9]{8}\.admin\.cedisense\.pages\.dev$/)) {
+      if (origin?.match(/^https:\/\/[a-f0-9]{8}\.cedisense-admin\.pages\.dev$/)) {
         return origin;
       }
 
