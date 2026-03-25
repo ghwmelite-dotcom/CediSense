@@ -1,7 +1,7 @@
 import { createMiddleware } from 'hono/factory';
 import type { Env, Variables } from '../types.js';
 
-const GENERAL_LIMIT = 100;
+const GENERAL_LIMIT = 200;
 const GENERAL_WINDOW_SECONDS = 60;
 
 /**
@@ -36,12 +36,8 @@ export const rateLimitMiddleware = createMiddleware<{
     );
   }
 
-  // Increment counter — only set TTL on first write to preserve the window
-  if (count === 0) {
-    await c.env.KV.put(key, '1', { expirationTtl: GENERAL_WINDOW_SECONDS });
-  } else {
-    await c.env.KV.put(key, String(count + 1));
-  }
+  // Increment counter — always include TTL to prevent orphaned keys
+  await c.env.KV.put(key, String(count + 1), { expirationTtl: GENERAL_WINDOW_SECONDS });
 
   await next();
 });
@@ -69,12 +65,8 @@ export async function incrementLoginAttempts(kv: KVNamespace, phone: string): Pr
   const key = `rate:login:${phone}`;
   const current = await kv.get(key);
   const count = current ? parseInt(current, 10) : 0;
-  // Only set TTL on first write to preserve the 15-minute window
-  if (count === 0) {
-    await kv.put(key, '1', { expirationTtl: 900 });
-  } else {
-    await kv.put(key, String(count + 1));
-  }
+  // Always include TTL to prevent orphaned keys
+  await kv.put(key, String(count + 1), { expirationTtl: 900 });
 }
 
 export async function clearLoginAttempts(kv: KVNamespace, phone: string): Promise<void> {

@@ -38,7 +38,7 @@ app.use('*', async (c, next) => {
   c.header('X-XSS-Protection', '0');
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
   c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  c.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com; font-src 'self' https://fonts.gstatic.com https://cdn.fontshare.com; img-src 'self' data: blob: https://flagcdn.com; connect-src 'self' https://cedisense-api.ghwmelite.workers.dev; frame-ancestors 'none'");
+  c.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://api.fontshare.com; font-src 'self' https://fonts.gstatic.com https://cdn.fontshare.com; img-src 'self' data: blob: https://flagcdn.com; connect-src 'self' https://cedisense-api.ghwmelite.workers.dev; frame-ancestors 'none'; report-uri /api/v1/csp-report");
 });
 
 // Public auth routes
@@ -154,6 +154,13 @@ app.get('/api/v1/health', (c) => {
   return c.json({ data: { status: 'ok', timestamp: new Date().toISOString() } });
 });
 
+// CSP violation report endpoint
+app.post('/api/v1/csp-report', async (c) => {
+  const body = await c.req.text();
+  console.log(JSON.stringify({ type: 'csp-violation', report: body }));
+  return c.json({ data: { received: true } });
+});
+
 // 404 fallback
 app.notFound((c) => {
   return c.json(
@@ -164,9 +171,18 @@ app.notFound((c) => {
 
 // Global error handler
 app.onError((err, c) => {
-  console.error('Unhandled error:', err);
+  const requestId = crypto.randomUUID();
+  console.error(JSON.stringify({
+    timestamp: new Date().toISOString(),
+    requestId,
+    userId: c.get('userId') ?? null,
+    path: c.req.path,
+    method: c.req.method,
+    error: err instanceof Error ? err.message : String(err),
+    stack: err instanceof Error ? err.stack : undefined,
+  }));
   return c.json(
-    { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } },
+    { error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred', request_id: requestId } },
     500
   );
 });
@@ -174,9 +190,13 @@ app.onError((err, c) => {
 export default {
   fetch: (req: Request, env: Env, ctx: ExecutionContext) => app.fetch(req, env, ctx),
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    const { NotificationService } = await import('./lib/notifications.js');
-    const service = new NotificationService(env);
-    const deleted = await service.purgeExpired(30);
-    console.log(`[cron] Purged ${deleted} expired notifications`);
+    try {
+      const { NotificationService } = await import('./lib/notifications.js');
+      const service = new NotificationService(env);
+      const deleted = await service.purgeExpired(30);
+      console.log(JSON.stringify({ type: 'cron', action: 'purge', deleted, timestamp: new Date().toISOString() }));
+    } catch (err) {
+      console.error(JSON.stringify({ type: 'cron', action: 'purge', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
+    }
   },
 };
