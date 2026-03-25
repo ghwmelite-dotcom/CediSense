@@ -1,4 +1,9 @@
+import { useState } from 'react';
 import type { SusuMessage } from '@cedisense/shared';
+import { MarkdownContent } from './MarkdownContent';
+import { LinkPreviewCard } from './LinkPreviewCard';
+import { VoicePlayer } from './VoicePlayer';
+import { EmojiPicker } from './EmojiPicker';
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -42,6 +47,9 @@ interface ChatMessageProps {
   reactionPickerId: string | null;
   onSetMenuOpenId: (id: string | null) => void;
   onSetReactionPickerId: (id: string | null) => void;
+  isGrouped?: boolean;
+  isCreator?: boolean;
+  onPin?: (messageId: string) => void;
 }
 
 export function ChatMessage({
@@ -62,14 +70,19 @@ export function ChatMessage({
   reactionPickerId,
   onSetMenuOpenId,
   onSetReactionPickerId,
+  isGrouped = false,
+  isCreator = false,
+  onPin,
 }: ChatMessageProps) {
+  const [showFullEmojiPicker, setShowFullEmojiPicker] = useState(false);
+
   return (
     <div
       id={`msg-${msg.id}`}
-      className={`group/msg flex flex-col gap-0.5 animate-[fadeSlideIn_0.2s_ease-out] transition-all rounded-lg ${isOwn ? 'items-end' : 'items-start'}`}
+      className={`group/msg flex flex-col gap-0.5 animate-[fadeSlideIn_0.2s_ease-out] transition-all rounded-lg ${isGrouped ? 'mt-0.5' : 'mt-3'} ${isOwn ? 'items-end' : 'items-start'}`}
     >
-      {/* Sender name (others only) */}
-      {!isOwn && (
+      {/* Sender name (others only, hidden when grouped) */}
+      {!isOwn && !isGrouped && (
         <span className="text-[11px] text-muted font-medium px-1">
           {msg.sender_name}
         </span>
@@ -174,12 +187,38 @@ export function ChatMessage({
                     </svg>
                   </a>
                 )}
+                {/* Voice message player */}
+                {msg.attachment_type?.startsWith('audio/') && msg.attachment_url && (
+                  <VoicePlayer url={`/api/v1${msg.attachment_url}`} isOwn={isOwn} />
+                )}
+                {/* Other file attachments (non-image, non-pdf, non-audio) download link */}
+                {msg.attachment_url && msg.attachment_type && !msg.attachment_type.startsWith('image/') && msg.attachment_type !== 'application/pdf' && !msg.attachment_type.startsWith('audio/') && (
+                  <a
+                    href={`/api/v1${msg.attachment_url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 bg-[#1D1D30] rounded-xl p-3 border border-white/[0.06] hover:bg-white/5 transition-colors min-w-[200px]"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-white truncate">{msg.attachment_name ?? 'File'}</p>
+                      <p className="text-[10px] text-muted">{msg.attachment_size ? formatFileSize(msg.attachment_size) : 'File'}</p>
+                    </div>
+                    <svg className="w-4 h-4 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                  </a>
+                )}
                 {/* Text content */}
                 {msg.content && (
                   <span className={msg.attachment_url ? 'block px-2 py-1.5 text-sm' : ''}>
-                    {msg.content}
+                    <MarkdownContent content={msg.content} className="text-sm" />
                   </span>
                 )}
+                {/* Link preview for first URL in content */}
+                {(() => {
+                  const urlMatch = msg.content?.match(/https?:\/\/[^\s]+/);
+                  return urlMatch ? <LinkPreviewCard url={urlMatch[0]} /> : null;
+                })()}
               </>
             )}
             {msg.edited_at && !msg.is_deleted && (
@@ -212,6 +251,7 @@ export function ChatMessage({
                   e.stopPropagation();
                   onSetReactionPickerId(reactionPickerId === msg.id ? null : msg.id);
                   onSetMenuOpenId(null);
+                  setShowFullEmojiPicker(false);
                 }}
                 className="p-1 text-muted hover:text-white transition-colors rounded min-w-[28px] min-h-[28px] flex items-center justify-center"
                 aria-label="React"
@@ -222,7 +262,7 @@ export function ChatMessage({
                 </svg>
               </button>
 
-              {reactionPickerId === msg.id && (
+              {reactionPickerId === msg.id && !showFullEmojiPicker && (
                 <div
                   className={`absolute z-20 bottom-full mb-1 flex items-center gap-0.5 bg-[#1D1D30] rounded-full p-1 border border-white/10 shadow-lg
                     ${isOwn ? 'right-0' : 'left-0'}`}
@@ -239,12 +279,39 @@ export function ChatMessage({
                       {emoji}
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => setShowFullEmojiPicker(true)}
+                    className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-base text-muted"
+                    aria-label="More emojis"
+                  >
+                    +
+                  </button>
+                </div>
+              )}
+
+              {reactionPickerId === msg.id && showFullEmojiPicker && (
+                <div
+                  className={`absolute z-20 bottom-full mb-1 ${isOwn ? 'right-0' : 'left-0'}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <EmojiPicker
+                    onSelect={(emoji) => {
+                      onToggleReaction(msg.id, emoji);
+                      onSetReactionPickerId(null);
+                      setShowFullEmojiPicker(false);
+                    }}
+                    onClose={() => {
+                      onSetReactionPickerId(null);
+                      setShowFullEmojiPicker(false);
+                    }}
+                  />
                 </div>
               )}
             </div>
 
-            {/* "..." menu for own messages */}
-            {isOwn && (
+            {/* "..." menu for own messages or creator */}
+            {(isOwn || (isCreator && onPin)) && (
               <div className="relative">
                 <button
                   type="button"
@@ -269,7 +336,7 @@ export function ChatMessage({
                     className="absolute z-20 bottom-full mb-1 right-0 bg-[#1D1D30] rounded-xl border border-white/10 shadow-lg overflow-hidden min-w-[120px]"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {canEdit && (
+                    {isOwn && canEdit && (
                       <button
                         type="button"
                         onClick={() => onStartEditing(msg)}
@@ -281,16 +348,33 @@ export function ChatMessage({
                         Edit
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => onDeleteMessage(msg.id)}
-                      className="w-full text-left px-3 py-2 text-xs text-expense hover:bg-expense/10 transition-colors flex items-center gap-2 min-h-[36px]"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Delete
-                    </button>
+                    {isCreator && onPin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onPin(msg.id);
+                          onSetMenuOpenId(null);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs text-white hover:bg-white/5 transition-colors flex items-center gap-2 min-h-[36px]"
+                      >
+                        <svg className="w-3.5 h-3.5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                        </svg>
+                        Pin message
+                      </button>
+                    )}
+                    {isOwn && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteMessage(msg.id)}
+                        className="w-full text-left px-3 py-2 text-xs text-expense hover:bg-expense/10 transition-colors flex items-center gap-2 min-h-[36px]"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

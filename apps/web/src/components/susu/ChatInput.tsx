@@ -1,5 +1,6 @@
-import { useRef, type ChangeEvent } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import type { SusuMessage } from '@cedisense/shared';
+import { MentionPopup } from './MentionPopup';
 
 interface ChatInputProps {
   content: string;
@@ -15,6 +16,8 @@ interface ChatInputProps {
   onCancelReply: () => void;
   onToggleSearch: () => void;
   inputRef: React.RefObject<HTMLTextAreaElement>;
+  onVoicePress?: () => void;
+  members?: Array<{ member_id: string; display_name: string; user_id: string }>;
 }
 
 export function ChatInput({
@@ -31,8 +34,52 @@ export function ChatInput({
   onCancelReply,
   onToggleSearch,
   inputRef,
+  onVoicePress,
+  members = [],
 }: ChatInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionPos, setMentionPos] = useState({ bottom: 0, left: 0 });
+
+  function handleInputChangeWithMention(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    // Forward to parent handler
+    onContentChange(e);
+
+    // Detect @mention
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart ?? value.length;
+    const textBeforeCursor = value.slice(0, cursorPos);
+    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
+
+    if (mentionMatch) {
+      setMentionQuery(mentionMatch[1]);
+      const rect = e.target.getBoundingClientRect();
+      setMentionPos({ bottom: window.innerHeight - rect.top + 8, left: rect.left });
+    } else {
+      setMentionQuery(null);
+    }
+  }
+
+  function handleMentionSelect(member: { display_name: string }) {
+    const value = (inputRef as React.RefObject<HTMLTextAreaElement>).current?.value ?? '';
+    const cursorPos = (inputRef as React.RefObject<HTMLTextAreaElement>).current?.selectionStart ?? value.length;
+    const textBeforeCursor = value.slice(0, cursorPos);
+    const textAfterCursor = value.slice(cursorPos);
+    const beforeMention = textBeforeCursor.replace(/@\w*$/, '');
+    const newValue = `${beforeMention}@${member.display_name} ${textAfterCursor}`;
+
+    // Create a synthetic event to update via parent handler
+    const nativeEvent = new Event('input', { bubbles: true });
+    const textarea = (inputRef as React.RefObject<HTMLTextAreaElement>).current;
+    if (textarea) {
+      const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+      nativeSetter?.call(textarea, newValue);
+      textarea.dispatchEvent(nativeEvent);
+    }
+
+    setMentionQuery(null);
+    (inputRef as React.RefObject<HTMLTextAreaElement>).current?.focus();
+  }
 
   return (
     <>
@@ -92,7 +139,7 @@ export function ChatInput({
           <textarea
             ref={inputRef}
             value={content}
-            onChange={onContentChange}
+            onChange={handleInputChangeWithMention}
             onKeyDown={onKeyDown}
             placeholder="Message the group\u2026"
             rows={1}
@@ -123,6 +170,22 @@ export function ChatInput({
               </svg>
             )}
           </button>
+          {/* Voice recording button */}
+          {onVoicePress && (
+            <button
+              type="button"
+              onClick={onVoicePress}
+              className="p-2 text-white/40 hover:text-white/70 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Record voice message"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            </button>
+          )}
           <button
             type="button"
             onClick={onSend}
@@ -148,6 +211,16 @@ export function ChatInput({
           {content.length}/500 {'\u00B7'} Enter to send
         </p>
       </div>
+      {/* Mention popup */}
+      {mentionQuery !== null && members.length > 0 && (
+        <MentionPopup
+          query={mentionQuery}
+          members={members}
+          onSelect={handleMentionSelect}
+          onClose={() => setMentionQuery(null)}
+          position={mentionPos}
+        />
+      )}
     </>
   );
 }

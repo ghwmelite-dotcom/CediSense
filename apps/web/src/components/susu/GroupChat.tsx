@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback, type ChangeEvent } from 'react';
-import type { SusuMessage, TypingUser } from '@cedisense/shared';
+import type { SusuMessage, TypingUser, PinnedMessage } from '@cedisense/shared';
 import { api } from '../../lib/api';
 import { ChatMessage } from './ChatMessage';
 import { ChatSearchBar } from './ChatSearchBar';
 import { ChatInput } from './ChatInput';
+import { PinnedMessageBanner } from './PinnedMessageBanner';
+import { VoiceRecorder } from './VoiceRecorder';
 
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -20,9 +22,11 @@ const LIMIT = 50;
 interface GroupChatProps {
   groupId: string;
   currentUserId: string;
+  isCreator?: boolean;
+  members?: Array<{ member_id: string; display_name: string; user_id: string }>;
 }
 
-export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
+export function GroupChat({ groupId, currentUserId, isCreator = false, members = [] }: GroupChatProps) {
   const [messages, setMessages] = useState<SusuMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -57,6 +61,15 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
 
   // Lightbox state
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  // Pinned messages state
+  const [pins, setPins] = useState<PinnedMessage[]>([]);
+
+  // Unread separator
+  const [lastReadId, setLastReadId] = useState<string | null>(null);
+
+  // Voice recording state
+  const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -94,6 +107,8 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
       if (msgs.length > 0) {
         oldestIdRef.current = msgs[0].id;
         newestIdRef.current = msgs[msgs.length - 1].id;
+        // Save last-read ID for unread separator (before new messages arrive via poll)
+        setLastReadId(msgs[msgs.length - 1].id);
         void markAsRead(msgs[msgs.length - 1].id);
       }
     } catch {
@@ -466,11 +481,77 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
     };
   }, []);
 
+  // ─── Fetch pinned messages ──────────────────────────────────────────────
+  useEffect(() => {
+    api.get<PinnedMessage[]>(`/susu/groups/${groupId}/pins`)
+      .then(setPins)
+      .catch(() => {});
+  }, [groupId]);
+
+  // ─── Pin / Unpin handlers ─────────────────────────────────────────────
+  async function handlePin(messageId: string) {
+    try {
+      await api.post(`/susu/groups/${groupId}/pin`, { message_id: messageId });
+      const updated = await api.get<PinnedMessage[]>(`/susu/groups/${groupId}/pins`);
+      setPins(updated);
+    } catch {
+      setError('Failed to pin message.');
+    }
+  }
+
+  async function handleUnpin(pinId: string) {
+    try {
+      await api.delete(`/susu/groups/${groupId}/pin/${pinId}`);
+      setPins((prev) => prev.filter((p) => p.id !== pinId));
+    } catch {
+      setError('Failed to unpin message.');
+    }
+  }
+
+  // ─── Voice recording handler ──────────────────────────────────────────
+  async function handleVoiceRecordComplete(blob: Blob, duration: number) {
+    setShowVoiceRecorder(false);
+    const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
+    const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: blob.type });
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('content', `Voice message (${duration}s)`);
+
+    try {
+      setUploading(true);
+      const msg = await api.upload<SusuMessage>(
+        `/susu/groups/${groupId}/messages/upload`,
+        formData,
+      );
+      setMessages((prev) => {
+        const merged = [...prev, msg];
+        newestIdRef.current = msg.id;
+        if (prev.length === 0) oldestIdRef.current = msg.id;
+        return merged;
+      });
+      void markAsRead(msg.id);
+    } catch {
+      setError('Failed to send voice message.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   // Check if a message is within 15 min for editing
   function canEditMsg(msg: SusuMessage): boolean {
     if (msg.sender_user_id !== currentUserId || msg.is_deleted) return false;
     const created = new Date(msg.created_at.endsWith('Z') ? msg.created_at : msg.created_at + 'Z');
     return (Date.now() - created.getTime()) < 15 * 60 * 1000;
+  }
+
+  // Message grouping: same sender, within 2 min, previous not deleted
+  function shouldGroup(msg: SusuMessage, prevMsg: SusuMessage | null): boolean {
+    if (!prevMsg) return false;
+    if (msg.sender_user_id !== prevMsg.sender_user_id) return false;
+    if (prevMsg.is_deleted) return false;
+    const diff = new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime();
+    return diff < 2 * 60 * 1000;
   }
 
   return (
@@ -485,6 +566,19 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
         onCloseSearch={closeSearch}
         onScrollToMessage={scrollToMessage}
       />
+
+      {/* Pinned messages banner */}
+      {pins.length > 0 && (
+        <PinnedMessageBanner
+          pins={pins}
+          isCreator={isCreator}
+          onUnpin={handleUnpin}
+          onScrollTo={(messageId) => {
+            const el = document.getElementById(`msg-${messageId}`);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+        />
+      )}
 
       {/* Message list */}
       <div
@@ -546,33 +640,46 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
 
         {/* Messages */}
         {!loading &&
-          messages.map((msg) => {
+          messages.map((msg, i) => {
             const isOwn = msg.sender_user_id === currentUserId;
+            const prevMsg = messages[i - 1] ?? null;
 
             return (
-              <ChatMessage
-                key={msg.id}
-                msg={msg}
-                isOwn={isOwn}
-                isEditing={editingId === msg.id}
-                editContent={editContent}
-                onEditContentChange={setEditContent}
-                onSaveEdit={() => void saveEdit()}
-                onCancelEdit={cancelEdit}
-                onReply={(m) => {
-                  setReplyTo(m);
-                  inputRef.current?.focus();
-                }}
-                onToggleReaction={(id, emoji) => void toggleReaction(id, emoji)}
-                onStartEditing={startEditing}
-                onDeleteMessage={(id) => void deleteMessage(id)}
-                onOpenLightbox={setLightboxUrl}
-                canEdit={canEditMsg(msg)}
-                menuOpenId={menuOpenId}
-                reactionPickerId={reactionPickerId}
-                onSetMenuOpenId={setMenuOpenId}
-                onSetReactionPickerId={setReactionPickerId}
-              />
+              <div key={msg.id}>
+                {/* Unread separator */}
+                {lastReadId && prevMsg?.id === lastReadId && msg.id !== lastReadId && (
+                  <div className="flex items-center gap-3 py-2 px-4">
+                    <div className="flex-1 h-px bg-expense/30" />
+                    <span className="text-expense text-[11px] font-medium">New messages</span>
+                    <div className="flex-1 h-px bg-expense/30" />
+                  </div>
+                )}
+                <ChatMessage
+                  msg={msg}
+                  isOwn={isOwn}
+                  isGrouped={shouldGroup(msg, prevMsg)}
+                  isCreator={isCreator}
+                  onPin={handlePin}
+                  isEditing={editingId === msg.id}
+                  editContent={editContent}
+                  onEditContentChange={setEditContent}
+                  onSaveEdit={() => void saveEdit()}
+                  onCancelEdit={cancelEdit}
+                  onReply={(m) => {
+                    setReplyTo(m);
+                    inputRef.current?.focus();
+                  }}
+                  onToggleReaction={(id, emoji) => void toggleReaction(id, emoji)}
+                  onStartEditing={startEditing}
+                  onDeleteMessage={(id) => void deleteMessage(id)}
+                  onOpenLightbox={setLightboxUrl}
+                  canEdit={canEditMsg(msg)}
+                  menuOpenId={menuOpenId}
+                  reactionPickerId={reactionPickerId}
+                  onSetMenuOpenId={setMenuOpenId}
+                  onSetReactionPickerId={setReactionPickerId}
+                />
+              </div>
             );
           })}
 
@@ -601,22 +708,33 @@ export function GroupChat({ groupId, currentUserId }: GroupChatProps) {
         </div>
       )}
 
-      {/* Chat input */}
-      <ChatInput
-        content={content}
-        sending={sending}
-        uploading={uploading}
-        uploadProgress={uploadProgress}
-        replyTo={replyTo}
-        searchOpen={searchOpen}
-        onContentChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        onSend={() => void sendMessage()}
-        onFileSelect={handleFileSelect}
-        onCancelReply={() => setReplyTo(null)}
-        onToggleSearch={() => setSearchOpen(!searchOpen)}
-        inputRef={inputRef}
-      />
+      {/* Chat input / Voice recorder */}
+      {showVoiceRecorder ? (
+        <div className="border-t border-white/10 bg-ghana-surface/80 backdrop-blur-md px-4 py-3">
+          <VoiceRecorder
+            onRecordComplete={handleVoiceRecordComplete}
+            onCancel={() => setShowVoiceRecorder(false)}
+          />
+        </div>
+      ) : (
+        <ChatInput
+          content={content}
+          sending={sending}
+          uploading={uploading}
+          uploadProgress={uploadProgress}
+          replyTo={replyTo}
+          searchOpen={searchOpen}
+          onContentChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onSend={() => void sendMessage()}
+          onFileSelect={handleFileSelect}
+          onCancelReply={() => setReplyTo(null)}
+          onToggleSearch={() => setSearchOpen(!searchOpen)}
+          inputRef={inputRef}
+          onVoicePress={() => setShowVoiceRecorder(true)}
+          members={members}
+        />
+      )}
 
       {/* Image lightbox overlay */}
       {lightboxUrl && (

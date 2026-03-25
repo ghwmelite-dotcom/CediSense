@@ -183,7 +183,16 @@ export function GroupDetail({
 
       {/* Chat tab */}
       {activeTab === 'chat' && (
-        <GroupChat groupId={group.id} currentUserId={currentUserId} />
+        <GroupChat
+          groupId={group.id}
+          currentUserId={currentUserId}
+          isCreator={group.is_creator}
+          members={group.members.map((m) => ({
+            member_id: m.id,
+            display_name: m.display_name,
+            user_id: m.user_id,
+          }))}
+        />
       )}
 
       {/* Overview tab */}
