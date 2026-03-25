@@ -32,6 +32,7 @@ interface AdminGroupMember extends Record<string, unknown> {
   phone: string;
   payout_order: number | null;
   joined_at: string;
+  pre_paid: 0 | 1;
 }
 
 interface AdminGroupMessage extends Record<string, unknown> {
@@ -39,6 +40,9 @@ interface AdminGroupMessage extends Record<string, unknown> {
   sender_name: string;
   content: string;
   created_at: string;
+  attachment_type?: string | null;
+  attachment_name?: string | null;
+  is_pinned?: 0 | 1 | boolean | null;
 }
 
 interface AdminGroupClaim extends Record<string, unknown> {
@@ -186,6 +190,16 @@ function buildMemberColumns(
         ) : (
           <span className="text-white/30">—</span>
         ),
+    },
+    {
+      key: 'pre_paid',
+      header: 'Pre-paid',
+      render: (row) =>
+        row.pre_paid === 1 ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/20">
+            Pre-paid
+          </span>
+        ) : null,
     },
     {
       key: 'joined_at',
@@ -640,20 +654,43 @@ export function GroupDetailPage() {
                           </span>
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold text-white/60 mb-0.5">
-                            {msg.sender_name || 'Unknown'}
-                          </p>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <p className="text-xs font-semibold text-white/60">
+                              {msg.sender_name || 'Unknown'}
+                            </p>
+                            {(msg.is_pinned === 1 || msg.is_pinned === true) && (
+                              <svg
+                                className="w-3 h-3 text-amber-400 flex-shrink-0"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                aria-label="Pinned message"
+                              >
+                                <path d="M16 2v4l-2 2v5l2 1v4H8v-4l2-1V8L8 6V2h8zm-4 17a2 2 0 100-4 2 2 0 000 4z" />
+                              </svg>
+                            )}
+                          </div>
                           {msg.content ? (
                             <p className="text-sm text-white/80 break-words">{msg.content}</p>
+                          ) : msg.attachment_type ? (
+                            <p className="text-sm text-white/40 italic">
+                              {msg.attachment_type === 'voice'
+                                ? '[Voice message]'
+                                : `[Attachment: ${msg.attachment_type}]`}
+                            </p>
                           ) : (
                             <p className="text-sm text-white/25 italic">[deleted]</p>
+                          )}
+                          {msg.attachment_name && (
+                            <p className="text-xs text-white/40 mt-0.5 font-mono truncate">
+                              {msg.attachment_name}
+                            </p>
                           )}
                           <p className="text-xs text-white/30 mt-1">{formatDateTime(msg.created_at as string)}</p>
                         </div>
                       </div>
 
-                      {/* Delete button — only show if not already deleted */}
-                      {msg.content ? (
+                      {/* Delete button — show if message has content or an attachment (i.e. not already deleted) */}
+                      {(msg.content || msg.attachment_type) ? (
                         <button
                           type="button"
                           onClick={() => setMessageToDelete(msg)}

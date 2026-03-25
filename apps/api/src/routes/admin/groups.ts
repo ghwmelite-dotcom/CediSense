@@ -26,6 +26,7 @@ interface MemberRow {
   role: string;
   joined_at: string;
   phone: string;
+  pre_paid: number;
   [key: string]: unknown;
 }
 
@@ -37,6 +38,8 @@ interface MessageRow {
   created_at: string;
   deleted_at: string | null;
   display_name: string;
+  attachment_type: string | null;
+  attachment_name: string | null;
   [key: string]: unknown;
 }
 
@@ -149,7 +152,8 @@ groups.get('/groups/:id', async (c) => {
       .first<GroupRow>(),
 
     c.env.DB.prepare(
-      `SELECT sm.*, u.phone
+      `SELECT sm.id, sm.user_id, sm.group_id, sm.display_name, sm.role,
+              sm.joined_at, sm.payout_order, sm.pre_paid, u.phone
        FROM susu_members sm
        JOIN users u ON sm.user_id = u.id
        WHERE sm.group_id = ?`
@@ -170,7 +174,9 @@ groups.get('/groups/:id', async (c) => {
       .first<CountRow>(),
 
     c.env.DB.prepare(
-      `SELECT m.*, sm.display_name
+      `SELECT m.id, m.group_id, m.member_id, m.content, m.created_at,
+              m.deleted_at, m.attachment_type, m.attachment_name,
+              sm.display_name
        FROM susu_messages m
        JOIN susu_members sm ON m.member_id = sm.id
        WHERE m.group_id = ? AND m.deleted_at IS NULL
