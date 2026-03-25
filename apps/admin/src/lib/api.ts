@@ -1,6 +1,10 @@
 import type { ApiSuccess, ApiError } from '@cedisense/shared';
 
-const API_BASE = '/api/v1';
+// Use full URL in production (Pages proxy doesn't reliably handle cross-origin rewrites)
+// Dev server uses Vite proxy via relative path
+const API_BASE = (import.meta as any).env?.DEV
+  ? '/api/v1'
+  : 'https://cedisense-api.ghwmelite.workers.dev/api/v1';
 
 let accessToken: string | null = null;
 
