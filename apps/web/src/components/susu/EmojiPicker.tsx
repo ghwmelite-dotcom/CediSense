@@ -117,7 +117,7 @@ export function EmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
   return (
     <div
       ref={containerRef}
-      className="absolute bottom-full mb-2 left-0 z-50 w-[320px] max-h-[380px] rounded-xl border border-white/10 bg-[#14142A]/95 backdrop-blur-xl shadow-2xl flex flex-col overflow-hidden"
+      className="absolute bottom-full mb-2 left-0 z-50 w-[min(320px,calc(100vw-2rem))] max-h-[320px] sm:max-h-[380px] rounded-xl border border-white/10 bg-[#14142A]/95 backdrop-blur-xl shadow-2xl flex flex-col overflow-hidden"
       role="dialog"
       aria-label="Emoji picker"
     >
@@ -158,7 +158,7 @@ export function EmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
         {search && filteredEmojis.length === 0 && (
           <p className="text-muted text-xs text-center py-4">No emojis found</p>
         )}
-        <div className="grid grid-cols-8 gap-0.5">
+        <div className="grid grid-cols-7 sm:grid-cols-8 gap-0.5">
           {filteredEmojis.map((emoji, idx) => (
             <button
               key={`${emoji}-${idx}`}
@@ -167,7 +167,7 @@ export function EmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
                 onSelect(emoji);
                 onClose();
               }}
-              className="w-[36px] h-[36px] min-w-[36px] min-h-[36px] flex items-center justify-center text-xl rounded-lg hover:bg-white/[0.08] transition-colors cursor-pointer"
+              className="w-[36px] h-[36px] sm:w-[36px] sm:h-[36px] min-w-[32px] min-h-[32px] flex items-center justify-center text-lg sm:text-xl rounded-lg hover:bg-white/[0.08] transition-colors cursor-pointer"
               aria-label={`Emoji ${emoji}`}
             >
               {emoji}

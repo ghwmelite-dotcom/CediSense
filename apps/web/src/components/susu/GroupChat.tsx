@@ -555,7 +555,7 @@ export function GroupChat({ groupId, currentUserId, isCreator = false, members =
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)] md:h-[calc(100vh-180px)] min-h-[400px] rounded-2xl overflow-hidden border border-white/10 bg-ghana-surface">
+    <div className="flex flex-col h-[calc(100vh-260px)] sm:h-[calc(100vh-220px)] md:h-[calc(100vh-180px)] min-h-[320px] rounded-2xl overflow-hidden border border-white/10 bg-ghana-surface">
       {/* Search bar */}
       <ChatSearchBar
         searchOpen={searchOpen}

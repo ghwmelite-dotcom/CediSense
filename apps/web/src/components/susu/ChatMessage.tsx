@@ -90,7 +90,7 @@ export function ChatMessage({
 
       {/* Reply preview */}
       {msg.reply_to_id && msg.reply_to_content && (
-        <div className={`max-w-[85%] md:max-w-[75%] text-[11px] text-muted/80 px-3 py-1 rounded-lg
+        <div className={`max-w-[90%] sm:max-w-[85%] md:max-w-[75%] text-[11px] text-muted/80 px-3 py-1 rounded-lg
           ${isOwn ? 'bg-gold/8 border-l-2 border-gold/40' : 'bg-white/5 border-l-2 border-white/20'}`}>
           <span className="font-medium">{msg.reply_to_sender}</span>
           <p className="truncate">{msg.reply_to_content}</p>
@@ -98,7 +98,7 @@ export function ChatMessage({
       )}
 
       {/* Message bubble + action row */}
-      <div className={`relative flex items-center gap-1 max-w-[85%] md:max-w-[75%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+      <div className={`relative flex items-center gap-1 max-w-[90%] sm:max-w-[85%] md:max-w-[75%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
         {/* Message bubble */}
         {isEditing ? (
           <div className="flex flex-col gap-1.5 w-full max-w-[75%]">
@@ -162,7 +162,7 @@ export function ChatMessage({
                     <img
                       src={`/api/v1${msg.attachment_url}`}
                       alt={msg.attachment_name ?? 'Attached image'}
-                      className="max-w-[300px] w-full rounded-xl border border-white/[0.06] object-cover"
+                      className="max-w-full sm:max-w-[300px] w-full rounded-xl border border-white/[0.06] object-cover"
                       loading="lazy"
                     />
                   </button>

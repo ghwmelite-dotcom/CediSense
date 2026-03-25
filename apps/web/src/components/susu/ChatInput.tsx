@@ -124,11 +124,11 @@ export function ChatInput({
           onChange={(e) => void onFileSelect(e)}
         />
         <div className="flex items-end gap-1.5 md:gap-2.5">
-          {/* Search icon */}
+          {/* Search icon — hidden on small screens to save space */}
           <button
             type="button"
             onClick={onToggleSearch}
-            className="w-9 h-9 flex items-center justify-center rounded-lg text-muted hover:text-white hover:bg-white/5 transition-all shrink-0"
+            className="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg text-muted hover:text-white hover:bg-white/5 transition-all shrink-0"
             aria-label="Search messages"
             title="Search"
           >
@@ -142,12 +142,12 @@ export function ChatInput({
             onChange={handleInputChangeWithMention}
             onKeyDown={onKeyDown}
             placeholder="Type a message"
-            rows={2}
+            rows={1}
             maxLength={500}
             aria-label="Chat message"
             className="flex-1 resize-none rounded-2xl bg-white/5 border border-white/15 text-white
-              placeholder:text-muted text-[15px] px-4 py-3 focus:outline-none focus:border-gold/50
-              focus:ring-1 focus:ring-gold/30 transition-all min-h-[48px] max-h-[160px]"
+              placeholder:text-muted text-sm sm:text-[15px] px-3 sm:px-4 py-2.5 sm:py-3 focus:outline-none focus:border-gold/50
+              focus:ring-1 focus:ring-gold/30 transition-all min-h-[44px] sm:min-h-[48px] max-h-[120px] sm:max-h-[160px]"
           />
           {/* Paperclip / attach file button */}
           <button
@@ -175,7 +175,7 @@ export function ChatInput({
             <button
               type="button"
               onClick={onVoicePress}
-              className="p-2 text-white/40 hover:text-white/70 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="hidden sm:flex p-2 text-white/40 hover:text-white/70 transition-colors min-w-[44px] min-h-[44px] items-center justify-center"
               aria-label="Record voice message"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -191,7 +191,7 @@ export function ChatInput({
             onClick={onSend}
             disabled={!content.trim() || sending}
             aria-label="Send message"
-            className="w-12 h-12 flex items-center justify-center rounded-xl bg-gold text-ghana-dark
+            className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl bg-gold text-ghana-dark
               font-bold hover:brightness-110 active:scale-95 transition-all
               disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 shrink-0"
           >
