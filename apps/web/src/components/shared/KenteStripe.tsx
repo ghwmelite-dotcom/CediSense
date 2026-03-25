@@ -11,6 +11,7 @@ export const KenteStripe = memo(function KenteStripe({ className = '', height = 
       className={`w-full rounded-sm ${className}`}
       style={{
         height: `${height}px`,
+        paddingTop: 'env(safe-area-inset-top)',
         background:
           'linear-gradient(90deg, #FF6B35 20%, #D4A843 20%, #D4A843 40%, #00C896 40%, #00C896 60%, #FF6B35 60%, #FF6B35 80%, #D4A843 80%)',
       }}

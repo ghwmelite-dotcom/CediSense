@@ -14,7 +14,7 @@ export function TopBar() {
 
   return (
     <header
-      className="md:hidden sticky top-0 z-40 px-4 py-3 flex items-center justify-between border-b border-white/5"
+      className="md:hidden sticky top-0 z-40 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 flex items-center justify-between border-b border-white/5"
       style={{
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',

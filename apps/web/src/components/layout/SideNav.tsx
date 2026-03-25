@@ -28,9 +28,9 @@ const bottomNav = [
 
 export function SideNav({ susuUnreadCount = 0 }: SideNavProps) {
   return (
-    <aside className="hidden md:flex flex-col w-56 lg:w-60 bg-[#0E0E1A] min-h-screen flex-shrink-0 relative">
+    <aside className="hidden md:flex flex-col w-56 lg:w-60 bg-[#0E0E1A] min-h-screen flex-shrink-0 relative z-20">
       {/* Logo area — brand-confident */}
-      <div className="flex items-center justify-between px-6 py-6 relative">
+      <div className="flex items-center justify-between px-6 py-6 relative overflow-visible">
         <div className="flex items-center gap-3">
           <span className="text-gold font-extrabold text-2xl leading-none">₵</span>
           <span className="text-text-primary font-semibold text-lg tracking-[-0.02em]">CediSense</span>
