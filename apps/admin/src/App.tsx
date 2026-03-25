@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { AdminShell } from '@/components/layout/AdminShell';
 import { AdminProtectedRoute } from '@/components/layout/AdminProtectedRoute';
+import { LoginPage } from '@/pages/LoginPage';
 
 // Placeholder pages for now
 function PlaceholderPage({ title }: { title: string }) {
@@ -14,7 +15,7 @@ function PlaceholderPage({ title }: { title: string }) {
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<PlaceholderPage title="Login" />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route
         element={
           <AdminProtectedRoute>
