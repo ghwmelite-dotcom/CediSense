@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 interface BottomNavProps {
   susuUnreadCount?: number;
@@ -26,6 +26,11 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const navigate = useNavigate();
 
+  const handleMoreNav = useCallback((path: string) => {
+    navigate(path);
+    setMoreOpen(false);
+  }, [navigate]);
+
   return (
     <>
       {/* More menu overlay */}
@@ -47,7 +52,7 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
                   <button
                     key={item.to}
                     type="button"
-                    onClick={() => { navigate(item.to); setMoreOpen(false); }}
+                    onClick={() => handleMoreNav(item.to)}
                     className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl transition-colors duration-150 relative ${
                       item.highlight
                         ? 'bg-flame/[0.06] hover:bg-flame/[0.1]'

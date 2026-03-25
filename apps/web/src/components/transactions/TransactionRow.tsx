@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import type { Transaction, Category } from '@cedisense/shared';
 import { formatPesewas } from '@cedisense/shared';
 
@@ -26,7 +26,7 @@ interface TransactionRowProps {
   compact?: boolean;
 }
 
-export function TransactionRow({
+export const TransactionRow = memo(function TransactionRow({
   transaction,
   categories = [],
   onEdit,
@@ -181,4 +181,4 @@ export function TransactionRow({
       )}
     </div>
   );
-}
+});

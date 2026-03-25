@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -6,12 +6,13 @@ import type { DashboardData, Category, RecurringWithStatus } from '@cedisense/sh
 import { MonthPicker } from '@/components/dashboard/MonthPicker';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
 import { SummaryCard } from '@/components/dashboard/SummaryCard';
-import { SpendingTrendChart } from '@/components/dashboard/SpendingTrendChart';
-import { CategoryBreakdownCard } from '@/components/dashboard/CategoryBreakdownCard';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { UpcomingBillsCard } from '@/components/recurring/UpcomingBillsCard';
 import { NewUserWelcome, isWelcomeDismissed } from '@/components/dashboard/NewUserWelcome';
 import { AdinkraWhisper } from '@/components/shared/AdinkraWhisper';
+
+const SpendingTrendChart = lazy(() => import('@/components/dashboard/SpendingTrendChart').then(m => ({ default: m.SpendingTrendChart })));
+const CategoryBreakdownCard = lazy(() => import('@/components/dashboard/CategoryBreakdownCard').then(m => ({ default: m.CategoryBreakdownCard })));
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -192,17 +193,21 @@ export function DashboardPage() {
               />
             </div>
 
-            <div className="mt-6 motion-safe:animate-slide-up" style={stagger(2)}>
-              <SpendingTrendChart data={data.daily_trend} />
-            </div>
+            <Suspense fallback={<div className="mt-6 h-48 rounded-2xl skeleton" />}>
+              <div className="mt-6 motion-safe:animate-slide-up" style={stagger(2)}>
+                <SpendingTrendChart data={data.daily_trend} />
+              </div>
+            </Suspense>
 
-            <div className="mt-6 motion-safe:animate-slide-up" style={stagger(3)}>
-              <CategoryBreakdownCard
-                data={data.category_breakdown}
-                totalExpenses={data.summary.total_expenses_pesewas}
-                month={month}
-              />
-            </div>
+            <Suspense fallback={<div className="mt-6 h-48 rounded-2xl skeleton" />}>
+              <div className="mt-6 motion-safe:animate-slide-up" style={stagger(3)}>
+                <CategoryBreakdownCard
+                  data={data.category_breakdown}
+                  totalExpenses={data.summary.total_expenses_pesewas}
+                  month={month}
+                />
+              </div>
+            </Suspense>
 
             <div className="mt-6 motion-safe:animate-slide-up" style={stagger(4)}>
               <UpcomingBillsCard items={upcomingBills} />
