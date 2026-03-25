@@ -65,6 +65,16 @@ export async function verifyAccessToken(token: string, secret: string): Promise<
     if (parts.length !== 3) return null;
 
     const [header, payload, signature] = parts;
+
+    // Parse and validate header
+    const decodedHeader = JSON.parse(
+      new TextDecoder().decode(fromBase64Url(header))
+    ) as { alg: string; typ?: string };
+
+    if (decodedHeader.alg !== 'HS256') {
+      return null; // Reject non-HS256 tokens
+    }
+
     const signingInput = `${header}.${payload}`;
 
     const key = await getSigningKey(secret);

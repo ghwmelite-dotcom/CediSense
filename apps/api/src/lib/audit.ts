@@ -3,7 +3,7 @@ import { generateId } from './db.js';
 interface AuditEntry {
   adminId: string;
   action: string;
-  targetType: 'user' | 'group' | 'member' | 'message';
+  targetType: 'user' | 'group' | 'member' | 'message' | 'claim';
   targetId: string;
   details?: Record<string, unknown>;
 }

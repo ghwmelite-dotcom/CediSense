@@ -16,7 +16,7 @@ import {
 import { authMiddleware } from '../middleware/auth.js';
 import type { PinCredential, PublicUser } from '@cedisense/shared';
 
-const REFRESH_TOKEN_TTL = 30 * 24 * 60 * 60; // 30 days in seconds
+const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60; // 7 days
 
 const auth = new Hono<{ Bindings: Env; Variables: Variables }>();
 
