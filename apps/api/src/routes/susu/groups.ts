@@ -210,11 +210,18 @@ groups.get('/groups', async (c) => {
     }
   }
 
-  const data = results.map((row) => ({
-    ...mapGroup(row),
-    member_count: row.member_count,
-    unread_count: unreadCounts.get(row.id) ?? 0,
-  }));
+  const data = results.map((row) => {
+    const mapped = mapGroup(row);
+    // Hide invite_code from non-creators
+    if (row.creator_id !== userId) {
+      mapped.invite_code = null as unknown as string;
+    }
+    return {
+      ...mapped,
+      member_count: row.member_count,
+      unread_count: unreadCounts.get(row.id) ?? 0,
+    };
+  });
 
   return c.json({ data, meta: { limit, offset } });
 });
@@ -623,9 +630,15 @@ groups.get('/groups/:id', async (c) => {
     unread_count = countRow?.cnt ?? 0;
   }
 
+  // Hide invite_code from non-creators
+  const mappedGroup = mapGroup(group);
+  if (group.creator_id !== userId) {
+    mappedGroup.invite_code = null as unknown as string;
+  }
+
   return c.json({
     data: {
-      ...mapGroup(group),
+      ...mappedGroup,
       member_count,
       members: membersWithContrib,
       payout_recipient,

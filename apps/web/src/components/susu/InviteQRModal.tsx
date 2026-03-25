@@ -12,7 +12,7 @@ export function InviteQRModal({ open, onClose, groupName, inviteCode }: InviteQR
   const [copied, setCopied] = useState(false);
   const [shareError, setShareError] = useState(false);
 
-  if (!open) return null;
+  if (!open || !inviteCode) return null;
 
   const inviteUrl = `https://cedisense.pages.dev/join?code=${encodeURIComponent(inviteCode)}`;
 
