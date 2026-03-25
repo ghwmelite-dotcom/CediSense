@@ -12,6 +12,15 @@ import {
 
 const exportRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
+function htmlEscape(str: string): string {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /**
  * GET /export/transactions/csv
  * Query params: account_id, category_id, from, to (all optional)
@@ -48,7 +57,11 @@ exportRoutes.get('/transactions/csv', async (c) => {
   // Build CSV with BOM for Excel compatibility
   const header = 'Date,Type,Amount (GHS),Fee (GHS),Description,Counterparty,Reference,Category,Account,Source';
   const escape = (v: unknown) => {
-    const s = String(v ?? '');
+    let s = String(v ?? '');
+    // Prevent CSV formula injection — prefix with apostrophe if starts with formula char
+    if (/^[=+\-@\t\r]/.test(s)) {
+      s = `'${s}`;
+    }
     return s.includes(',') || s.includes('"') || s.includes('\n')
       ? `"${s.replace(/"/g, '""')}"` : s;
   };
@@ -137,7 +150,7 @@ exportRoutes.get('/report/html', async (c) => {
     const changePct = prevP > 0 ? Math.round(((curP - prevP) / prevP) * 1000) / 10 : (curP > 0 ? 100 : 0);
     const changeColor = changePct <= 0 ? '#22c55e' : '#ef4444';
     categoryRowsHtml += `<tr>
-      <td>${meta.icon} ${meta.name}</td>
+      <td>${htmlEscape(meta.icon)} ${htmlEscape(meta.name)}</td>
       <td>${fmtGHS(curP)}</td>
       <td>${fmtGHS(prevP)}</td>
       <td style="color:${changeColor}">${changePct > 0 ? '+' : ''}${changePct.toFixed(1)}%</td>
@@ -148,7 +161,7 @@ exportRoutes.get('/report/html', async (c) => {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>CediSense Report - ${monthLabel}</title>
+  <title>CediSense Report - ${htmlEscape(monthLabel)}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e; line-height: 1.5; }
@@ -167,7 +180,7 @@ exportRoutes.get('/report/html', async (c) => {
 </head>
 <body>
   <h1>CediSense Monthly Report</h1>
-  <p class="subtitle">${monthLabel}</p>
+  <p class="subtitle">${htmlEscape(monthLabel)}</p>
 
   <h2>Summary</h2>
   <table>

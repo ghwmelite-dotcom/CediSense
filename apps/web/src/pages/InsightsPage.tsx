@@ -1,12 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { api, getAccessToken } from '@/lib/api';
 import type { InsightsData, InsightsReport } from '@cedisense/shared';
 import { MonthPicker } from '@/components/dashboard/MonthPicker';
 import { ComparisonCard } from '@/components/insights/ComparisonCard';
-import { CategoryTrendsChart } from '@/components/insights/CategoryTrendsChart';
 import { TopChangesCard } from '@/components/insights/TopChangesCard';
 import { AIReportSection } from '@/components/insights/AIReportSection';
 import { AdinkraWhisper } from '@/components/shared/AdinkraWhisper';
+
+const CategoryTrendsChart = lazy(() => import('@/components/insights/CategoryTrendsChart').then(m => ({ default: m.CategoryTrendsChart })));
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -141,12 +142,14 @@ export function InsightsPage() {
               />
             </div>
 
-            <div
-              className="motion-safe:animate-slide-up"
-              style={{ animationDelay: '80ms', animationFillMode: 'both' }}
-            >
-              <CategoryTrendsChart trends={data.category_trends} />
-            </div>
+            <Suspense fallback={<div className="h-48 rounded-2xl skeleton" />}>
+              <div
+                className="motion-safe:animate-slide-up"
+                style={{ animationDelay: '80ms', animationFillMode: 'both' }}
+              >
+                <CategoryTrendsChart trends={data.category_trends} />
+              </div>
+            </Suspense>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div
