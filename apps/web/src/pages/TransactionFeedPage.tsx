@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Transaction, Category, Account } from '@cedisense/shared';
-import { api } from '@/lib/api';
+import { api, getAccessToken } from '@/lib/api';
 import { TransactionRow } from '@/components/transactions/TransactionRow';
 
 const LIMIT = 20;
@@ -229,13 +229,24 @@ export function TransactionFeedPage() {
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 const params = new URLSearchParams();
                 if (accountFilter) params.set('account_id', accountFilter);
                 if (categoryFilter) params.set('category_id', categoryFilter);
                 if (fromFilter) params.set('from', fromFilter);
                 if (toFilter) params.set('to', toFilter);
-                window.open(`/print/transactions?${params.toString()}`, '_blank');
+
+                const token = getAccessToken();
+                const response = await fetch(`/api/v1/export/transactions/csv?${params}`, {
+                  headers: token ? { Authorization: `Bearer ${token}` } : {},
+                });
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cedisense-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
               }}
               className="px-3.5 py-2 rounded-xl text-[#FF6B35]/70 text-sm font-medium hover:bg-white/[0.03] hover:text-[#FF6B35] transition-all min-h-[44px]"
             >

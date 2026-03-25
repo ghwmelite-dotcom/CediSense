@@ -474,6 +474,19 @@ export type AddCollectorClientInput = z.infer<typeof addCollectorClientSchema>;
 export type RecordDepositInput = z.infer<typeof recordDepositSchema>;
 export type UpdateCollectorClientInput = z.infer<typeof updateCollectorClientSchema>;
 
+// ─── Admin schemas ─────────────────────────────────────────────────────────
+
+export const adminPinResetSchema = z.object({
+  pin: pinSchema,
+});
+
+export const adminRoleChangeSchema = z.object({
+  role: z.enum(['user', 'admin', 'superadmin']),
+});
+
+export type AdminPinResetInput = z.infer<typeof adminPinResetSchema>;
+export type AdminRoleChangeInput = z.infer<typeof adminRoleChangeSchema>;
+
 // ─── Notification schemas ──────────────────────────────────────────────────
 
 // Notification schemas

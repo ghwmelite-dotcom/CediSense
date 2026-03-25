@@ -1,4 +1,6 @@
 // User types
+export type UserRole = 'user' | 'admin' | 'superadmin';
+
 export interface User {
   id: string;
   phone: string;
@@ -8,6 +10,8 @@ export interface User {
   monthly_income_ghs: number | null;
   preferred_language: 'en' | 'tw' | 'ee' | 'dag';
   onboarding_completed: 0 | 1;
+  role: UserRole;
+  is_active: 0 | 1;
   created_at: string;
   updated_at: string;
 }

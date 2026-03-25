@@ -25,6 +25,7 @@ const SplitsPage = lazy(() => import('@/pages/SplitsPage').then(m => ({ default:
 const InvestmentsPage = lazy(() => import('@/pages/InvestmentsPage').then(m => ({ default: m.InvestmentsPage })));
 const SusuPage = lazy(() => import('@/pages/SusuPage').then(m => ({ default: m.SusuPage })));
 const CollectorPage = lazy(() => import('@/pages/CollectorPage').then(m => ({ default: m.CollectorPage })));
+const NotificationsPage = lazy(() => import('@/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
 const JoinByLinkPage = lazy(() => import('@/pages/JoinByLinkPage').then(m => ({ default: m.JoinByLinkPage })));
 const MonthlyReportPrint = lazy(() => import('@/pages/print/MonthlyReportPrint').then(m => ({ default: m.MonthlyReportPrint })));
 const TransactionsPrint = lazy(() => import('@/pages/print/TransactionsPrint').then(m => ({ default: m.TransactionsPrint })));
@@ -108,6 +109,7 @@ export function App() {
           <Route path="/investments" element={<InvestmentsPage />} />
           <Route path="/susu" element={<ErrorBoundary><SusuPage /></ErrorBoundary>} />
           <Route path="/collector" element={<CollectorPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
         </Route>
 
         {/* Catch-all */}

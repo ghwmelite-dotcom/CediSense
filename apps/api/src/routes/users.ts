@@ -11,7 +11,7 @@ users.get('/me', async (c) => {
   const userId = c.get('userId');
 
   const user = await c.env.DB.prepare(
-    `SELECT id, phone, name, monthly_income_ghs, preferred_language, onboarding_completed, created_at, updated_at
+    `SELECT id, phone, name, monthly_income_ghs, preferred_language, onboarding_completed, role, is_active, created_at, updated_at
      FROM users WHERE id = ?`
   ).bind(userId).first();
 
@@ -75,7 +75,7 @@ users.put('/me', async (c) => {
   ).bind(...values).run();
 
   const user = await c.env.DB.prepare(
-    `SELECT id, phone, name, monthly_income_ghs, preferred_language, onboarding_completed, created_at, updated_at
+    `SELECT id, phone, name, monthly_income_ghs, preferred_language, onboarding_completed, role, is_active, created_at, updated_at
      FROM users WHERE id = ?`
   ).bind(userId).first();
 

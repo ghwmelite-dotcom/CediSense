@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '@/lib/api';
+import { api, getAccessToken } from '@/lib/api';
 import type { InsightsData, InsightsReport } from '@cedisense/shared';
 import { MonthPicker } from '@/components/dashboard/MonthPicker';
 import { ComparisonCard } from '@/components/insights/ComparisonCard';
@@ -61,7 +61,18 @@ export function InsightsPage() {
           </div>
           <button
             type="button"
-            onClick={() => window.open(`/print/report?month=${month}`, '_blank')}
+            onClick={async () => {
+              const token = getAccessToken();
+              const res = await fetch(`/api/v1/export/report/html?month=${month}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              });
+              if (!res.ok) return;
+              const html = await res.text();
+              const blob = new Blob([html], { type: 'text/html' });
+              const url = URL.createObjectURL(blob);
+              window.open(url, '_blank');
+              setTimeout(() => URL.revokeObjectURL(url), 10000);
+            }}
             className="btn-gold flex items-center gap-1.5 px-4 py-2.5 text-sm no-print min-h-[44px]"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">

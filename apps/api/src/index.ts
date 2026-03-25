@@ -21,6 +21,9 @@ import { investments } from './routes/investments.js';
 import { susu } from './routes/susu/index.js';
 import { collector } from './routes/collector.js';
 import { notifications } from './routes/notifications.js';
+import { exportRoutes } from './routes/export.js';
+import { admin } from './routes/admin/index.js';
+import { adminMiddleware } from './middleware/admin.js';
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -57,12 +60,8 @@ app.get('/api/v1/susu/certificate/verify/:certificateId', async (c) => {
     );
   }
 
-  // Only set TTL on first write to avoid resetting the window
-  if (rlCount === 0) {
-    await c.env.KV.put(rlKey, '1', { expirationTtl: 60 });
-  } else {
-    await c.env.KV.put(rlKey, String(rlCount + 1));
-  }
+  // Always include TTL to prevent orphaned keys
+  await c.env.KV.put(rlKey, String(rlCount + 1), { expirationTtl: 60 });
 
   const certId = c.req.param('certificateId');
   const row = await c.env.DB.prepare(
@@ -122,6 +121,12 @@ app.use('/api/v1/collector/*', authMiddleware, rateLimitMiddleware);
 // IMPORTANT: Both bare path AND wildcard required — GET / and GET /unread-count need the first, nested routes need the second.
 app.use('/api/v1/notifications', authMiddleware, rateLimitMiddleware);
 app.use('/api/v1/notifications/*', authMiddleware, rateLimitMiddleware);
+// Export routes
+app.use('/api/v1/export', authMiddleware, rateLimitMiddleware);
+app.use('/api/v1/export/*', authMiddleware, rateLimitMiddleware);
+// Admin portal
+app.use('/api/v1/admin', authMiddleware, rateLimitMiddleware, adminMiddleware);
+app.use('/api/v1/admin/*', authMiddleware, rateLimitMiddleware, adminMiddleware);
 
 app.route('/api/v1/users', users);
 app.route('/api/v1/accounts', accounts);
@@ -141,6 +146,8 @@ app.route('/api/v1/investments', investments);
 app.route('/api/v1/susu', susu);
 app.route('/api/v1/collector', collector);
 app.route('/api/v1/notifications', notifications);
+app.route('/api/v1/export', exportRoutes);
+app.route('/api/v1/admin', admin);
 
 // Health check
 app.get('/api/v1/health', (c) => {
