@@ -117,7 +117,7 @@ export function InvestmentsPage() {
 
             {/* Filter tabs */}
             {investments.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 pr-4 scrollbar-none">
                 {FILTER_TABS.map((tab) => {
                   const count =
                     tab.value === 'all'

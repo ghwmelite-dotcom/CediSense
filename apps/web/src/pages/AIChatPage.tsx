@@ -132,7 +132,7 @@ export function AIChatPage() {
       {/* Message area */}
       <div
         ref={scrollAreaRef}
-        className="flex-1 overflow-y-auto px-4 pt-4"
+        className="flex-1 overflow-y-auto px-3 sm:px-4 pt-4"
         style={{
           background:
             'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,107,53,0.03) 0%, transparent 70%), ' +

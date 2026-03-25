@@ -465,12 +465,12 @@ export function SusuPage() {
       <div className="sticky top-0 z-30 bg-ghana-dark/95 backdrop-blur-md border-b border-white/10 px-4 py-4">
         <div className="flex items-center justify-between gap-3 max-w-screen-lg mx-auto">
           <h1 className="text-white text-xl font-bold font-display">Susu Groups</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setShowCertificate(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-500/40
-                text-amber-400 font-semibold text-sm hover:bg-amber-500/10 active:scale-95 transition-all min-h-[44px]"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl border border-amber-500/40
+                text-amber-400 font-semibold text-xs sm:text-sm hover:bg-amber-500/10 active:scale-95 transition-all min-h-[44px]"
               title="View My Certificate"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -481,16 +481,16 @@ export function SusuPage() {
             <button
               type="button"
               onClick={() => setJoinOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gold/60
-                text-gold font-semibold text-sm hover:bg-gold/10 active:scale-95 transition-all min-h-[44px]"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl border border-gold/60
+                text-gold font-semibold text-xs sm:text-sm hover:bg-gold/10 active:scale-95 transition-all min-h-[44px]"
             >
               Join
             </button>
             <button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gold text-ghana-dark
-                font-semibold text-sm hover:brightness-110 active:scale-95 transition-all min-h-[44px]"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl bg-gold text-ghana-dark
+                font-semibold text-xs sm:text-sm hover:brightness-110 active:scale-95 transition-all min-h-[44px]"
             >
               <svg
                 className="w-4 h-4"

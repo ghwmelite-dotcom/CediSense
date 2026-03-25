@@ -144,7 +144,7 @@ export function RecurringPage() {
                 </div>
                 <div>
                   <h2 className="text-white font-semibold mb-1.5">No bills detected yet</h2>
-                  <p className="text-muted text-sm max-w-xs leading-relaxed">
+                  <p className="text-muted text-sm max-w-[260px] sm:max-w-xs leading-relaxed">
                     Scan your transactions to find recurring bills and subscriptions automatically.
                   </p>
                 </div>

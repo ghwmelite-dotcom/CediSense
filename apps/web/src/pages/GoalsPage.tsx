@@ -163,7 +163,7 @@ export function GoalsPage() {
         {!loading && !error && goals.length === 0 && (
           <div className="text-center py-20 px-6 motion-safe:animate-slide-up">
             <div className="relative inline-flex items-center justify-center mb-6">
-              <div className="relative w-28 h-28 motion-safe:animate-float">
+              <div className="relative w-20 sm:w-24 md:w-28 h-20 sm:h-24 md:h-28 motion-safe:animate-float">
                 <svg viewBox="0 0 112 112" fill="none" className="w-full h-full">
                   {/* Mountain/flag illustration */}
                   {/* Mountain */}

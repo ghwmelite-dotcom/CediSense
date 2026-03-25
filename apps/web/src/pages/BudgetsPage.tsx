@@ -111,7 +111,7 @@ export function BudgetsPage() {
               <div className="flex flex-col items-center justify-center py-20 gap-5 text-center motion-safe:animate-slide-up">
                 <div className="relative">
                   {/* Pie chart illustration */}
-                  <div className="w-28 h-28 relative motion-safe:animate-float">
+                  <div className="w-20 sm:w-24 md:w-28 h-20 sm:h-24 md:h-28 relative motion-safe:animate-float">
                     <svg viewBox="0 0 112 112" fill="none" className="w-full h-full">
                       {/* Outer ring segments */}
                       <circle cx="56" cy="56" r="42" stroke="#1F1F35" strokeWidth="12" />

@@ -49,7 +49,7 @@ export function SummaryCard({ income, expenses, fees }: SummaryCardProps) {
         boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
       }}
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         {/* Income column */}
         <div
           className="relative rounded-xl p-4 overflow-hidden"

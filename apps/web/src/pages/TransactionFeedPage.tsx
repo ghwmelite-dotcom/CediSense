@@ -289,7 +289,7 @@ export function TransactionFeedPage() {
         </div>
 
         {/* Filter chips */}
-        <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+        <div className="flex gap-2 overflow-x-auto pb-0.5 pr-4 scrollbar-none">
           <select
             value={accountFilter}
             onChange={(e) => setAccountFilter(e.target.value)}

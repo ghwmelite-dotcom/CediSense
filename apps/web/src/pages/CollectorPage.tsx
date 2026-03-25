@@ -216,7 +216,7 @@ export function CollectorPage() {
       </div>
 
       {/* Today's summary cards */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-6">
         <div className="bg-[#00C896]/10 border border-[#00C896]/20 rounded-2xl p-4">
           <p className="text-[#00C896]/70 text-xs font-medium uppercase tracking-wider mb-1">Today</p>
           <p className="text-[#00C896] font-bold text-xl">{'\u20B5'}{todayAmountGHS}</p>

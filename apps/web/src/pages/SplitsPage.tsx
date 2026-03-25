@@ -17,18 +17,18 @@ function SummaryCard({ totalOwedToMe, totalIOwe }: SummaryCardProps) {
   const isPositive = net >= 0;
 
   return (
-    <div className="bg-ghana-surface border border-white/10 rounded-xl p-4 grid grid-cols-3 gap-3">
+    <div className="bg-ghana-surface border border-white/10 rounded-xl p-4 grid grid-cols-3 gap-2 sm:gap-3">
       <div className="space-y-0.5">
         <p className="text-muted text-xs">Owed to you</p>
-        <p className="text-income font-bold text-base">{formatPesewas(totalOwedToMe)}</p>
+        <p className="text-income font-bold text-lg sm:text-xl">{formatPesewas(totalOwedToMe)}</p>
       </div>
       <div className="space-y-0.5">
         <p className="text-muted text-xs">You owe</p>
-        <p className="text-expense font-bold text-base">{formatPesewas(totalIOwe)}</p>
+        <p className="text-expense font-bold text-lg sm:text-xl">{formatPesewas(totalIOwe)}</p>
       </div>
       <div className="space-y-0.5 text-right">
         <p className="text-muted text-xs">Net</p>
-        <p className={`font-bold text-base ${isPositive ? 'text-income' : 'text-expense'}`}>
+        <p className={`font-bold text-lg sm:text-xl ${isPositive ? 'text-income' : 'text-expense'}`}>
           {isPositive ? '+' : ''}{formatPesewas(net)}
         </p>
       </div>

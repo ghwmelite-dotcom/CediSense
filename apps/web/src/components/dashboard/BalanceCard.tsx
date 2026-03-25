@@ -68,7 +68,7 @@ export function BalanceCard({ totalBalance, accounts }: BalanceCardProps) {
               className="inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-lg bg-white/[0.03] text-xs hover:bg-white/[0.06] transition-all duration-200 cursor-default"
               style={{ borderLeft: `3px solid ${ACCOUNT_TYPE_COLORS[acc.type]}` }}
             >
-              <span className="text-text-primary font-medium">{acc.name}</span>
+              <span className="text-text-primary font-medium truncate">{acc.name}</span>
               <span className="text-muted-dim tabular-nums">{formatPesewas(acc.balance_pesewas)}</span>
             </span>
           ))}
