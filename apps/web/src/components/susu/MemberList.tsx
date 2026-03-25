@@ -15,6 +15,7 @@ interface MemberListProps {
   onViewReceipt?: (memberId: string) => void;
   onReorderMembers?: (memberIds: string[]) => void;
   reorderSaving?: boolean;
+  onTogglePrePaid?: (memberId: string, prePaid: boolean) => void;
 }
 
 export function MemberList({
@@ -28,6 +29,7 @@ export function MemberList({
   onViewReceipt,
   onReorderMembers,
   reorderSaving = false,
+  onTogglePrePaid,
 }: MemberListProps) {
   const [lateMembers, setLateMembers] = useState<Set<string>>(new Set());
 
@@ -218,11 +220,16 @@ export function MemberList({
                 </span>
 
                 {/* Member info */}
-                <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className={`flex items-center gap-2 flex-1 min-w-0 ${member.pre_paid ? 'opacity-60' : ''}`}>
                   <p className="font-semibold text-sm text-white truncate">
                     {member.display_name}
                     {isMe && <span className="ml-1.5 text-xs font-normal text-muted">(you)</span>}
                   </p>
+                  {member.pre_paid && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wider bg-income/15 text-income px-1.5 py-0.5 rounded-md shrink-0">
+                      Paid
+                    </span>
+                  )}
                   <span
                     className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-bold shrink-0 border
                       ${member.trust_score >= 80
@@ -257,7 +264,7 @@ export function MemberList({
                     : 'bg-ghana-surface border-white/10'
                   }`}
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className={`flex items-center gap-3 flex-1 min-w-0 ${member.pre_paid && !isRecipient ? 'opacity-60' : ''}`}>
                   {/* Payout order */}
                   <span
                     className={`text-xs font-bold w-5 text-center shrink-0
@@ -273,6 +280,11 @@ export function MemberList({
                         <span className="ml-1.5 text-xs font-normal text-muted">(you)</span>
                       )}
                     </p>
+                    {member.pre_paid && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wider bg-income/15 text-income px-1.5 py-0.5 rounded-md shrink-0">
+                        Paid
+                      </span>
+                    )}
                     {/* Trust score badge */}
                     <span
                       className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-bold shrink-0 border
@@ -292,6 +304,21 @@ export function MemberList({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                  {/* Pre-paid toggle — creator only */}
+                  {isCreator && onTogglePrePaid && (
+                    <button
+                      type="button"
+                      onClick={() => onTogglePrePaid(member.id, !member.pre_paid)}
+                      className={`text-[11px] font-medium px-2 py-1 rounded-lg transition-colors min-h-[32px] ${
+                        member.pre_paid
+                          ? 'bg-income/15 text-income hover:bg-income/25'
+                          : 'bg-white/5 text-muted hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      {member.pre_paid ? 'Marked Paid' : 'Mark as Paid'}
+                    </button>
+                  )}
+
                   {/* Contribution status */}
                   {member.has_contributed_this_round ? (
                     onViewReceipt ? (

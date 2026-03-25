@@ -42,6 +42,7 @@ interface GroupDetailProps {
   leaderboard?: LeaderboardEntry[];
   leaderboardLoading?: boolean;
   onLoadLeaderboard?: () => void;
+  onTogglePrePaid?: (memberId: string, prePaid: boolean) => void;
 }
 
 export function GroupDetail({
@@ -79,6 +80,7 @@ export function GroupDetail({
   onPayWelfareClaim,
   onReorderMembers,
   reorderSaving = false,
+  onTogglePrePaid,
 }: GroupDetailProps) {
   const [activeTab, setActiveTab] = useState<GroupDetailTab>('overview');
 
@@ -226,6 +228,7 @@ export function GroupDetail({
           onReorderMembers={onReorderMembers}
           reorderSaving={reorderSaving}
           badges={badges}
+          onTogglePrePaid={onTogglePrePaid}
         />
       )}
     </div>

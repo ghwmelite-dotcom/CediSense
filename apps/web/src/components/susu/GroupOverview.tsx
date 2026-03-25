@@ -60,6 +60,7 @@ interface GroupOverviewProps {
   onReorderMembers?: (memberIds: string[]) => void;
   reorderSaving?: boolean;
   badges?: SusuBadge[];
+  onTogglePrePaid?: (memberId: string, prePaid: boolean) => void;
 }
 
 export function GroupOverview({
@@ -91,6 +92,7 @@ export function GroupOverview({
   onReorderMembers,
   reorderSaving = false,
   badges = [],
+  onTogglePrePaid,
 }: GroupOverviewProps) {
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
@@ -698,6 +700,7 @@ export function GroupOverview({
         onViewReceipt={onViewReceipt}
         onReorderMembers={onReorderMembers}
         reorderSaving={reorderSaving}
+        onTogglePrePaid={onTogglePrePaid}
       />
 
       {/* Creator actions */}

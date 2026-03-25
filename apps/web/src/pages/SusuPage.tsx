@@ -252,6 +252,19 @@ export function SusuPage() {
     }
   }
 
+  // ── Toggle pre-paid ────────────────────────────────────────────────────────
+
+  async function handleTogglePrePaid(memberId: string, prePaid: boolean) {
+    if (!selectedGroup) return;
+    try {
+      await api.patch(`/susu/groups/${selectedGroup.id}/members/${memberId}/pre-paid`, { pre_paid: prePaid });
+      const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
+      setSelectedGroup(updated);
+    } catch {
+      // Non-fatal — silently ignore
+    }
+  }
+
   // ── Contribute ──────────────────────────────────────────────────────────────
 
   async function handleContribute(memberId: string, isLate: boolean) {
@@ -441,6 +454,7 @@ export function SusuPage() {
               onLoadLeaderboard={() => fetchLeaderboard(selectedGroup.id)}
               onReorderMembers={handleReorderMembers}
               reorderSaving={reorderSaving}
+              onTogglePrePaid={handleTogglePrePaid}
             />
           </div>
         </div>
