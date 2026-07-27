@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 360" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0D68A"/>
+      <stop offset="100%" stop-color="#D4A843"/>
+    </linearGradient>
+    <linearGradient id="coin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0D68A"/>
+      <stop offset="60%" stop-color="#D4A843"/>
+      <stop offset="100%" stop-color="#9C7B24"/>
+    </linearGradient>
+    <linearGradient id="ttl2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#D4A843"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <radialGradient id="glow5" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D4A843" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#D4A843" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow6" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00B04F" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#00B04F" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- canvas -->
+  <rect width="1280" height="360" fill="#0C0C14"/>
+  <ellipse cx="210" cy="170" rx="340" ry="220" fill="url(#glow5)"/>
+  <ellipse cx="1150" cy="310" rx="360" ry="200" fill="url(#glow6)"/>
+
+  <!-- faint grid -->
+  <g stroke="#D4A843" stroke-opacity="0.05">
+    <path d="M0 90h1280M0 180h1280M0 270h1280"/>
+    <path d="M160 0v360M320 0v360M480 0v360M640 0v360M800 0v360M960 0v360M1120 0v360"/>
+  </g>
+
+  <!-- coin logo -->
+  <g transform="translate(72,92)">
+    <circle cx="88" cy="88" r="88" fill="#14142A" stroke="url(#coin)" stroke-width="5"/>
+    <circle cx="88" cy="88" r="72" fill="none" stroke="#D4A843" stroke-opacity="0.35" stroke-width="2" stroke-dasharray="3 6"/>
+    <text x="88" y="118" text-anchor="middle" font-size="88" font-weight="800" fill="url(#gold)">&#8373;</text>
+  </g>
+
+  <!-- wordmark + tagline -->
+  <text x="288" y="176" font-size="72" font-weight="800" letter-spacing="-1" fill="url(#ttl2)">CediSense</text>
+  <text x="292" y="222" font-size="23" font-weight="500" fill="#b9bdd0">AI-Powered Personal Finance for Ghana</text>
+
+  <!-- chips -->
+  <g font-size="15" font-weight="600">
+    <g>
+      <rect x="292" y="248" width="122" height="34" rx="17" fill="#D4A843" fill-opacity="0.08" stroke="#D4A843" stroke-opacity="0.55"/>
+      <text x="353" y="270" text-anchor="middle" fill="#E8C96B">MoMo-native</text>
+    </g>
+    <g>
+      <rect x="426" y="248" width="112" height="34" rx="17" fill="#00B04F" fill-opacity="0.08" stroke="#00B04F" stroke-opacity="0.5"/>
+      <text x="482" y="270" text-anchor="middle" fill="#4fd68a">AI Advisor</text>
+    </g>
+    <g>
+      <rect x="550" y="248" width="120" height="34" rx="17" fill="#E60000" fill-opacity="0.07" stroke="#E60000" stroke-opacity="0.45"/>
+      <text x="610" y="270" text-anchor="middle" fill="#f07575">Susu Groups</text>
+    </g>
+  </g>
+
+  <!-- phone dashboard mock (right) -->
+  <g transform="translate(806,40)">
+    <rect width="240" height="284" rx="26" fill="#10101E" stroke="#D4A843" stroke-opacity="0.4" stroke-width="2"/>
+    <rect x="96" y="12" width="48" height="8" rx="4" fill="#2a2a40"/>
+    <!-- balance -->
+    <text x="24" y="52" font-size="11" fill="#8b90a8">TOTAL BALANCE</text>
+    <text x="24" y="82" font-size="30" font-weight="800" fill="url(#gold)">&#8373;4,280.50</text>
+    <rect x="160" y="34" width="56" height="20" rx="10" fill="#00B04F" fill-opacity="0.15"/>
+    <text x="188" y="48" text-anchor="middle" font-size="10" font-weight="700" fill="#4fd68a">+12.4%</text>
+    <!-- trend area -->
+    <path d="M24 128 L60 118 L96 124 L132 106 L168 112 L216 96 L216 150 L24 150 Z" fill="#D4A843" fill-opacity="0.18"/>
+    <path d="M24 128 L60 118 L96 124 L132 106 L168 112 L216 96" fill="none" stroke="#D4A843" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- category bars -->
+    <g font-size="9" fill="#8b90a8">
+      <rect x="24" y="164" width="130" height="10" rx="5" fill="#D4A843" fill-opacity="0.85"/>
+      <text x="24" y="188">Trotro</text>
+      <rect x="24" y="194" width="96" height="10" rx="5" fill="#00B04F" fill-opacity="0.7"/>
+      <text x="132" y="203">Market</text>
+      <rect x="24" y="216" width="64" height="10" rx="5" fill="#E60000" fill-opacity="0.6"/>
+      <text x="100" y="225">Airtime</text>
+    </g>
+    <!-- AI pill -->
+    <rect x="24" y="240" width="192" height="28" rx="14" fill="#D4A843" fill-opacity="0.10" stroke="#D4A843" stroke-opacity="0.4"/>
+    <text x="120" y="258" text-anchor="middle" font-size="11" font-weight="600" fill="#E8C96B">&#10022; Ask CediSense AI&#8230;</text>
+  </g>
+
+  <!-- MoMo provider chips floating -->
+  <g font-size="12" font-weight="800" text-anchor="middle">
+    <g transform="translate(1080,84)">
+      <rect width="86" height="30" rx="15" fill="#FFCC00"/>
+      <text x="43" y="20" fill="#0C0C14">MTN</text>
+    </g>
+    <g transform="translate(1120,140)">
+      <rect width="96" height="30" rx="15" fill="#E60000"/>
+      <text x="48" y="20" fill="#ffffff">Vodafone</text>
+    </g>
+    <g transform="translate(1088,196)">
+      <rect width="104" height="30" rx="15" fill="#0F4C97"/>
+      <text x="52" y="20" fill="#ffffff">AirtelTigo</text>
+    </g>
+    <g transform="translate(1130,252)">
+      <rect width="80" height="30" rx="15" fill="#1C6E3C"/>
+      <text x="40" y="20" fill="#ffffff">GCB</text>
+    </g>
+    <g stroke="#D4A843" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="3 5">
+      <path d="M1080 99 Q 1052 110 1046 130" fill="none"/>
+      <path d="M1120 155 Q 1070 160 1048 155" fill="none"/>
+      <path d="M1088 211 Q 1056 200 1046 180" fill="none"/>
+      <path d="M1130 267 Q 1070 250 1048 210" fill="none"/>
+    </g>
+  </g>
+
+  <!-- bottom accent -->
+  <rect x="0" y="354" width="1280" height="6" fill="url(#coin)"/>
+</svg>

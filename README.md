@@ -1,21 +1,20 @@
 <div align="center">
 
-# CediSense
-
-### AI-Powered Personal Finance Dashboard for Ghana
+<img src="docs/assets/banner.svg" alt="CediSense — AI-Powered Personal Finance for Ghana" width="100%" />
 
 *Smart money management built for Ghanaians, by Ghanaians.*
 
-[![Built by Hodges & Co.](https://img.shields.io/badge/Built%20by-Hodges%20%26%20Co.-D4A843?style=for-the-badge)](https://hodgesandco.com)
-[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
-[![React 18](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Live App](https://img.shields.io/badge/🚀_Live-cedisense.pages.dev-D4A843?style=for-the-badge&labelColor=0C0C14)](https://cedisense.pages.dev/)
+[![Built by Hodges & Co.](https://img.shields.io/badge/Built%20by-Hodges%20%26%20Co.-D4A843?style=for-the-badge&labelColor=0C0C14)](https://hodgesandco.com)
 
----
-
-**CediSense** is an AI-powered personal finance platform designed specifically for Ghana's financial ecosystem. Unlike Plaid-based tools built for US/EU markets, CediSense is architected around **Mobile Money** (MTN MoMo, Vodafone Cash, AirtelTigo) and **local banks** — with AI advice contextualized to the Ghanaian economy.
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
+[![React 18](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Hono](https://img.shields.io/badge/API-Hono-E36002?style=flat-square)](https://hono.dev)
 
 </div>
+
+**CediSense** is an AI-powered personal finance platform designed specifically for Ghana's financial ecosystem. Unlike Plaid-based tools built for US/EU markets, CediSense is architected around **Mobile Money** (MTN MoMo, Vodafone Cash, AirtelTigo) and **local banks** — with AI advice contextualized to the Ghanaian economy.
 
 ---
 
@@ -27,36 +26,45 @@ CediSense fills that gap with:
 
 - **SMS & CSV Import** — Parse transaction messages from 11 Ghanaian providers (MTN MoMo, Vodafone Cash, AirtelTigo, GCB, Ecobank, Fidelity, Stanbic, Absa, CalBank, UBA, Zenith)
 - **AI Chat Advisor** — Conversational financial guidance powered by Qwen3-30B, with full context of your spending patterns, budgets, and goals
+- **Susu Groups** — Digital rotating savings with trust scores, early-payout voting, penalties, and group chat
 - **Smart Categorization** — Rule-based + AI auto-categorization across 18 Ghana-contextualized categories
 - **Visual Dashboard** — Income vs expenses, daily spending trends, category breakdowns with Recharts
 - **Budgets & Goals** — Monthly per-category spending limits and savings goals with progress tracking
 - **Zero API Costs** — Runs entirely on Cloudflare's free tier (Workers AI, D1, KV, Pages)
 
----
-
-## Screenshots
-
-> *Coming soon — the app is in active development.*
+<div align="center">
+<img src="docs/assets/pipeline.svg" alt="CediSense pipeline — Capture, Parse, Categorize, Understand, Advise" width="100%" />
+</div>
 
 ---
 
 ## Architecture
 
-```
-                    Cloudflare Edge
-    ┌─────────────────────────────────────────┐
-    │                                         │
-    │   ┌─────────┐     ┌──────────────────┐  │
-    │   │  Pages   │     │    Workers AI     │  │
-    │   │ (React)  │────>│  Qwen3-30B-A3B   │  │
-    │   └────┬─────┘     │  Granite Micro    │  │
-    │        │           └──────────────────┘  │
-    │        v                                 │
-    │   ┌─────────┐  ┌─────┐  ┌────┐  ┌────┐  │
-    │   │ Workers  │──│ D1  │  │ KV │  │ R2 │  │
-    │   │ (Hono)   │  │(SQL)│  │    │  │    │  │
-    │   └─────────┘  └─────┘  └────┘  └────┘  │
-    └─────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph CLIENTS["📱 Clients"]
+        WEB["web<br/><i>React PWA · cedisense.pages.dev</i>"]
+        ADMIN["admin<br/><i>ops portal · cedisense-admin.pages.dev</i>"]
+    end
+
+    subgraph EDGE["☁️ Cloudflare Edge"]
+        WORKER["Hono API Worker<br/><i>auth · rate limits · 40+ route modules</i>"]
+        AI["⚡ Workers AI<br/><i>Qwen3-30B chat · Granite categorization</i>"]
+    end
+
+    subgraph DATA["🗄️ Edge Data — 41 tables"]
+        D1[("D1 · SQLite<br/>34 migrations")]
+        KV[("KV sessions")]
+        R2[("R2 uploads")]
+    end
+
+    WEB & ADMIN --> WORKER
+    WORKER --> AI
+    WORKER --> D1 & KV & R2
+
+    style CLIENTS fill:#14142A,stroke:#D4A843,color:#e8eaf2
+    style EDGE fill:#101c16,stroke:#00B04F,color:#e8eaf2
+    style DATA fill:#1c1710,stroke:#E8C96B,color:#e8eaf2
 ```
 
 ### Tech Stack
@@ -65,13 +73,13 @@ CediSense fills that gap with:
 |-------|-----------|
 | **Frontend** | React 18, Vite, Tailwind CSS, Recharts, TypeScript |
 | **API** | Hono on Cloudflare Workers |
-| **Database** | Cloudflare D1 (SQLite at the edge) |
+| **Database** | Cloudflare D1 (SQLite at the edge) — 41 tables, 34 migrations |
 | **Cache/Sessions** | Cloudflare KV |
 | **File Storage** | Cloudflare R2 |
 | **AI Models** | Qwen3-30B-A3B (chat), Granite Micro (categorization) |
 | **Auth** | Phone + 4-digit PIN, JWT, httpOnly refresh cookies |
-| **Hosting** | Cloudflare Pages |
-| **Monorepo** | pnpm workspaces |
+| **Hosting** | Cloudflare Pages (web + admin) |
+| **Monorepo** | pnpm workspaces + Turbo |
 
 ---
 
@@ -81,18 +89,19 @@ CediSense fills that gap with:
 CediSense/
 ├── apps/
 │   ├── api/                    # Cloudflare Worker (Hono)
-│   │   ├── migrations/         # D1 SQL migrations
+│   │   ├── migrations/         # 34 D1 SQL migrations
 │   │   └── src/
-│   │       ├── routes/         # API endpoints
+│   │       ├── routes/         # API endpoints — incl. susu/ suite & admin/
 │   │       ├── lib/            # Shared utilities
 │   │       └── middleware/     # Auth, CORS, rate limiting
-│   └── web/                    # React frontend (Vite)
-│       └── src/
-│           ├── pages/          # Route pages
-│           ├── components/     # UI components
-│           ├── contexts/       # React contexts
-│           ├── hooks/          # Custom hooks
-│           └── lib/            # Utilities
+│   ├── web/                    # React frontend (Vite) → cedisense.pages.dev
+│   │   └── src/
+│   │       ├── pages/          # Route pages
+│   │       ├── components/     # UI components
+│   │       ├── contexts/       # React contexts
+│   │       ├── hooks/          # Custom hooks
+│   │       └── lib/            # Utilities
+│   └── admin/                  # Ops/admin portal (Vite) → cedisense-admin.pages.dev
 ├── packages/
 │   └── shared/                 # Shared types, schemas, formatters
 │       └── src/
@@ -102,6 +111,7 @@ CediSense/
 │           ├── sms/            # SMS parsing engine
 │           └── csv/            # CSV parser
 └── docs/
+    ├── assets/                 # README illustrations (SVG)
     └── superpowers/
         ├── specs/              # Design specifications
         └── plans/              # Implementation plans
@@ -117,6 +127,16 @@ CediSense/
 - CSV bank statement import (MTN MoMo, GCB, Ecobank, Stanbic, Absa, Generic)
 - Two-step import flow: parse/preview then confirm/persist
 - Smart deduplication (reference match + fuzzy fallback)
+- Recurring transactions with automatic candidate detection
+
+### 🤝 Susu Suite — digital rotating savings
+- **Susu groups** with member roles, payout ordering, and pre-paid member tagging
+- **Trust scores** per member driven by contribution history
+- **Early payouts** with group voting, plus penalties for defaults
+- **Group chat** — attachments, reactions, pins, read receipts, member colors, "while you were away" presence separator
+- **Gamification** — badges, streaks, and milestones
+- **Specialized variants** — funeral fund with claim voting, welfare fund, guarantee fund, school-fees plans, agricultural cycles, bulk purchase, diaspora contributions
+- **Collector mode** — profiles, client books, deposits, and payouts for traditional susu collectors
 
 ### AI Chat Advisor
 - Streaming responses (SSE) powered by Qwen3-30B-A3B
@@ -147,11 +167,12 @@ CediSense/
 - Celebration state when goal is reached
 - AI advisor is aware of goal progress
 
-### Categorization
-- 18 Ghana-contextualized default categories
-- Rule-based auto-categorization (contains, exact, regex matching)
-- AI fallback categorization via Workers AI Granite Micro
-- Custom user categories and rules
+### More
+- **IOUs** — track money lent and borrowed
+- **Investments** — T-Bills and local investment tracking
+- **Notifications** — web push (VAPID) with per-user preferences
+- **Admin portal** — operations dashboard with audit log
+- **Categorization** — 18 Ghana-contextualized defaults, rule engine, AI fallback, custom rules
 
 ---
 
@@ -228,9 +249,10 @@ CediSense is **Ghana-first**, not a US fintech localization:
 ## Roadmap
 
 - [x] **Phase 1: MVP** — Auth, Transactions, Dashboard, AI Chat, Budgets & Goals
-- [ ] **Phase 2: Smart Features** — Spending insights, budget alerts, AI monthly reports
-- [ ] **Phase 3: Growth & Polish** — Twi language, offline support, bill reminders, PDF reports
-- [ ] **Phase 4: Future** — MTN MoMo API, WhatsApp bot, investment tracking, susu groups
+- [x] **Phase 2: Smart Features** — Recurring detection, IOUs, investments, notifications
+- [x] **Phase 3: Susu Suite** — Groups, trust scores, chat, gamification, specialized funds, collector mode
+- [ ] **Phase 4: Growth & Polish** — Twi language, offline support, bill reminders, PDF reports
+- [ ] **Phase 5: Future** — MTN MoMo API, WhatsApp bot, deeper investment tracking
 
 ---
 
