@@ -17,6 +17,11 @@ import { authMiddleware } from '../middleware/auth.js';
 import type { PinCredential, PublicUser } from '@cedisense/shared';
 
 const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60; // 7 days
+// Grace window after rotation: a concurrent/duplicate refresh (React
+// StrictMode double-mount, second tab, rapid reload) presents the previous
+// token moments after it rotated. Keep it briefly valid instead of killing
+// the session.
+const REFRESH_GRACE_TTL = 60; // seconds
 
 const auth = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -267,7 +272,10 @@ auth.post('/refresh', async (c) => {
   const stored = await c.env.KV.get(`refresh:${tokenHash}`);
 
   if (!stored) {
-    clearRefreshCookie(c);
+    // Unknown/expired token. Do NOT clear the cookie here: if this was a
+    // rotation race, the parallel successful refresh just set a fresh cookie
+    // — clearing it would log the user out. Genuinely expired cookies age
+    // out via Max-Age; /logout clears explicitly.
     return c.json(
       { error: { code: 'TOKEN_EXPIRED', message: 'Refresh token is invalid or expired' } },
       401
@@ -276,8 +284,9 @@ auth.post('/refresh', async (c) => {
 
   const { userId } = JSON.parse(stored) as { userId: string };
 
-  // Delete old token (single-use rotation)
-  await c.env.KV.delete(`refresh:${tokenHash}`);
+  // Rotate: keep the old token briefly valid (grace window) so a racing
+  // duplicate refresh also succeeds instead of destroying the session.
+  await c.env.KV.put(`refresh:${tokenHash}`, stored, { expirationTtl: REFRESH_GRACE_TTL });
 
   // Generate new token pair
   const newAccessToken = await signAccessToken(userId, c.env.JWT_SECRET);
