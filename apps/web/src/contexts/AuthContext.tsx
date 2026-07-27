@@ -15,6 +15,20 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+// Module-level single-flight for the boot refresh (shared across mounts).
+let bootRefreshPromise: Promise<void> | null = null;
+function bootRefresh(): Promise<void> {
+  if (!bootRefreshPromise) {
+    bootRefreshPromise = api
+      .post<RefreshResponse>('/auth/refresh')
+      .then(({ accessToken }) => setAccessToken(accessToken))
+      .finally(() => {
+        bootRefreshPromise = null;
+      });
+  }
+  return bootRefreshPromise;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,21 +43,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Try silent refresh on mount
+  // Single-flight boot refresh: StrictMode double-mounts this effect in dev,
+  // and rapid reloads can re-enter it — share one in-flight refresh instead
+  // of firing parallel rotations (which race and can kill the session).
   useEffect(() => {
+    let cancelled = false;
     async function init() {
       try {
-        const { accessToken } = await api.post<RefreshResponse>('/auth/refresh');
-        setAccessToken(accessToken);
-        await fetchUser();
+        await bootRefresh();
+        if (!cancelled) await fetchUser();
       } catch {
-        // No valid refresh token — user needs to log in
-        setUser(null);
+        if (!cancelled) setUser(null);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
     init();
+    return () => { cancelled = true; };
   }, [fetchUser]);
 
   const login = useCallback(async (input: LoginInput) => {
