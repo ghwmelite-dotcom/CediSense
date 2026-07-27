@@ -15,7 +15,7 @@ binding = "AI"
 [[d1_databases]]
 binding = "DB"
 database_name = "cedisense-db"
-database_id = "6a0bfc97-22c1-4e29-ba28-f942f65b5fb2"
+database_id = "db62605a-6dbb-4f49-8408-2344b99a15ab"
 
 [[kv_namespaces]]
 binding = "KV"
