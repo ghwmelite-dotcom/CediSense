@@ -316,20 +316,42 @@ export function SusuPage() {
 
   async function handlePayout() {
     if (!selectedGroup) return;
-    await api.post(`/susu/groups/${selectedGroup.id}/payout`);
-    const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
-    setSelectedGroup(updated);
-    await fetchGroups();
+    try {
+      await api.post(`/susu/groups/${selectedGroup.id}/payouts`);
+      const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
+      setSelectedGroup(updated);
+      await fetchGroups();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to record payout');
+    }
   }
 
   // ── Advance round ───────────────────────────────────────────────────────────
 
   async function handleAdvanceRound() {
     if (!selectedGroup) return;
-    await api.post(`/susu/groups/${selectedGroup.id}/advance`);
-    const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
-    setSelectedGroup(updated);
-    await fetchGroups();
+    try {
+      await api.post(`/susu/groups/${selectedGroup.id}/advance-round`);
+      const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
+      setSelectedGroup(updated);
+      await fetchGroups();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to advance round');
+    }
+  }
+
+  // ── Update round ────────────────────────────────────────────────────────────
+
+  async function handleUpdateRound(round: number) {
+    if (!selectedGroup) return;
+    try {
+      await api.put(`/susu/groups/${selectedGroup.id}`, { current_round: round });
+      const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
+      setSelectedGroup(updated);
+      await fetchGroups();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update round');
+    }
   }
 
   // ── Leave ───────────────────────────────────────────────────────────────────
@@ -337,6 +359,21 @@ export function SusuPage() {
   async function handleLeave() {
     if (!selectedGroup) return;
     await api.post(`/susu/groups/${selectedGroup.id}/leave`);
+    setSelectedGroup(null);
+    await fetchGroups();
+  }
+
+  // ── Delete (creator only) ───────────────────────────────────────────────────
+
+  async function handleDeleteGroup() {
+    if (!selectedGroup) return;
+    const confirmed = confirm(
+      `Delete "${selectedGroup.name}" permanently?\n\n` +
+      'This removes the group and all its members, contributions, payouts, ' +
+      'claims and chat history. This cannot be undone.'
+    );
+    if (!confirmed) return;
+    await api.delete(`/susu/groups/${selectedGroup.id}`);
     setSelectedGroup(null);
     await fetchGroups();
   }
@@ -439,6 +476,7 @@ export function SusuPage() {
               onPayout={handlePayout}
               onAdvanceRound={handleAdvanceRound}
               onLeave={handleLeave}
+              onDeleteGroup={handleDeleteGroup}
               onRequestEarlyPayout={handleRequestEarlyPayout}
               onVoteEarlyPayout={handleVoteEarlyPayout}
               onPayEarlyPayout={handlePayEarlyPayout}
@@ -455,6 +493,7 @@ export function SusuPage() {
               onReorderMembers={handleReorderMembers}
               reorderSaving={reorderSaving}
               onTogglePrePaid={handleTogglePrePaid}
+              onUpdateRound={handleUpdateRound}
             />
           </div>
         </div>

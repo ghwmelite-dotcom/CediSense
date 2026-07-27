@@ -39,6 +39,7 @@ interface GroupOverviewProps {
   onPayout: () => void;
   onAdvanceRound: () => void;
   onLeave: () => void;
+  onDeleteGroup: () => void;
   onRequestEarlyPayout: () => void;
   onVoteEarlyPayout: (vote: 'for' | 'against') => void;
   onPayEarlyPayout: () => void;
@@ -61,6 +62,7 @@ interface GroupOverviewProps {
   reorderSaving?: boolean;
   badges?: SusuBadge[];
   onTogglePrePaid?: (memberId: string, prePaid: boolean) => void;
+  onUpdateRound?: (round: number) => void;
 }
 
 export function GroupOverview({
@@ -71,6 +73,7 @@ export function GroupOverview({
   onPayout,
   onAdvanceRound,
   onLeave,
+  onDeleteGroup,
   onRequestEarlyPayout,
   onVoteEarlyPayout,
   onPayEarlyPayout,
@@ -93,10 +96,13 @@ export function GroupOverview({
   reorderSaving = false,
   badges = [],
   onTogglePrePaid,
+  onUpdateRound,
 }: GroupOverviewProps) {
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [welfareFormOpen, setWelfareFormOpen] = useState(false);
+  const [editingRound, setEditingRound] = useState(false);
+  const [roundInput, setRoundInput] = useState(String(group.current_round));
 
   async function copyInviteCode() {
     await navigator.clipboard.writeText(group.invite_code);
@@ -164,9 +170,56 @@ export function GroupOverview({
         <div className="bg-ghana-surface border border-white/10 rounded-xl p-4 flex items-center justify-between">
           <div className="space-y-0.5">
             <p className="text-muted text-xs">Current Round</p>
-            <p className="text-white font-bold text-lg">
-              Round {group.current_round} of {group.max_members}
-            </p>
+            {editingRound && group.is_creator ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={roundInput}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => setRoundInput(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                  className="w-16 bg-white/10 border border-gold/50 rounded-lg px-2 py-1 text-white font-bold text-lg text-center focus:outline-none focus:ring-2 focus:ring-gold/50"
+                  autoFocus
+                />
+                <span className="text-muted text-sm">of {group.max_members}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const val = Math.min(group.max_members, Math.max(1, parseInt(roundInput, 10) || 1));
+                    onUpdateRound?.(val);
+                    setEditingRound(false);
+                  }}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-gold/20 text-gold hover:bg-gold/30 active:scale-95 transition-all"
+                  aria-label="Save round"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setRoundInput(String(group.current_round)); setEditingRound(false); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 text-muted hover:text-white hover:bg-white/20 active:scale-95 transition-all"
+                  aria-label="Cancel"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <p className="text-white font-bold text-lg">
+                  Round {group.current_round} of {group.max_members}
+                </p>
+                {group.is_creator && onUpdateRound && (
+                  <button
+                    type="button"
+                    onClick={() => { setRoundInput(String(group.current_round)); setEditingRound(true); }}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-muted hover:text-gold hover:bg-white/10 active:scale-95 transition-all"
+                    aria-label="Edit current round"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <div className="text-right space-y-0.5">
             <p className="text-muted text-xs">Pool per round</p>
@@ -710,6 +763,18 @@ export function GroupOverview({
           onPayout={onPayout}
           onAdvanceRound={onAdvanceRound}
         />
+      )}
+
+      {/* Creator: delete group (all variants) */}
+      {group.is_creator && (
+        <div className="pt-2">
+          <button type="button" onClick={onDeleteGroup} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-expense/40 text-expense font-semibold text-sm hover:bg-expense/10 active:scale-95 transition-all min-h-[44px]">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Delete Group
+          </button>
+        </div>
       )}
 
       {/* Member: leave group */}
