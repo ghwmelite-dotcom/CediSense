@@ -15,6 +15,7 @@ interface GroupDetailProps {
   onPayout: () => void;
   onAdvanceRound: () => void;
   onLeave: () => void;
+  onDeleteGroup: () => void;
   onRequestEarlyPayout: () => void;
   onVoteEarlyPayout: (vote: 'for' | 'against') => void;
   onPayEarlyPayout: () => void;
@@ -43,6 +44,7 @@ interface GroupDetailProps {
   leaderboardLoading?: boolean;
   onLoadLeaderboard?: () => void;
   onTogglePrePaid?: (memberId: string, prePaid: boolean) => void;
+  onUpdateRound?: (round: number) => void;
 }
 
 export function GroupDetail({
@@ -53,6 +55,7 @@ export function GroupDetail({
   onPayout,
   onAdvanceRound,
   onLeave,
+  onDeleteGroup,
   onRequestEarlyPayout,
   onVoteEarlyPayout,
   onPayEarlyPayout,
@@ -81,6 +84,7 @@ export function GroupDetail({
   onReorderMembers,
   reorderSaving = false,
   onTogglePrePaid,
+  onUpdateRound,
 }: GroupDetailProps) {
   const [activeTab, setActiveTab] = useState<GroupDetailTab>('overview');
 
@@ -207,6 +211,7 @@ export function GroupDetail({
           onPayout={onPayout}
           onAdvanceRound={onAdvanceRound}
           onLeave={onLeave}
+          onDeleteGroup={onDeleteGroup}
           onRequestEarlyPayout={onRequestEarlyPayout}
           onVoteEarlyPayout={onVoteEarlyPayout}
           onPayEarlyPayout={onPayEarlyPayout}
@@ -229,6 +234,7 @@ export function GroupDetail({
           reorderSaving={reorderSaving}
           badges={badges}
           onTogglePrePaid={onTogglePrePaid}
+          onUpdateRound={onUpdateRound}
         />
       )}
     </div>
