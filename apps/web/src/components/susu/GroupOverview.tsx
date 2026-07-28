@@ -753,6 +753,44 @@ export function GroupOverview({
       </div>
 
       {/* Member list */}
+      {/* Feature 8: MoMo USSD deeplink — pay this round's contribution from the dialer */}
+      {(() => {
+        const myMember = group.members.find((m) => m.user_id === currentUserId);
+        const unpaid = myMember && !myMember.has_contributed_this_round;
+        if (!unpaid) return null;
+        const amount = formatPesewas(group.contribution_pesewas);
+        return (
+          <div className="bg-income/10 border border-income/30 rounded-xl p-4 space-y-3">
+            <p className="text-income font-semibold text-sm">
+              📲 Pay {amount} via Mobile Money
+            </p>
+            <p className="text-muted text-xs">
+              Tap your network to open the MoMo menu in your dialer, then send {amount} and tap Record below.
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <a
+                href="tel:*170%23"
+                className="flex items-center justify-center px-2 py-3 rounded-xl bg-[#FFCC00] text-ghana-dark font-bold text-xs active:scale-95 transition-all min-h-[44px]"
+              >
+                MTN *170#
+              </a>
+              <a
+                href="tel:*110%23"
+                className="flex items-center justify-center px-2 py-3 rounded-xl bg-[#E60000] text-white font-bold text-xs active:scale-95 transition-all min-h-[44px]"
+              >
+                Vodafone *110#
+              </a>
+              <a
+                href="tel:*500%23"
+                className="flex items-center justify-center px-2 py-3 rounded-xl bg-[#0F4C97] text-white font-bold text-xs active:scale-95 transition-all min-h-[44px]"
+              >
+                AT *500#
+              </a>
+            </div>
+          </div>
+        );
+      })()}
+
       <MemberList
         members={group.members}
         myMemberId={group.my_member_id}
