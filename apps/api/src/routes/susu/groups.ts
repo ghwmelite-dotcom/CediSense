@@ -754,9 +754,12 @@ groups.delete('/groups/:id', async (c) => {
     return c.json({ error: { code: 'FORBIDDEN', message: 'Only the creator can delete this group' } }, 403);
   }
 
-  await c.env.DB.prepare(
-    `DELETE FROM susu_groups WHERE id = ?`
-  ).bind(groupId).run();
+  await c.env.DB.batch([
+    // notifications.group_id has a bare FK (no ON DELETE action) — clear them
+    // first or the group delete violates the constraint (was a silent 500).
+    c.env.DB.prepare(`DELETE FROM notifications WHERE group_id = ?`).bind(groupId),
+    c.env.DB.prepare(`DELETE FROM susu_groups WHERE id = ?`).bind(groupId),
+  ]);
 
   void logAuditAction(c.env.DB, {
     adminId: userId, action: 'group.delete',
