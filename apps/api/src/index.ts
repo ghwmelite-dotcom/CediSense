@@ -308,5 +308,64 @@ export default {
     } catch (err) {
       console.error(JSON.stringify({ type: 'cron', action: 'due-nudge', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
     }
+
+    // Feature 4: daily chat digest — one notification per member per group
+    // summarizing unread messages from the last 24h.
+    try {
+      const { sendWebPush } = await import('./lib/web-push.js');
+      const today = new Date().toISOString().slice(0, 10);
+
+      const { results: digestRows } = await env.DB.prepare(
+        `SELECT g.id AS group_id, g.name AS group_name, m.id AS member_id, m.user_id,
+                (SELECT COUNT(*) FROM susu_messages msg
+                 WHERE msg.group_id = g.id AND msg.deleted_at IS NULL
+                   AND msg.created_at >= datetime('now', '-1 day')
+                   AND msg.rowid > COALESCE((
+                     SELECT sm2.rowid FROM susu_messages sm2
+                     JOIN chat_read_receipts rr ON rr.last_read_message_id = sm2.id
+                     WHERE rr.member_id = m.id
+                   ), 0)) AS unread
+         FROM susu_groups g
+         JOIN susu_members m ON m.group_id = g.id
+         WHERE g.is_active = 1`
+      ).all<{ group_id: string; group_name: string; member_id: string; user_id: string; unread: number }>();
+
+      let sent = 0;
+      for (const row of digestRows ?? []) {
+        if (!row.unread || row.unread <= 0) continue;
+        const dedupeKey = `chat-digest:${row.group_id}:${row.member_id}:${today}`;
+        if (await env.KV.get(dedupeKey)) continue;
+
+        const title = `${row.unread} new message${row.unread === 1 ? '' : 's'} 💬`;
+        const body = `You have ${row.unread} unread message${row.unread === 1 ? '' : 's'} in "${row.group_name}" from the last day. Catch up now.`;
+
+        const insert = env.DB.prepare(
+          `INSERT INTO notifications (user_id, type, title, body, group_id, reference_id, reference_type, created_at)
+           VALUES (?, 'chat_digest', ?, ?, ?, ?, 'susu_group', datetime('now'))`
+        ).bind(row.user_id, title, body, row.group_id, row.group_id);
+
+        const subs = await env.DB.prepare(
+          `SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?`
+        ).bind(row.user_id).all<{ id: string; endpoint: string; p256dh: string; auth: string }>();
+
+        const vapid = {
+          publicKey: env.VAPID_PUBLIC_KEY,
+          privateKey: env.VAPID_PRIVATE_KEY,
+          contactEmail: env.VAPID_CONTACT_EMAIL,
+        };
+        const pushes = (subs.results ?? []).map((sub) =>
+          sendWebPush(
+            { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+            { title, body, data: { url: '/susu' } },
+            vapid
+          )
+        );
+        ctx.waitUntil(Promise.all([insert.run(), ...pushes, env.KV.put(dedupeKey, '1', { expirationTtl: 2 * 24 * 3600 })]));
+        sent++;
+      }
+      console.log(JSON.stringify({ type: 'cron', action: 'chat-digest', sent, timestamp: new Date().toISOString() }));
+    } catch (err) {
+      console.error(JSON.stringify({ type: 'cron', action: 'chat-digest', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
+    }
   },
 };
