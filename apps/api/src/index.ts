@@ -198,5 +198,54 @@ export default {
     } catch (err) {
       console.error(JSON.stringify({ type: 'cron', action: 'purge', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
     }
+
+    // Feature 1: streak-risk nudges — push members whose streak dies if they
+    // miss the current round.
+    try {
+      const { computeStreakNudges } = await import('./lib/streak-nudge.js');
+      const { sendWebPush } = await import('./lib/web-push.js');
+      const { results } = await env.DB.prepare(
+        `SELECT m.user_id, m.display_name, g.id AS group_id, g.name AS group_name,
+                COALESCE(ts.current_streak, 0) AS current_streak,
+                EXISTS(SELECT 1 FROM susu_contributions sc
+                       WHERE sc.group_id = g.id AND sc.member_id = m.id AND sc.round = g.current_round) AS contributed_this_round
+         FROM susu_members m
+         JOIN susu_groups g ON g.id = m.group_id AND g.is_active = 1
+         LEFT JOIN trust_scores ts ON ts.user_id = m.user_id`
+      ).all<{
+        user_id: string; display_name: string; group_id: string; group_name: string;
+        current_streak: number; contributed_this_round: number;
+      }>();
+
+      const nudges = computeStreakNudges(results);
+      const vapid = {
+        publicKey: env.VAPID_PUBLIC_KEY,
+        privateKey: env.VAPID_PRIVATE_KEY,
+        contactEmail: env.VAPID_CONTACT_EMAIL,
+      };
+
+      for (const n of nudges) {
+        const insert = env.DB.prepare(
+          `INSERT INTO notifications (user_id, type, title, body, group_id, reference_id, reference_type, created_at)
+           VALUES (?, 'streak_risk', ?, ?, ?, ?, 'susu_group', datetime('now'))`
+        ).bind(n.userId, n.title, n.body, n.groupId, n.groupId);
+
+        const subs = await env.DB.prepare(
+          `SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?`
+        ).bind(n.userId).all<{ id: string; endpoint: string; p256dh: string; auth: string }>();
+
+        const pushes = (subs.results ?? []).map((sub) =>
+          sendWebPush(
+            { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+            { title: n.title, body: n.body, data: { url: '/susu' } },
+            vapid
+          )
+        );
+        ctx.waitUntil(Promise.all([insert.run(), ...pushes]));
+      }
+      console.log(JSON.stringify({ type: 'cron', action: 'streak-nudge', sent: nudges.length, timestamp: new Date().toISOString() }));
+    } catch (err) {
+      console.error(JSON.stringify({ type: 'cron', action: 'streak-nudge', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
+    }
   },
 };

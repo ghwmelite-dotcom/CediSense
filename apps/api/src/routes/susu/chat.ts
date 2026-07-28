@@ -42,6 +42,7 @@ chat.get('/groups/:id/messages', async (c) => {
     reply_to_sender: string | null;
     edited_at: string | null;
     deleted_at: string | null;
+    message_type: string;
     attachment_key: string | null;
     attachment_type: string | null;
     attachment_name: string | null;
@@ -61,7 +62,7 @@ chat.get('/groups/:id/messages', async (c) => {
     }
 
     query = `
-      SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+      SELECT m.id, m.content, m.created_at, m.message_type, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
              m.reply_to_id, m.edited_at, m.deleted_at,
              m.attachment_key, m.attachment_type, m.attachment_name, m.attachment_size,
              rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
@@ -76,7 +77,7 @@ chat.get('/groups/:id/messages', async (c) => {
     bindings = [groupId, cursorRow.rowid, limit];
   } else {
     query = `
-      SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+      SELECT m.id, m.content, m.created_at, m.message_type, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
              m.reply_to_id, m.edited_at, m.deleted_at,
              m.attachment_key, m.attachment_type, m.attachment_name, m.attachment_size,
              rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
@@ -192,6 +193,7 @@ chat.get('/groups/:id/messages/poll', async (c) => {
     reply_to_sender: string | null;
     edited_at: string | null;
     deleted_at: string | null;
+    message_type: string;
     attachment_key: string | null;
     attachment_type: string | null;
     attachment_name: string | null;
@@ -208,7 +210,7 @@ chat.get('/groups/:id/messages/poll', async (c) => {
     if (!cursorRow) return [];
 
     const { results } = await c.env.DB.prepare(
-      `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+      `SELECT m.id, m.content, m.created_at, m.message_type, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
               m.reply_to_id, m.edited_at, m.deleted_at,
               m.attachment_key, m.attachment_type, m.attachment_name, m.attachment_size,
               rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
@@ -474,7 +476,7 @@ chat.post('/groups/:id/messages', async (c) => {
   ).bind(messageId, groupId, myMember.id, parsed.data.content, replyToId).run();
 
   const row = await c.env.DB.prepare(
-    `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+    `SELECT m.id, m.content, m.created_at, m.message_type, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
             m.reply_to_id, m.edited_at, m.deleted_at,
             rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
      FROM susu_messages m
@@ -493,6 +495,7 @@ chat.post('/groups/:id/messages', async (c) => {
     reply_to_sender: string | null;
     edited_at: string | null;
     deleted_at: string | null;
+    message_type: string;
   }>();
 
   // Parse @mentions from content
@@ -700,7 +703,7 @@ chat.put('/groups/:id/messages/:messageId', async (c) => {
   ).bind(parsed.data.content, messageId).run();
 
   const row = await c.env.DB.prepare(
-    `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+    `SELECT m.id, m.content, m.created_at, m.message_type, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
             m.reply_to_id, m.edited_at, m.deleted_at,
             m.attachment_key, m.attachment_type, m.attachment_name, m.attachment_size,
             rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
@@ -713,6 +716,7 @@ chat.put('/groups/:id/messages/:messageId', async (c) => {
     id: string; content: string; created_at: string; sender_name: string; sender_user_id: string;
     reply_to_id: string | null; reply_to_content: string | null; reply_to_sender: string | null;
     edited_at: string | null; deleted_at: string | null;
+    message_type: string;
     attachment_key: string | null; attachment_type: string | null; attachment_name: string | null; attachment_size: number | null;
   }>();
 
@@ -819,7 +823,7 @@ chat.get('/groups/:id/messages/search', async (c) => {
   }
 
   const { results } = await c.env.DB.prepare(
-    `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+    `SELECT m.id, m.content, m.created_at, m.message_type, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
             m.reply_to_id, m.edited_at, m.deleted_at,
             m.attachment_key, m.attachment_type, m.attachment_name, m.attachment_size,
             rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
@@ -834,6 +838,7 @@ chat.get('/groups/:id/messages/search', async (c) => {
     id: string; content: string; created_at: string; sender_name: string; sender_user_id: string;
     reply_to_id: string | null; reply_to_content: string | null; reply_to_sender: string | null;
     edited_at: string | null; deleted_at: string | null;
+    message_type: string;
     attachment_key: string | null; attachment_type: string | null; attachment_name: string | null; attachment_size: number | null;
   }>();
 
@@ -938,7 +943,7 @@ chat.post('/groups/:id/messages/upload', async (c) => {
 
   // Fetch the created message
   const row = await c.env.DB.prepare(
-    `SELECT m.id, m.content, m.created_at, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
+    `SELECT m.id, m.content, m.created_at, m.message_type, sm.display_name AS sender_name, sm.user_id AS sender_user_id,
             m.reply_to_id, m.edited_at, m.deleted_at,
             m.attachment_key, m.attachment_type, m.attachment_name, m.attachment_size,
             rm.content AS reply_to_content, rsm.display_name AS reply_to_sender
@@ -951,6 +956,7 @@ chat.post('/groups/:id/messages/upload', async (c) => {
     id: string; content: string; created_at: string; sender_name: string; sender_user_id: string;
     reply_to_id: string | null; reply_to_content: string | null; reply_to_sender: string | null;
     edited_at: string | null; deleted_at: string | null;
+    message_type: string;
     attachment_key: string | null; attachment_type: string | null; attachment_name: string | null; attachment_size: number | null;
   }>();
 

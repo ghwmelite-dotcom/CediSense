@@ -121,12 +121,13 @@ groups.get('/groups', async (c) => {
             g.crop_type, g.planting_month, g.harvest_month, g.organization_name, g.organization_type,
             g.created_at, g.updated_at,
             (SELECT COUNT(*) FROM susu_members m2 WHERE m2.group_id = g.id) AS member_count,
+            (SELECT COALESCE(ts.current_streak, 0) FROM trust_scores ts WHERE ts.user_id = ?) AS my_streak,
             sm.id AS _my_member_id
      FROM susu_groups g
      INNER JOIN susu_members sm ON sm.group_id = g.id AND sm.user_id = ?
      ORDER BY g.created_at DESC
      LIMIT ? OFFSET ?`
-  ).bind(userId, limit, offset).all<SusuGroupRow & { member_count: number; _my_member_id: string }>();
+  ).bind(userId, userId, limit, offset).all<SusuGroupRow & { member_count: number; my_streak: number; _my_member_id: string }>();
 
   // Batch-fetch unread counts: single query using LEFT JOIN + subquery instead of N+1
   const groupIds = results.map((r) => r.id);
@@ -219,6 +220,7 @@ groups.get('/groups', async (c) => {
     return {
       ...mapped,
       member_count: row.member_count,
+      my_streak: row.my_streak,
       unread_count: unreadCounts.get(row.id) ?? 0,
     };
   });
@@ -254,12 +256,13 @@ groups.get('/groups/:id', async (c) => {
 
   const { results: members } = await c.env.DB.prepare(
     `SELECT sm.id, sm.group_id, sm.user_id, sm.display_name, sm.payout_order, sm.pre_paid, sm.joined_at,
-            COALESCE(ts.score, 50) AS trust_score
+            COALESCE(ts.score, 50) AS trust_score,
+            COALESCE(ts.current_streak, 0) AS streak
      FROM susu_members sm
      LEFT JOIN trust_scores ts ON ts.user_id = sm.user_id
      WHERE sm.group_id = ?
      ORDER BY sm.payout_order ASC`
-  ).bind(groupId).all<SusuMemberRow & { trust_score: number }>();
+  ).bind(groupId).all<SusuMemberRow & { trust_score: number; streak: number }>();
 
   const { results: contributions } = await c.env.DB.prepare(
     `SELECT member_id FROM susu_contributions
@@ -695,7 +698,7 @@ groups.put('/groups/:id', async (c) => {
     );
   }
 
-  const { name, contribution_pesewas, frequency, max_members, is_active } = parsed.data;
+  const { name, contribution_pesewas, frequency, max_members, is_active, current_round } = parsed.data;
 
   const setClauses: string[] = [`updated_at = datetime('now')`];
   const bindings: unknown[] = [];
@@ -705,6 +708,7 @@ groups.put('/groups/:id', async (c) => {
   if (frequency !== undefined) { setClauses.push('frequency = ?'); bindings.push(frequency); }
   if (max_members !== undefined) { setClauses.push('max_members = ?'); bindings.push(max_members); }
   if (is_active !== undefined) { setClauses.push('is_active = ?'); bindings.push(is_active ? 1 : 0); }
+  if (current_round !== undefined) { setClauses.push('current_round = ?'); bindings.push(current_round); }
 
   bindings.push(groupId);
 

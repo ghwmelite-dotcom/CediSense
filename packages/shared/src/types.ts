@@ -448,6 +448,8 @@ export interface SusuGroup {
   frequency: SusuFrequency;
   max_members: number;
   current_round: number;
+  /** Requesting user's current streak in this group (list payload only). */
+  my_streak?: number;
   is_active: boolean;
   variant: SusuVariant;
   goal_amount_pesewas: number | null;
@@ -500,6 +502,8 @@ export interface SusuMember {
   payout_order: number;
   pre_paid: boolean;
   joined_at: string;
+  /** Current on-time contribution streak (from trust_scores). */
+  streak?: number;
 }
 
 export interface SusuContribution {
