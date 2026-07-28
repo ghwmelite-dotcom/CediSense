@@ -225,6 +225,14 @@ export function MemberList({
                     {member.display_name}
                     {isMe && <span className="ml-1.5 text-xs font-normal text-muted">(you)</span>}
                   </p>
+                  {(member.streak ?? 0) >= 1 && (
+                    <span
+                      className="inline-flex items-center gap-0.5 text-xs font-semibold text-orange-400 shrink-0"
+                      title={`${member.streak}-round streak`}
+                    >
+                      🔥 {member.streak}
+                    </span>
+                  )}
                   {member.pre_paid && (
                     <span className="text-[10px] font-semibold uppercase tracking-wider bg-income/15 text-income px-1.5 py-0.5 rounded-md shrink-0">
                       Paid
@@ -382,6 +390,18 @@ export function MemberList({
                         Record
                       </button>
                     </div>
+                  )}
+
+                  {/* Member self-record: "I've Paid" button for own unpaid row */}
+                  {!isCreator && member.id === myMemberId && !member.has_contributed_this_round && (
+                    <button
+                      type="button"
+                      onClick={() => onContribute(member.id, false)}
+                      className="px-3 py-1.5 rounded-lg bg-income/20 border border-income/40 text-income
+                        text-xs font-semibold hover:bg-income/30 active:scale-95 transition-all min-h-[36px]"
+                    >
+                      I've Paid
+                    </button>
                   )}
                 </div>
               </div>

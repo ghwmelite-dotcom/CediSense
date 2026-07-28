@@ -23,10 +23,6 @@ contributions.post('/groups/:id/contributions', withNotification(async (c) => {
     return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
   }
 
-  if (group.creator_id !== userId) {
-    return c.json({ error: { code: 'FORBIDDEN', message: 'Only the creator can record contributions' } }, 403);
-  }
-
   const body = await c.req.json();
   const parsed = recordContributionSchema.safeParse(body);
 
@@ -47,8 +43,14 @@ contributions.post('/groups/:id/contributions', withNotification(async (c) => {
 
   // Verify member belongs to this group
   const member = await c.env.DB.prepare(
-    `SELECT id FROM susu_members WHERE id = ? AND group_id = ?`
-  ).bind(member_id, groupId).first();
+    `SELECT id, user_id FROM susu_members WHERE id = ? AND group_id = ?`
+  ).bind(member_id, groupId).first<{ id: string; user_id: string }>();
+
+  // Allow creator to record for anyone, or member to record for themselves
+  const isSelfRecord = member?.user_id === userId;
+  if (group.creator_id !== userId && !isSelfRecord) {
+    return c.json({ error: { code: 'FORBIDDEN', message: 'Only the creator or the member themselves can record contributions' } }, 403);
+  }
 
   if (!member) {
     return c.json({ error: { code: 'NOT_FOUND', message: 'Member not found in this group' } }, 404);
@@ -225,6 +227,26 @@ contributions.post('/groups/:id/contributions', withNotification(async (c) => {
   } else if (batchStatements.length > 0) {
     // No contributing member found but still need to flush penalty/guarantee writes
     await c.env.DB.batch(batchStatements);
+  }
+
+  // System message: the last pending member contributing on time completes the round
+  if (!is_late) {
+    const pending = await c.env.DB.prepare(
+      `SELECT COUNT(*) AS cnt FROM susu_members m
+       WHERE m.group_id = ? AND NOT EXISTS (
+         SELECT 1 FROM susu_contributions sc
+         WHERE sc.group_id = m.group_id AND sc.member_id = m.id AND sc.round = ?)`
+    ).bind(groupId, group.current_round).first<{ cnt: number }>();
+    if ((pending?.cnt ?? 1) === 0) {
+      const nameRow = await c.env.DB.prepare(
+        `SELECT display_name FROM susu_members WHERE id = ?`
+      ).bind(member_id).first<{ display_name: string }>();
+      await c.env.DB.prepare(
+        `INSERT INTO susu_messages (id, group_id, member_id, content, message_type)
+         VALUES (?, ?, ?, ?, 'system')`
+      ).bind(generateId(), groupId, member_id,
+        `🔥 ${nameRow?.display_name ?? 'Someone'} kept the round alive — everyone has contributed!`).run();
+    }
   }
 
   const contribution = await c.env.DB.prepare(

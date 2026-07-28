@@ -85,6 +85,11 @@ export const GroupCard = memo(function GroupCard({ group, isCreator, onClick }: 
         </span>
         <span className="text-muted">{group.member_count} member{group.member_count !== 1 ? 's' : ''}</span>
         <span className="text-muted">Round {group.current_round}</span>
+        {(group.my_streak ?? 0) >= 1 && (
+          <span className="text-xs font-semibold text-orange-400" title={`Your ${group.my_streak}-round streak`}>
+            🔥 {group.my_streak}
+          </span>
+        )}
       </div>
 
       {/* Row 3: frequency badge + variant badge + active/inactive status */}
