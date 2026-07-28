@@ -175,11 +175,30 @@ contributions.post('/groups/:id/contributions', withNotification(async (c) => {
 
     if (stats) {
       const newScore = computeTrustScore(stats);
+
+      // Feature 6: trust-score milestone — crossing 90 earns a group-visible moment
+      const before = await c.env.DB.prepare(
+        `SELECT score FROM trust_scores WHERE user_id = ?`
+      ).bind(membUserId).first<{ score: number }>();
+
       const badgeStatements: D1PreparedStatement[] = [
         c.env.DB.prepare(
           `UPDATE trust_scores SET score = ? WHERE user_id = ?`
         ).bind(newScore, membUserId),
       ];
+
+      if (before && before.score < 90 && newScore >= 90) {
+        const nameRow = await c.env.DB.prepare(
+          `SELECT display_name FROM susu_members WHERE id = ?`
+        ).bind(member_id).first<{ display_name: string }>();
+        badgeStatements.push(
+          c.env.DB.prepare(
+            `INSERT INTO susu_messages (id, group_id, member_id, content, message_type)
+             VALUES (?, ?, ?, ?, 'system')`
+          ).bind(generateId(), groupId, member_id,
+            `⭐ ${nameRow?.display_name ?? 'A member'} just became a Trusted Payer (trust score 90+)!`)
+        );
+      }
 
       // Award first_contribution badge
       if (stats.total_contributions === 1) {
@@ -241,11 +260,20 @@ contributions.post('/groups/:id/contributions', withNotification(async (c) => {
       const nameRow = await c.env.DB.prepare(
         `SELECT display_name FROM susu_members WHERE id = ?`
       ).bind(member_id).first<{ display_name: string }>();
+
+      // Feature 6: perfect round — everyone contributed, zero penalties
+      const penaltyRow = await c.env.DB.prepare(
+        `SELECT COUNT(*) AS cnt FROM susu_penalties WHERE group_id = ? AND round = ?`
+      ).bind(groupId, group.current_round).first<{ cnt: number }>();
+      const perfect = (penaltyRow?.cnt ?? 0) === 0;
+
       await c.env.DB.prepare(
         `INSERT INTO susu_messages (id, group_id, member_id, content, message_type)
          VALUES (?, ?, ?, ?, 'system')`
       ).bind(generateId(), groupId, member_id,
-        `🔥 ${nameRow?.display_name ?? 'Someone'} kept the round alive — everyone has contributed!`).run();
+        perfect
+          ? `🏆 Perfect Round ${group.current_round} — everyone contributed on time!`
+          : `🔥 ${nameRow?.display_name ?? 'Someone'} kept the round alive — everyone has contributed!`).run();
     }
   }
 
@@ -707,6 +735,25 @@ contributions.post('/groups/:id/advance-round', async (c) => {
 
   // Refund guarantee pool if cycle is complete (new round > max_members)
   const afterRound = group.current_round + 1;
+
+  // Feature 6: halfway milestone — first time the group crosses the cycle midpoint
+  if (member_count > 0 && group.current_round < afterRound && afterRound === Math.floor(group.max_members / 2) + 1 && group.max_members > 2) {
+    const milestoneKey = `milestone:halfway:${groupId}`;
+    if (!(await c.env.KV.get(milestoneKey))) {
+      const anyMember = await c.env.DB.prepare(
+        `SELECT id FROM susu_members WHERE group_id = ? ORDER BY payout_order LIMIT 1`
+      ).bind(groupId).first<{ id: string }>();
+      if (anyMember) {
+        await c.env.DB.prepare(
+          `INSERT INTO susu_messages (id, group_id, member_id, content, message_type)
+           VALUES (?, ?, ?, ?, 'system')`
+        ).bind(generateId(), groupId, anyMember.id,
+          `🎯 Halfway there! Round ${afterRound} of ${group.max_members} — the group is on track. Keep the momentum!`).run();
+        await c.env.KV.put(milestoneKey, '1', { expirationTtl: 365 * 24 * 3600 });
+      }
+    }
+  }
+
   if (group.guarantee_percent > 0 && group.guarantee_pool_pesewas > 0 && afterRound > group.max_members && member_count > 0) {
     const refundPerMember = Math.floor(group.guarantee_pool_pesewas / member_count);
     if (refundPerMember > 0) {
