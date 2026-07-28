@@ -393,7 +393,16 @@ export function SusuPage() {
       'claims and chat history. This cannot be undone.'
     );
     if (!confirmed) return;
-    await api.delete(`/susu/groups/${selectedGroup.id}`);
+    try {
+      await api.delete(`/susu/groups/${selectedGroup.id}`);
+    } catch (err) {
+      alert(
+        err instanceof Error && err.message
+          ? `Could not delete the group: ${err.message}`
+          : 'Could not delete the group. Please check your connection and try again.'
+      );
+      return;
+    }
     setSelectedGroup(null);
     await fetchGroups();
   }
