@@ -375,6 +375,15 @@ contributions.post('/groups/:id/payouts', withNotification(async (c) => {
       if (p) payouts.push(p);
     }
 
+    // Feature 2: split-day celebration system message
+    if (allMembers.length > 0) {
+      await c.env.DB.prepare(
+        `INSERT INTO susu_messages (id, group_id, member_id, content, message_type)
+         VALUES (?, ?, ?, ?, 'system')`
+      ).bind(generateId(), groupId, allMembers[0].id,
+        `🎉 Split day! Everyone receives ₵${(sharePerMember / 100).toFixed(2)} from the pool.`).run();
+    }
+
     return c.json({ data: { type: 'accumulating_distribution', payouts, share_per_member: sharePerMember } }, 201);
   }
 
@@ -410,6 +419,15 @@ contributions.post('/groups/:id/payouts', withNotification(async (c) => {
         `SELECT id, group_id, member_id, round, amount_pesewas, paid_at FROM susu_payouts WHERE id = ?`
       ).bind(payoutId).first<SusuPayoutRow>();
       if (p) payouts.push(p);
+    }
+
+    // Feature 2: split-day celebration system message
+    if (allMembers.length > 0) {
+      await c.env.DB.prepare(
+        `INSERT INTO susu_messages (id, group_id, member_id, content, message_type)
+         VALUES (?, ?, ?, ?, 'system')`
+      ).bind(generateId(), groupId, allMembers[0].id,
+        `🎉 Goal reached! Everyone receives ₵${(sharePerMember / 100).toFixed(2)} from the pool.`).run();
     }
 
     return c.json({ data: { type: 'goal_distribution', payouts, total_pool: totalPool, share_per_member: sharePerMember } }, 201);
@@ -478,6 +496,31 @@ contributions.post('/groups/:id/payouts', withNotification(async (c) => {
 
   if (!payout) {
     return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to create resource' } }, 500);
+  }
+
+  // Feature 2 (payout-day celebration): system chat message + recipient notification
+  const recipientRow = await c.env.DB.prepare(
+    `SELECT m.display_name, m.user_id, g.name AS group_name FROM susu_members m
+     JOIN susu_groups g ON g.id = m.group_id
+     WHERE m.id = ?`
+  ).bind(payout_member.id).first<{ display_name: string; user_id: string; group_name: string }>();
+
+  if (recipientRow) {
+    const amountGhs = (amount_pesewas / 100).toFixed(2);
+    await c.env.DB.batch([
+      c.env.DB.prepare(
+        `INSERT INTO susu_messages (id, group_id, member_id, content, message_type)
+         VALUES (?, ?, ?, ?, 'system')`
+      ).bind(generateId(), groupId, payout_member.id,
+        `🎉 ${recipientRow.display_name} cashes out ₵${amountGhs} this round!`),
+      c.env.DB.prepare(
+        `INSERT INTO notifications (user_id, type, title, body, group_id, reference_id, reference_type, created_at)
+         VALUES (?, 'payout_day', ?, ?, ?, ?, 'susu_payout', datetime('now'))`
+      ).bind(recipientRow.user_id,
+        "It's your round! 🎉",
+        `₵${amountGhs} has been paid out to you in "${recipientRow.group_name}". Enjoy your day!`,
+        groupId, payout.id),
+    ]);
   }
 
   return c.json({ data: payout }, 201);

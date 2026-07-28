@@ -140,6 +140,7 @@ chat.get('/groups/:id/messages', async (c) => {
   const messages = rawMessages.map((msg) => ({
     id: msg.id,
     content: msg.deleted_at ? '' : msg.content,
+    message_type: msg.message_type ?? 'user',
     sender_name: msg.sender_name,
     sender_user_id: msg.sender_user_id,
     created_at: msg.created_at,
@@ -272,6 +273,7 @@ chat.get('/groups/:id/messages/poll', async (c) => {
       const enriched = newMsgs.map((msg) => ({
         id: msg.id,
         content: msg.deleted_at ? '' : msg.content,
+        message_type: msg.message_type ?? 'user',
         sender_name: msg.sender_name,
         sender_user_id: msg.sender_user_id,
         created_at: msg.created_at,

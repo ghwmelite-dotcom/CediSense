@@ -697,6 +697,17 @@ export function GroupOverview({
         </button>
       )}
 
+      {/* Feature 2: payout-day celebration for the recipient */}
+      {hasPayoutRecipient && group.payout_this_round && group.payout_recipient!.user_id === currentUserId && (
+        <div className="bg-gradient-to-r from-gold/25 via-income/15 to-gold/25 border border-gold/50 rounded-xl p-4 text-center space-y-1">
+          <p className="text-2xl" aria-hidden="true">🎉</p>
+          <p className="text-gold font-bold text-lg">It's your round!</p>
+          <p className="text-white text-sm">
+            {formatPesewas(group.contribution_pesewas * (group.member_count || 1))} has been paid out to you. Enjoy your day!
+          </p>
+        </div>
+      )}
+
       {/* Payout recipient */}
       {hasPayoutRecipient && group.variant !== 'funeral_fund' && (
         <div className="bg-gold/10 border border-gold/30 rounded-xl p-4 flex items-center gap-3">
