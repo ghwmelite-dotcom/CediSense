@@ -6,6 +6,7 @@ interface UsePushSubscriptionReturn {
   permission: NotificationPermission | 'unsupported';
   subscribe: () => Promise<void>;
   unsubscribe: () => Promise<void>;
+  syncSubscription: () => Promise<void>;
 }
 
 const VAPID_PUBLIC_KEY = (import.meta as any).env?.VITE_VAPID_PUBLIC_KEY || '';
@@ -69,5 +70,30 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
     setPermission('default');
   }, [isSupported]);
 
-  return { isSupported, permission, subscribe, unsubscribe };
+  /**
+   * Silent boot-time sync: if the user already granted permission, make sure
+   * the server has this device's subscription (covers expired endpoints,
+   * server-side cleanup, and subscriptions made on another device profile).
+   * The server endpoint is idempotent (upsert on endpoint).
+   */
+  const syncSubscription = useCallback(async () => {
+    if (!isSupported || Notification.permission !== 'granted' || !VAPID_PUBLIC_KEY) return;
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) return;
+      const sub = subscription.toJSON();
+      await api.post('/notifications/push/subscribe', {
+        endpoint: sub.endpoint,
+        keys: {
+          p256dh: sub.keys?.p256dh,
+          auth: sub.keys?.auth,
+        },
+      });
+    } catch {
+      // Non-fatal: next boot retries
+    }
+  }, [isSupported]);
+
+  return { isSupported, permission, subscribe, unsubscribe, syncSubscription };
 }

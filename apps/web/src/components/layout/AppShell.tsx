@@ -1,22 +1,31 @@
 import { Outlet, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { TopBar } from './TopBar';
 import { BottomNav } from './BottomNav';
 import { SideNav } from './SideNav';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useSusuUnread } from '@/hooks/useSusuUnread';
+import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { OfflineBanner } from './OfflineBanner';
 import { SyncIndicator } from './SyncIndicator';
 import { InstallBanner } from './InstallBanner';
 import { UpdateBanner } from './UpdateBanner';
+import { PushOptIn } from '../shared/PushOptIn';
 import { KenteStripe } from '@/components/shared/KenteStripe';
 
 export function AppShell() {
   const { isOnline, syncCount, isSyncing, triggerSync } = useOnlineStatus();
   const susuUnreadCount = useSusuUnread();
   const location = useLocation();
+  const { syncSubscription } = usePushSubscription();
+
+  // Silent push-subscription sync on every app boot (idempotent server-side)
+  useEffect(() => {
+    void syncSubscription();
+  }, [syncSubscription]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-ghana-dark">
+    <div className="flex flex-col min-h-screen" style={{ background: 'var(--color-bg)' }}>
       {/* Kente stripe — cultural DNA marker at the very top */}
       <KenteStripe className="sticky top-0 z-50" />
 
@@ -26,7 +35,7 @@ export function AppShell() {
           className="fixed inset-0 pointer-events-none z-0"
           style={{
             background:
-              'radial-gradient(ellipse 80% 50% at 30% 20%, rgba(255,107,53,0.05) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 75% 80%, rgba(0,200,150,0.03) 0%, transparent 60%)',
+              'var(--gradient-glow-orange), var(--gradient-glow-teal)',
           }}
           aria-hidden="true"
         />
@@ -35,6 +44,8 @@ export function AppShell() {
 
         <div className="flex-1 flex flex-col relative z-10 min-w-0">
           <TopBar />
+
+          <PushOptIn />
 
           {!isOnline && <OfflineBanner syncCount={syncCount} />}
 
