@@ -73,14 +73,15 @@ export function CreditCertificateView({ certificate: propCert, isVerification, o
   const verifyUrl = `${window.location.origin}/verify/${cert.certificate_id}`;
 
   function handleShare() {
+    const text = `🏅 My CediSense Trust Score: ${cert!.trust_score}/100 (${cert!.trust_label}) — ${cert!.on_time_rate}% on-time across ${cert!.total_groups_participated} susu group${cert!.total_groups_participated === 1 ? '' : 's'}. Verify my Trust Card: ${verifyUrl}`;
     if (navigator.share) {
       navigator.share({
-        title: 'CediSense Financial Discipline Certificate',
-        text: `${cert!.user_name}'s verified financial discipline certificate with a Trust Score of ${cert!.trust_score}/100.`,
+        title: 'CediSense Trust Card',
+        text,
         url: verifyUrl,
       }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(verifyUrl).catch(() => {});
+      navigator.clipboard.writeText(text).catch(() => {});
     }
   }
 
