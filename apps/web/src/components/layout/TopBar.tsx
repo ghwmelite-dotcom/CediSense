@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NotificationBell } from '../shared/NotificationBell';
 
@@ -23,6 +24,7 @@ const PAGE_TITLES: Record<string, string> = {
 
 export function TopBar() {
   const { user, logout } = useAuth();
+  const { resolved: theme, toggle: toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -68,12 +70,15 @@ export function TopBar() {
 
   return (
     <header
-      className="sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between border-b border-white/5"
+      className="sticky top-0 z-40 px-4 md:px-6 flex items-center justify-between"
       style={{
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        background: 'rgba(13, 13, 26, 0.88)',
-        boxShadow: '0 1px 0 rgba(255,255,255,0.04)',
+        background: 'var(--color-overlay)',
+        borderBottom: '1px solid var(--color-border)',
+        boxShadow: theme === 'light'
+          ? '0 1px 3px rgba(0,0,0,0.04)'
+          : '0 1px 0 rgba(255,255,255,0.04)',
       }}
     >
       {/* Mobile: Logo | Desktop: Page title */}
@@ -89,12 +94,12 @@ export function TopBar() {
           >
             ₵
           </div>
-          <span className="text-white font-display font-bold text-base tracking-tight">CediSense</span>
+          <span className="font-display font-bold text-base tracking-tight" style={{ color: 'var(--color-text-primary)' }}>CediSense</span>
         </div>
 
         {/* Desktop page title — hidden on mobile */}
         {pageTitle && (
-          <h1 className="hidden md:block text-white/90 text-sm font-medium tracking-tight">
+          <h1 className="hidden md:block text-sm font-medium tracking-tight" style={{ color: 'var(--color-text-secondary)' }}>
             {pageTitle}
           </h1>
         )}
@@ -102,6 +107,29 @@ export function TopBar() {
 
       {/* Right side: bell + avatar menu */}
       <div className="flex items-center gap-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 md:pt-3">
+        {/* Quick theme toggle — one tap, always visible */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
+          style={{
+            background: 'var(--color-elevated)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          {theme === 'dark' ? (
+            <svg className="w-[18px] h-[18px] text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+            </svg>
+          ) : (
+            <svg className="w-[18px] h-[18px] text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+            </svg>
+          )}
+        </button>
+
         <NotificationBell />
 
         {/* Avatar + Dropdown */}
@@ -120,33 +148,61 @@ export function TopBar() {
             }}
           >
             {initials}
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-income border-2 border-ghana-dark" />
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-income" style={{ borderWidth: 2, borderStyle: 'solid', borderColor: 'var(--color-bg)' }} />
           </button>
 
           {/* Dropdown Menu */}
           {menuOpen && (
             <div
               role="menu"
-              className="absolute top-full right-0 mt-2 w-[220px] rounded-2xl border border-white/5 overflow-hidden motion-safe:animate-fadeIn z-50"
+              className="absolute top-full right-0 mt-2 w-[220px] rounded-2xl overflow-hidden motion-safe:animate-fadeIn z-50"
               style={{
-                background: 'rgba(20, 20, 42, 0.98)',
+                background: 'var(--color-overlay)',
                 backdropFilter: 'blur(20px)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04)',
+                border: '1px solid var(--color-border)',
+                boxShadow: theme === 'light'
+                  ? '0 8px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04)'
+                  : '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04)',
               }}
             >
               {/* User info */}
-              <div className="px-4 py-3 border-b border-white/5">
-                <p className="text-white text-sm font-semibold truncate">{user?.name}</p>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
+                <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{user?.name}</p>
                 <p className="text-muted text-xs truncate mt-0.5">{user?.phone ?? user?.email}</p>
               </div>
 
               {/* Menu items */}
               <div className="py-1">
+                {/* Theme toggle */}
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => { toggleTheme(); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors min-h-[44px]"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-hover-overlay)'; e.currentTarget.style.color = 'var(--color-text-primary)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
+                >
+                  {theme === 'dark' ? (
+                    <svg className="w-4 h-4 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                    </svg>
+                  )}
+                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </button>
+
                 <button
                   type="button"
                   role="menuitem"
                   onClick={() => { setMenuOpen(false); navigate('/settings'); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors min-h-[44px]"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors min-h-[44px]"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-hover-overlay)'; e.currentTarget.style.color = 'var(--color-text-primary)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
                 >
                   <svg className="w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
@@ -159,7 +215,10 @@ export function TopBar() {
                   type="button"
                   role="menuitem"
                   onClick={() => { setMenuOpen(false); navigate('/notifications'); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors min-h-[44px]"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors min-h-[44px]"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-hover-overlay)'; e.currentTarget.style.color = 'var(--color-text-primary)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
                 >
                   <svg className="w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
@@ -171,7 +230,10 @@ export function TopBar() {
                   type="button"
                   role="menuitem"
                   onClick={() => { setMenuOpen(false); navigate('/ai-chat'); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors min-h-[44px]"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm transition-colors min-h-[44px]"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-hover-overlay)'; e.currentTarget.style.color = 'var(--color-text-primary)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
                 >
                   <svg className="w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
@@ -181,7 +243,7 @@ export function TopBar() {
               </div>
 
               {/* Divider + Logout */}
-              <div className="border-t border-white/5 py-1">
+              <div className="py-1" style={{ borderTop: '1px solid var(--color-border)' }}>
                 <button
                   type="button"
                   role="menuitem"

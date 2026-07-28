@@ -49,6 +49,118 @@
   --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.5);
   --shadow-glow-orange: 0 0 25px rgba(255,107,53,0.04);
   --shadow-glow-btn: 0 4px 15px rgba(255,107,53,0.25);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(255,255,255,0.06);
+  --scrollbar-thumb-hover: rgba(255,255,255,0.12);
+
+  /* Selection */
+  --selection-bg: rgba(255, 107, 53, 0.25);
+  --selection-text: white;
+
+  /* Overlay / glass */
+  --color-overlay: rgba(13, 13, 26, 0.88);
+  --color-glass: rgba(255, 255, 255, 0.03);
+  --color-glass-border: rgba(255, 107, 53, 0.08);
+
+  /* Interactive */
+  --color-hover-overlay: rgba(255, 255, 255, 0.05);
+  --color-skeleton-base: rgba(136, 136, 168, 0.03);
+  --color-skeleton-mid: rgba(136, 136, 168, 0.07);
+  --color-skeleton-accent: rgba(255, 107, 53, 0.04);
+
+  /* Feature hero (dashboard Susu card) */
+  --gradient-susu-hero: linear-gradient(135deg, rgba(212,168,67,0.08) 0%, rgba(20,20,42,0.98) 40%, transparent 100%);
+}
+
+/* ──────────── Light Mode ──────────── */
+[data-theme="light"] {
+  /* Colors — accents stay the same, surfaces flip to warm cream */
+  --color-primary: #E85D2C;
+  --color-gold: #B8920A;
+  --color-income: #00A87A;
+  --color-expense: #E5405E;
+  --color-warning: #D4900A;
+  --color-info: #6B5CE7;
+  --color-bg: #F7F5F0;
+  --color-surface: #FFFFFF;
+  --color-elevated: #F0EDE6;
+
+  /* Text */
+  --color-text-primary: #1A1A2E;
+  --color-text-secondary: rgba(0,0,0,0.55);
+  --color-text-muted: rgba(0,0,0,0.38);
+  --color-text-whisper: rgba(0,0,0,0.12);
+
+  /* Borders */
+  --color-border: rgba(0,0,0,0.07);
+  --color-border-hover: rgba(0,0,0,0.12);
+
+  /* Backgrounds (functional) */
+  --color-income-bg: rgba(0,168,122,0.08);
+  --color-expense-bg: rgba(229,64,94,0.08);
+  --color-warning-bg: rgba(212,144,10,0.08);
+  --color-info-bg: rgba(107,92,231,0.08);
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #FF6B35, #E85D2C);
+  --gradient-gold: linear-gradient(135deg, #D4A843, #B8920A);
+  --gradient-income: linear-gradient(135deg, #00A87A, #00C896);
+  --gradient-kente: linear-gradient(90deg, #FF6B35 20%, #D4A843 20%, #D4A843 40%, #00A87A 40%, #00A87A 60%, #FF6B35 60%, #FF6B35 80%, #D4A843 80%);
+  --gradient-hero-text: linear-gradient(135deg, #1A1A2E 40%, #E85D2C);
+  --gradient-glow-orange: radial-gradient(ellipse, rgba(255,107,53,0.06), transparent 60%);
+  --gradient-glow-teal: radial-gradient(ellipse, rgba(0,168,122,0.04), transparent 60%);
+
+  /* Shadows — softer, warmer */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 4px 16px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-glow-orange: 0 0 25px rgba(255,107,53,0.06);
+  --shadow-glow-btn: 0 4px 15px rgba(255,107,53,0.2);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(0,0,0,0.08);
+  --scrollbar-thumb-hover: rgba(0,0,0,0.15);
+
+  /* Selection */
+  --selection-bg: rgba(255, 107, 53, 0.15);
+  --selection-text: #1A1A2E;
+
+  /* Overlay / glass */
+  --color-overlay: rgba(255, 255, 255, 0.92);
+  --color-glass: rgba(255, 255, 255, 0.7);
+  --color-glass-border: rgba(0, 0, 0, 0.06);
+
+  /* Interactive */
+  --color-hover-overlay: rgba(0, 0, 0, 0.04);
+  --color-skeleton-base: rgba(0, 0, 0, 0.03);
+  --color-skeleton-mid: rgba(0, 0, 0, 0.06);
+  --color-skeleton-accent: rgba(255, 107, 53, 0.04);
+
+  /* Feature hero (dashboard Susu card) — light: warm gold wash, no dark block */
+  --gradient-susu-hero: linear-gradient(135deg, rgba(212,168,67,0.14) 0%, rgba(255,255,255,0.95) 45%, rgba(255,255,255,0) 100%);
+}
+
+/* ── Light-mode text rescue ─────────────────────────────────────────────
+   Many components use Tailwind's `text-white` for text on dark surfaces.
+   On the light theme those surfaces are pale, so flip bare `text-white`
+   to the theme's primary text colour. Elements that carry their own
+   coloured background class (bg-flame, bg-gold, bg-red-500, …) or sit
+   inside the intentionally-dark Susu hero keep white text. */
+[data-theme="light"] .text-white {
+  color: var(--color-text-primary);
+}
+/* Opacity variants (text-white/80, /90, /70…) become theme secondary text */
+[data-theme="light"] [class*="text-white/"] {
+  color: var(--color-text-secondary);
+}
+[data-theme="light"] .text-white[class*="bg-"],
+[data-theme="light"] [class*="bg-flame"] .text-white,
+[data-theme="light"] [class*="bg-gold"] .text-white,
+[data-theme="light"] [class*="bg-red-500"] .text-white,
+[data-theme="light"] [class*="bg-income"] .text-white,
+[data-theme="light"] [class*="bg-expense"] .text-white,
+[data-theme="light"] [class*="bg-[#"] .text-white {
+  color: #fff;
 }
 
 /* ---- Text rendering ---- */
@@ -59,12 +171,15 @@ body {
 
 @layer base {
   body {
-    @apply bg-ghana-dark text-text-primary font-sans antialiased;
+    @apply font-sans antialiased;
+    background: var(--color-bg);
+    color: var(--color-text-primary);
     line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.2s ease;
   }
 }
 
-/* ---- Custom scrollbar (dark theme) ---- */
+/* ---- Custom scrollbar (theme-aware) ---- */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -73,17 +188,17 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* ---- Selection color ---- */
 ::selection {
-  background: rgba(255, 107, 53, 0.25);
-  color: white;
+  background: var(--selection-bg);
+  color: var(--selection-text);
 }
 
 /* ---- Motion preferences ---- */
@@ -97,18 +212,22 @@ body {
   }
 }
 
-/* ---- Premium card — no borders, background contrast only ---- */
+/* ---- Premium card — theme-aware surface ---- */
 .premium-card {
-  background: #14142A;
+  background: var(--color-surface);
   border-radius: 16px;
   box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+[data-theme="dark"] .premium-card {
   border: none;
 }
 .premium-card-hover {
   transition: background-color 0.2s ease-out, box-shadow 0.2s ease-out, transform 0.2s ease-out;
 }
 .premium-card-hover:hover {
-  background: #1A1A35;
+  background: var(--color-elevated);
   box-shadow: var(--shadow-card-hover);
   transform: translateY(-1px);
 }
@@ -118,9 +237,9 @@ body {
 
 /* ---- Glass card (updated — with glow) ---- */
 .glass-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--color-glass);
   border-radius: 16px;
-  border: 1px solid rgba(255, 107, 53, 0.08);
+  border: 1px solid var(--color-glass-border);
   box-shadow: var(--shadow-glow-orange);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -132,7 +251,7 @@ body {
 }
 .card-interactive:hover {
   transform: translateY(-1px);
-  background: #1A1A35;
+  background: var(--color-elevated);
   box-shadow: var(--shadow-card-hover);
 }
 .card-interactive:active {
@@ -143,11 +262,11 @@ body {
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(136, 136, 168, 0.03) 0%,
-    rgba(136, 136, 168, 0.07) 25%,
-    rgba(255, 107, 53, 0.04) 50%,
-    rgba(136, 136, 168, 0.07) 75%,
-    rgba(136, 136, 168, 0.03) 100%
+    var(--color-skeleton-base) 0%,
+    var(--color-skeleton-mid) 25%,
+    var(--color-skeleton-accent) 50%,
+    var(--color-skeleton-mid) 75%,
+    var(--color-skeleton-base) 100%
   );
   background-size: 300% 100%;
   animation: shimmer 2.5s ease-in-out infinite;
@@ -165,7 +284,7 @@ body {
   left: -80px;
   width: 500px;
   height: 500px;
-  background: radial-gradient(ellipse 80% 60% at 30% 30%, rgba(255, 107, 53, 0.06) 0%, transparent 60%);
+  background: var(--gradient-glow-orange);
   pointer-events: none;
   z-index: 0;
   will-change: transform;
@@ -177,7 +296,7 @@ body {
   right: -80px;
   width: 500px;
   height: 500px;
-  background: radial-gradient(ellipse 80% 60% at 70% 70%, rgba(0, 200, 150, 0.04) 0%, transparent 60%);
+  background: var(--gradient-glow-teal);
   pointer-events: none;
   z-index: 0;
   will-change: transform;
@@ -207,6 +326,9 @@ body {
   text-align: center;
   user-select: none;
 }
+[data-theme="light"] .adinkra-whisper {
+  color: rgba(184, 146, 10, 0.18);
+}
 
 /* ---- Left color bar for transaction rows ---- */
 .txn-bar-income { border-left: 3px solid rgba(0, 200, 150, 0.5); }
@@ -221,19 +343,32 @@ body {
 
 /* ---- Premium input styling ---- */
 .input-premium {
-  @apply w-full rounded-xl px-4 py-3.5 text-sm text-text-primary
-    placeholder:text-muted-dim/50
+  @apply w-full rounded-xl px-4 py-3.5 text-sm
     focus:outline-none
     transition-all duration-200;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary);
+  background: var(--color-elevated);
+  border: 1px solid var(--color-border);
+}
+.input-premium::placeholder {
+  color: var(--color-text-muted);
 }
 .input-premium:hover {
-  background: rgba(20, 20, 40, 0.6);
+  border-color: var(--color-border-hover);
 }
 .input-premium:focus {
+  border-color: rgba(255, 107, 53, 0.4);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.08);
+}
+[data-theme="dark"] .input-premium {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .input-premium:hover {
+  background: rgba(20, 20, 40, 0.6);
+}
+[data-theme="dark"] .input-premium:focus {
   background: rgba(20, 20, 42, 0.8);
-  border-color: rgba(255, 107, 53, 0.3);
   box-shadow: 0 0 20px rgba(255, 107, 53, 0.06);
 }
 
@@ -294,17 +429,71 @@ body {
   @apply mb-2 last:mb-0;
 }
 .prose-chat code {
-  @apply bg-white/[0.06] px-1.5 py-0.5 rounded text-xs font-mono;
+  @apply px-1.5 py-0.5 rounded text-xs font-mono;
+  background: var(--color-hover-overlay);
 }
 .prose-chat pre {
-  @apply bg-white/[0.04] rounded-lg p-3 overflow-x-auto mb-2;
+  @apply rounded-lg p-3 overflow-x-auto mb-2;
+  background: var(--color-elevated);
 }
 .prose-chat ul, .prose-chat ol {
   @apply pl-4 mb-2 space-y-1;
 }
 .prose-chat li {
-  @apply text-text-primary/90;
+  color: var(--color-text-primary);
+  opacity: 0.9;
 }
 .prose-chat strong {
-  @apply text-text-primary font-semibold;
+  @apply font-semibold;
+  color: var(--color-text-primary);
+}
+
+/* ---- Light mode global overrides ---- */
+
+/* Make border-white/X classes transparent in light mode */
+[data-theme="light"] .border-white\/5,
+[data-theme="light"] .border-white\/10 {
+  border-color: var(--color-border);
+}
+
+/* Hover overlays */
+[data-theme="light"] .hover\:bg-white\/5:hover,
+[data-theme="light"] .hover\:bg-white\/\[0\.03\]:hover,
+[data-theme="light"] .hover\:bg-white\/\[0\.05\]:hover {
+  background: var(--color-hover-overlay);
+}
+
+/* bg-white/X patterns used for subtle backgrounds */
+[data-theme="light"] .bg-white\/\[0\.03\],
+[data-theme="light"] .bg-white\/\[0\.04\],
+[data-theme="light"] .bg-white\/\[0\.06\] {
+  background: var(--color-hover-overlay);
+}
+
+/* Gold button — dark text on gold stays readable in light mode */
+[data-theme="light"] .btn-gold {
+  color: #fff;
+}
+
+/* Section label text */
+[data-theme="light"] .section-label {
+  color: var(--color-text-muted);
+}
+
+/* Gradient text for light mode */
+[data-theme="light"] .gradient-text {
+  background: var(--gradient-hero-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Transaction bar borders — slightly stronger in light */
+[data-theme="light"] .txn-bar-income { border-left-color: rgba(0, 168, 122, 0.6); }
+[data-theme="light"] .txn-bar-expense { border-left-color: rgba(229, 64, 94, 0.5); }
+[data-theme="light"] .txn-bar-transfer { border-left-color: rgba(184, 146, 10, 0.6); }
+
+/* Focus ring — stronger in light */
+[data-theme="light"] :focus-visible {
+  outline-color: rgba(255, 107, 53, 0.6);
 }

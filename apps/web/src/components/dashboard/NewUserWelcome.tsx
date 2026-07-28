@@ -142,9 +142,7 @@ export function NewUserWelcome({ userName, onDismiss }: Props) {
       >
         <div
           className="relative rounded-2xl overflow-hidden p-6 sm:p-8 border-2 border-gold/30 hover:border-gold/50 hover:shadow-gold-glow-lg transition-all duration-200"
-          style={{
-            background: 'linear-gradient(135deg, rgba(212,168,67,0.08) 0%, rgba(20,20,42,0.98) 40%, transparent 100%)',
-          }}
+          style={{ background: 'var(--gradient-susu-hero)' }}
         >
           {/* Star badge */}
           <span className="absolute top-3 right-3 bg-gold text-ghana-dark text-[10px] font-bold px-3 py-1 rounded-full motion-safe:animate-pulse-soft">
