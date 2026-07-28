@@ -6,6 +6,44 @@ import { getTrustLabel } from '../../lib/trust-score.js';
 
 const gamification = new Hono<AppType>();
 
+// ─── GET /challenge/standings — rank the caller's groups for this month ─────
+
+gamification.get('/challenge/standings', async (c) => {
+  const userId = c.get('userId');
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT g.id, g.name, g.current_round, g.max_members,
+            (SELECT COUNT(*) FROM susu_members m WHERE m.group_id = g.id) AS member_count,
+            (SELECT COUNT(*) FROM susu_contributions sc WHERE sc.group_id = g.id
+               AND sc.contributed_at >= datetime('now', 'start of month')) AS contributions_month,
+            (SELECT COUNT(*) FROM susu_members m WHERE m.group_id = g.id AND EXISTS (
+               SELECT 1 FROM susu_contributions sc
+               WHERE sc.group_id = m.group_id AND sc.member_id = m.id AND sc.round = g.current_round)) AS contributed_this_round
+     FROM susu_groups g
+     JOIN susu_members mine ON mine.group_id = g.id AND mine.user_id = ?
+     WHERE g.is_active = 1`
+  ).bind(userId).all<{
+    id: string; name: string; current_round: number; max_members: number;
+    member_count: number; contributions_month: number; contributed_this_round: number;
+  }>();
+
+  const standings = (results ?? [])
+    .map((g) => ({
+      group_id: g.id,
+      name: g.name,
+      member_count: g.member_count,
+      contributions_month: g.contributions_month,
+      current_round_rate: g.member_count > 0 ? g.contributed_this_round / g.member_count : 0,
+    }))
+    .sort((a, b) =>
+      b.current_round_rate - a.current_round_rate ||
+      b.contributions_month - a.contributions_month
+    )
+    .map((g, i) => ({ ...g, rank: i + 1 }));
+
+  return c.json({ data: standings });
+});
+
 // ─── GET /groups/trust/:userId — get a user's trust score ─────────────────────
 
 gamification.get('/groups/trust/:userId', async (c) => {

@@ -115,14 +115,34 @@ export function SusuPage() {
     }
   }, []);
 
+  // Feature 10: challenge standings across the user's groups
+  interface ChallengeStanding {
+    group_id: string;
+    name: string;
+    member_count: number;
+    contributions_month: number;
+    current_round_rate: number;
+    rank: number;
+  }
+  const [standings, setStandings] = useState<ChallengeStanding[]>([]);
+
+  const fetchStandings = useCallback(async () => {
+    try {
+      const data = await api.get<ChallengeStanding[]>('/susu/challenge/standings');
+      setStandings(data);
+    } catch {
+      // Non-fatal
+    }
+  }, []);
+
   useEffect(() => {
     async function init() {
       setLoading(true);
-      await fetchGroups();
+      await Promise.all([fetchGroups(), fetchStandings()]);
       setLoading(false);
     }
     void init();
-  }, [fetchGroups]);
+  }, [fetchGroups, fetchStandings]);
 
   async function fetchEarlyPayout(groupId: string) {
     try {
@@ -579,6 +599,27 @@ export function SusuPage() {
 
             {!isEmpty && (
               <div className="space-y-3">
+                {/* Feature 10: challenge standings card (only when 2+ groups) */}
+                {standings.length >= 2 && (
+                  <div className="bg-ghana-surface border border-gold/30 rounded-xl p-4 space-y-2">
+                    <p className="text-gold text-xs font-semibold uppercase tracking-wide">
+                      🏁 This month's challenge
+                    </p>
+                    {standings.map((s) => (
+                      <div key={s.group_id} className="flex items-center justify-between text-sm">
+                        <span className="text-white truncate">
+                          {s.rank === 1 ? '🥇' : s.rank === 2 ? '🥈' : s.rank === 3 ? '🥉' : `#${s.rank}`}{' '}
+                          {s.name}
+                        </span>
+                        <span className="text-muted shrink-0 ml-3">
+                          {s.contributions_month} contribution{s.contributions_month === 1 ? '' : 's'}
+                          {s.current_round_rate === 1 ? ' · all in ✅' : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {groups.map((group) => (
                   <GroupCard
                     key={group.id}

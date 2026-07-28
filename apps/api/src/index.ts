@@ -368,6 +368,67 @@ export default {
       console.error(JSON.stringify({ type: 'cron', action: 'chat-digest', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
     }
 
+    // Feature 10: month-end challenge winner — on the 1st, the group that led
+    // its "circle" (groups sharing at least one member) last month gets a
+    // winner system message.
+    try {
+      const now = new Date();
+      if (now.getUTCDate() === 1) {
+        const prevMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+        const monthKey = prevMonth.toISOString().slice(0, 7);
+
+        const { results: challengeRows } = await env.DB.prepare(
+          `SELECT g.id, g.name,
+                  (SELECT COUNT(*) FROM susu_contributions sc WHERE sc.group_id = g.id
+                     AND sc.contributed_at >= datetime('now', 'start of month', '-1 month')
+                     AND sc.contributed_at < datetime('now', 'start of month')) AS contributions_last_month,
+                  (SELECT m2.id FROM susu_members m2 WHERE m2.group_id = g.id ORDER BY m2.payout_order LIMIT 1) AS any_member_id
+           FROM susu_groups g WHERE g.is_active = 1`
+        ).all<{ id: string; name: string; contributions_last_month: number; any_member_id: string | null }>();
+
+        // Sibling sets: groups that share at least one member
+        const { results: membership } = await env.DB.prepare(
+          `SELECT group_id, user_id FROM susu_members`
+        ).all<{ group_id: string; user_id: string }>();
+
+        const userGroups = new Map<string, Set<string>>();
+        for (const m of membership ?? []) {
+          if (!userGroups.has(m.user_id)) userGroups.set(m.user_id, new Set());
+          userGroups.get(m.user_id)!.add(m.group_id);
+        }
+        const siblings = new Map<string, Set<string>>();
+        for (const groups of userGroups.values()) {
+          for (const gid of groups) {
+            if (!siblings.has(gid)) siblings.set(gid, new Set());
+            for (const other of groups) siblings.get(gid)!.add(other);
+          }
+        }
+
+        let winners = 0;
+        for (const g of challengeRows ?? []) {
+          if (!g.any_member_id) continue;
+          const circle = siblings.get(g.id) ?? new Set([g.id]);
+          const circleRows = (challengeRows ?? []).filter((r) => circle.has(r.id));
+          const top = Math.max(...circleRows.map((r) => r.contributions_last_month));
+          if (g.contributions_last_month === 0 || g.contributions_last_month < top) continue;
+
+          const dedupeKey = `challenge-winner:${g.id}:${monthKey}`;
+          if (await env.KV.get(dedupeKey)) continue;
+
+          await env.DB.prepare(
+            `INSERT INTO susu_messages (id, group_id, member_id, content, message_type)
+             VALUES (?, ?, ?, ?, 'system')`
+          ).bind(crypto.randomUUID().replace(/-/g, '').slice(0, 32), g.id, g.any_member_id,
+            `🏁 ${monthKey} challenge: this group led your circle with ${g.contributions_last_month} contributions! Champions! 🏆`).run();
+          await env.KV.put(dedupeKey, '1', { expirationTtl: 40 * 24 * 3600 });
+          winners++;
+        }
+        console.log(JSON.stringify({ type: 'cron', action: 'challenge-winner', winners, month: monthKey, timestamp: new Date().toISOString() }));
+      }
+    } catch (err) {
+      console.error(JSON.stringify({ type: 'cron', action: 'challenge-winner', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
+    }
+
     // Feature 5: weekly group health recap — system message in every active
     // group's chat each Monday, deduped per ISO week.
     try {
