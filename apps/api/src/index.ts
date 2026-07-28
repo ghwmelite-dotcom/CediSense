@@ -367,5 +367,48 @@ export default {
     } catch (err) {
       console.error(JSON.stringify({ type: 'cron', action: 'chat-digest', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
     }
+
+    // Feature 5: weekly group health recap — system message in every active
+    // group's chat each Monday, deduped per ISO week.
+    try {
+      const now = new Date();
+      if (now.getUTCDay() === 1) {
+        const isoWeek = `${now.getUTCFullYear()}-W${String(Math.ceil(((now.getTime() - new Date(now.getUTCFullYear(), 0, 1).getTime()) / 86400000 + 1) / 7)).padStart(2, '0')}`;
+
+        const { results: recapGroups } = await env.DB.prepare(
+          `SELECT g.id, g.name,
+                  (SELECT COUNT(*) FROM susu_members m WHERE m.group_id = g.id) AS member_count,
+                  (SELECT COUNT(*) FROM susu_contributions sc WHERE sc.group_id = g.id
+                     AND sc.contributed_at >= datetime('now', '-7 days')) AS contributions_7d,
+                  (SELECT COUNT(*) FROM susu_members m WHERE m.group_id = g.id AND NOT EXISTS (
+                     SELECT 1 FROM susu_contributions sc
+                     WHERE sc.group_id = m.group_id AND sc.member_id = m.id AND sc.round = g.current_round)) AS pending_now,
+                  (SELECT m2.id FROM susu_members m2 WHERE m2.group_id = g.id ORDER BY m2.payout_order LIMIT 1) AS any_member_id
+           FROM susu_groups g WHERE g.is_active = 1`
+        ).all<{ id: string; name: string; member_count: number; contributions_7d: number; pending_now: number; any_member_id: string | null }>();
+
+        let posted = 0;
+        for (const g of recapGroups ?? []) {
+          if (!g.any_member_id) continue;
+          const dedupeKey = `weekly-recap:${g.id}:${isoWeek}`;
+          if (await env.KV.get(dedupeKey)) continue;
+
+          const full = g.pending_now === 0 && g.member_count > 0;
+          const content = full
+            ? `📊 Weekly recap: ${g.contributions_7d} contribution${g.contributions_7d === 1 ? '' : 's'} logged this week — everyone is current. Perfect week, keep it up! 🏆`
+            : `📊 Weekly recap: ${g.contributions_7d} contribution${g.contributions_7d === 1 ? '' : 's'} logged this week. ${g.pending_now} member${g.pending_now === 1 ? ' is' : 's are'} still pending this round — a quick tap keeps the group on track.`;
+
+          await env.DB.prepare(
+            `INSERT INTO susu_messages (id, group_id, member_id, content, message_type)
+             VALUES (?, ?, ?, ?, 'system')`
+          ).bind(crypto.randomUUID().replace(/-/g, '').slice(0, 32), g.id, g.any_member_id, content).run();
+          await env.KV.put(dedupeKey, '1', { expirationTtl: 10 * 24 * 3600 });
+          posted++;
+        }
+        console.log(JSON.stringify({ type: 'cron', action: 'weekly-recap', posted, week: isoWeek, timestamp: new Date().toISOString() }));
+      }
+    } catch (err) {
+      console.error(JSON.stringify({ type: 'cron', action: 'weekly-recap', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
+    }
   },
 };
