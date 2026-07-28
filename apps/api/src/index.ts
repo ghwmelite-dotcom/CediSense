@@ -247,5 +247,66 @@ export default {
     } catch (err) {
       console.error(JSON.stringify({ type: 'cron', action: 'streak-nudge', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
     }
+
+    // Feature 3: due-date nudge sequence — 3 escalating stages per round,
+    // deduped per group+round+stage via KV.
+    try {
+      const { dueStage, stageMessage } = await import('./lib/due-nudge.js');
+      const { sendWebPush } = await import('./lib/web-push.js');
+
+      const { results: activeGroups } = await env.DB.prepare(
+        `SELECT id, name, frequency, current_round, round_started_at
+         FROM susu_groups WHERE is_active = 1 AND round_started_at IS NOT NULL`
+      ).all<{ id: string; name: string; frequency: 'daily' | 'weekly' | 'monthly'; current_round: number; round_started_at: string }>();
+
+      let sent = 0;
+      for (const g of activeGroups ?? []) {
+        const stage = dueStage(g.round_started_at, g.frequency);
+        if (stage === 0) continue;
+
+        const dedupeKey = `due-nudge:${g.id}:${g.current_round}:${stage}`;
+        if (await env.KV.get(dedupeKey)) continue;
+
+        const { results: pending } = await env.DB.prepare(
+          `SELECT m.user_id, m.display_name FROM susu_members m
+           WHERE m.group_id = ? AND NOT EXISTS (
+             SELECT 1 FROM susu_contributions sc
+             WHERE sc.group_id = m.group_id AND sc.member_id = m.id AND sc.round = ?)`
+        ).bind(g.id, g.current_round).all<{ user_id: string; display_name: string }>();
+
+        for (const member of pending ?? []) {
+          const msg = stageMessage(stage, member.display_name, g.name);
+          const insert = env.DB.prepare(
+            `INSERT INTO notifications (user_id, type, title, body, group_id, reference_id, reference_type, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, 'susu_group', datetime('now'))`
+          ).bind(member.user_id, `due_${stage}`, msg.title, msg.body, g.id, g.id);
+
+          const subs = await env.DB.prepare(
+            `SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?`
+          ).bind(member.user_id).all<{ id: string; endpoint: string; p256dh: string; auth: string }>();
+
+          const vapid = {
+            publicKey: env.VAPID_PUBLIC_KEY,
+            privateKey: env.VAPID_PRIVATE_KEY,
+            contactEmail: env.VAPID_CONTACT_EMAIL,
+          };
+          const pushes = (subs.results ?? []).map((sub) =>
+            sendWebPush(
+              { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+              { title: msg.title, body: msg.body, data: { url: '/susu' } },
+              vapid
+            )
+          );
+          ctx.waitUntil(Promise.all([insert.run(), ...pushes]));
+          sent++;
+        }
+
+        // Mark this stage sent for this round (outlives any round window)
+        ctx.waitUntil(env.KV.put(dedupeKey, '1', { expirationTtl: 40 * 24 * 3600 }));
+      }
+      console.log(JSON.stringify({ type: 'cron', action: 'due-nudge', sent, timestamp: new Date().toISOString() }));
+    } catch (err) {
+      console.error(JSON.stringify({ type: 'cron', action: 'due-nudge', error: err instanceof Error ? err.message : String(err), timestamp: new Date().toISOString() }));
+    }
   },
 };

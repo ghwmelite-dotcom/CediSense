@@ -61,14 +61,14 @@ groups.post('/groups', async (c) => {
   await c.env.DB.prepare(
     `INSERT INTO susu_groups
        (id, name, creator_id, invite_code, contribution_pesewas, frequency, max_members,
-        current_round,
+        current_round, round_started_at,
         variant, goal_amount_pesewas, goal_description,
         target_term, school_name, base_currency, event_name, event_date,
         guarantee_percent,
         supplier_name, supplier_contact, item_description, estimated_savings_percent,
         crop_type, planting_month, harvest_month,
         organization_name, organization_type)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     groupId, name, userId, invite_code, contribution_pesewas, frequency, max_members,
     starting_round ?? 1,

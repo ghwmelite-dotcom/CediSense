@@ -628,7 +628,7 @@ contributions.post('/groups/:id/advance-round', async (c) => {
   if (group.variant === 'accumulating' || group.variant === 'funeral_fund' || group.variant === 'bulk_purchase') {
     await c.env.DB.prepare(
       `UPDATE susu_groups
-       SET current_round = current_round + 1, updated_at = datetime('now')
+       SET current_round = current_round + 1, round_started_at = datetime('now'), updated_at = datetime('now')
        WHERE id = ?`
     ).bind(groupId).run();
 
@@ -641,7 +641,7 @@ contributions.post('/groups/:id/advance-round', async (c) => {
 
     await c.env.DB.prepare(
       `UPDATE susu_groups
-       SET current_round = current_round + 1,
+       SET current_round = current_round + 1, round_started_at = datetime('now'),
            is_active = CASE WHEN ? THEN 0 ELSE is_active END,
            updated_at = datetime('now')
        WHERE id = ?`
@@ -700,7 +700,7 @@ contributions.post('/groups/:id/advance-round', async (c) => {
 
     await c.env.DB.prepare(
       `UPDATE susu_groups
-       SET current_round = current_round + 1, updated_at = datetime('now')
+       SET current_round = current_round + 1, round_started_at = datetime('now'), updated_at = datetime('now')
        WHERE id = ?`
     ).bind(groupId).run();
   }
