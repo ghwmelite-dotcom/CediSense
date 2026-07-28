@@ -71,11 +71,13 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: payload.body || '',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-72.png',
     data: payload.data || {},
     vibrate: [100, 50, 100],
-    tag: payload.data?.notificationId || 'cedisense-notification',
+    // Unique tag per event so every notification shows individually
+    // (a fixed tag would collapse consecutive pushes into one shade).
+    tag: payload.data?.notificationId || `cedisense-${Date.now()}`,
     renotify: true,
   };
 
