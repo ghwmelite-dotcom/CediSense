@@ -680,6 +680,8 @@ export interface SusuGroupWithDetails extends SusuGroup {
   member_count: number;
   members: Array<SusuMember & { has_contributed_this_round: boolean; trust_score: number; trust_label: string }>;
   payout_recipient: SusuMember | null;
+  /** True once a payout has been recorded for the current round. */
+  payout_this_round?: boolean;
   my_member_id: string | null;
   is_creator: boolean;
   goal_progress: SusuGoalProgress | null;

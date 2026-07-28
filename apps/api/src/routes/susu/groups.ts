@@ -640,12 +640,18 @@ groups.get('/groups/:id', async (c) => {
     mappedGroup.invite_code = null as unknown as string;
   }
 
+  // Feature 2: has a payout been recorded for the current round?
+  const payoutRow = await c.env.DB.prepare(
+    `SELECT id FROM susu_payouts WHERE group_id = ? AND round = ? LIMIT 1`
+  ).bind(groupId, group.current_round).first<{ id: string }>();
+
   return c.json({
     data: {
       ...mappedGroup,
       member_count,
       members: membersWithContrib,
       payout_recipient,
+      payout_this_round: payoutRow !== null,
       my_member_id: myMember.id,
       is_creator: group.creator_id === userId,
       goal_progress,
