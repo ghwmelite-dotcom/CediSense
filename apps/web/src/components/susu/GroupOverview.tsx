@@ -160,6 +160,8 @@ export function GroupOverview({
               onClose={() => setQrOpen(false)}
               groupName={group.name}
               inviteCode={group.invite_code}
+              amountLabel={`${formatPesewas(group.contribution_pesewas)} / ${group.frequency}`}
+              memberLabel={`${group.member_count} of ${group.max_members} members`}
             />
           </>
         )}
