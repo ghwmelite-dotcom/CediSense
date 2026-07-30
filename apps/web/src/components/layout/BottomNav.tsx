@@ -40,8 +40,8 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
           <div
             className="absolute bottom-[72px] left-3 right-3 rounded-2xl shadow-card-hover p-3 motion-safe:animate-slide-up"
             style={{
-              background: '#14142a',
-              borderTop: '1px solid rgba(255,255,255,0.06)',
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -89,8 +89,8 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
         style={{
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          background: 'rgba(13, 13, 26, 0.92)',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
+          background: 'var(--color-overlay)',
+          borderTop: '1px solid var(--color-border)',
         }}
       >
         {primaryItems.map((item) => (
@@ -145,7 +145,7 @@ export function BottomNav({ susuUnreadCount = 0 }: BottomNavProps) {
           <span className="text-xl leading-none relative">
             ☰
             {susuUnreadCount > 0 && !moreOpen && (
-              <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-[#0d0d1a]" />
+              <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full bg-red-500" style={{ borderWidth: 2, borderStyle: 'solid', borderColor: 'var(--color-bg)' }} />
             )}
           </span>
           <span className="text-[10px] font-medium leading-none">More</span>

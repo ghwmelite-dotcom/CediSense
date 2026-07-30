@@ -357,6 +357,7 @@ export const updateSusuGroupSchema = z.object({
   frequency: z.enum(['daily', 'weekly', 'monthly']).optional(),
   max_members: z.number().int().min(2).max(50).optional(),
   is_active: z.boolean().optional(),
+  current_round: z.number().int().min(1).max(50).optional(),
 });
 
 export const reorderSusuMembersSchema = z.object({

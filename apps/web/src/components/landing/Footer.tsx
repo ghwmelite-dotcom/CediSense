@@ -2,7 +2,7 @@ import { AdinkraWhisper } from '@/components/shared/AdinkraWhisper';
 
 export function Footer() {
   return (
-    <footer className="relative py-14 px-6" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+    <footer className="relative py-14 px-6" style={{ borderTop: '1px solid var(--color-border)' }}>
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
@@ -14,7 +14,7 @@ export function Footer() {
             <a href="#" className="text-muted-dim hover:text-muted text-sm transition-colors duration-200">Terms</a>
           </div>
         </div>
-        <div className="mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+        <div className="mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderTop: '1px solid var(--color-border)' }}>
           <p className="text-muted-dim/50 text-sm">
             Built with care by <span className="text-muted-dim">Hodges &amp; Co.</span>
           </p>
