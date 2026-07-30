@@ -82,15 +82,13 @@ export function ChatMessage({
       id={`msg-${msg.id}`}
       className={`group/msg flex flex-col gap-0.5 animate-[fadeSlideIn_0.2s_ease-out] transition-all rounded-lg ${isGrouped ? 'mt-0.5' : 'mt-3'} ${isOwn ? 'items-end' : 'items-start'}`}
     >
-      {/* Sender name (others only, hidden when grouped) */}
-      {!isOwn && !isGrouped && (
-        <span
-          className="text-[11px] font-semibold px-1"
-          style={{ color: getMemberColor(msg.sender_user_id) }}
-        >
-          {msg.sender_name}
-        </span>
-      )}
+      {/* Sender name — always visible */}
+      <span
+        className={`text-[11px] font-semibold px-1 ${isOwn ? 'text-right' : ''}`}
+        style={{ color: getMemberColor(msg.sender_user_id) }}
+      >
+        {isOwn ? 'You' : msg.sender_name}
+      </span>
 
       {/* Reply preview */}
       {msg.reply_to_id && msg.reply_to_content && (
@@ -112,7 +110,7 @@ export function ChatMessage({
               maxLength={500}
               rows={2}
               autoFocus
-              className="w-full resize-none rounded-xl bg-white/5 border border-gold/40 text-white text-sm px-3 py-2
+              className="w-full resize-none rounded-xl bg-theme-elevated border border-gold/40 text-theme-text text-sm px-3 py-2
                 focus:outline-none focus:ring-1 focus:ring-gold/30 min-h-[44px]"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -147,8 +145,8 @@ export function ChatMessage({
               ${msg.is_deleted
                 ? 'bg-white/5 text-muted italic rounded-2xl border border-white/[0.06] py-2.5 px-4'
                 : isOwn
-                  ? `bg-gold/15 text-white rounded-2xl rounded-br-md ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'}`
-                  : `bg-[#1D1D30] text-white rounded-2xl rounded-bl-md border border-white/[0.08] ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'} border-l-[3px]`
+                  ? `bg-gold/15 text-theme-text rounded-2xl rounded-br-md ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'}`
+                  : `bg-theme-elevated text-theme-text rounded-2xl rounded-bl-md border border-white/[0.08] ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'} border-l-[3px]`
               }`}
             style={!isOwn && !msg.is_deleted ? { borderLeftColor: getMemberColor(msg.sender_user_id) } : undefined}
           >
