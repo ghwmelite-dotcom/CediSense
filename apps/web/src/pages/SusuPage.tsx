@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SusuGroup, SusuGroupWithDetails, SusuFrequency, ContributionReceipt, EarlyPayoutRequest, SusuAnalytics, SusuBadge, LeaderboardEntry } from '@cedisense/shared';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,6 +14,16 @@ import { AdinkraWhisper } from '@/components/shared/AdinkraWhisper';
 type SusuGroupWithCount = SusuGroup & { member_count: number; unread_count?: number };
 
 type JoinError = 'invalid' | 'full' | 'already_member' | null;
+
+// Feature 10: challenge standings across the user's groups
+interface ChallengeStanding {
+  group_id: string;
+  name: string;
+  member_count: number;
+  contributions_month: number;
+  current_round_rate: number;
+  rank: number;
+}
 
 // ─── Empty state ───────────────────────────────────────────────────────────────
 
@@ -74,10 +85,9 @@ function EmptyState({ onCreate, onJoin }: EmptyStateProps) {
 
 export function SusuPage() {
   const { user } = useAuth();
-  const [groups, setGroups] = useState<SusuGroupWithCount[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedGroup, setSelectedGroup] = useState<SusuGroupWithDetails | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
@@ -106,43 +116,31 @@ export function SusuPage() {
   // Reorder state
   const [reorderSaving, setReorderSaving] = useState(false);
 
-  const fetchGroups = useCallback(async () => {
-    try {
-      const data = await api.get<SusuGroupWithCount[]>('/susu/groups');
-      setGroups(data);
-    } catch {
-      // Non-fatal: keep existing state
-    }
-  }, []);
+  // ── Live queries ────────────────────────────────────────────────────────────
+  // Group list + standings inherit refetch-on-focus from the global QueryClient,
+  // so a returning user always sees current membership without reopening the app.
+  const { data: groups = [], isLoading: groupsLoading } = useQuery({
+    queryKey: ['susu-groups'],
+    queryFn: () => api.get<SusuGroupWithCount[]>('/susu/groups'),
+  });
 
-  // Feature 10: challenge standings across the user's groups
-  interface ChallengeStanding {
-    group_id: string;
-    name: string;
-    member_count: number;
-    contributions_month: number;
-    current_round_rate: number;
-    rank: number;
-  }
-  const [standings, setStandings] = useState<ChallengeStanding[]>([]);
+  const { data: standings = [] } = useQuery({
+    queryKey: ['susu-standings'],
+    queryFn: () => api.get<ChallengeStanding[]>('/susu/challenge/standings'),
+  });
 
-  const fetchStandings = useCallback(async () => {
-    try {
-      const data = await api.get<ChallengeStanding[]>('/susu/challenge/standings');
-      setStandings(data);
-    } catch {
-      // Non-fatal
-    }
-  }, []);
+  // Selected group detail. `refetchInterval` makes a new member (or any change)
+  // appear live for everyone watching the group — not just the person who acted.
+  const { data: selectedGroup = null, isLoading: detailFetching } = useQuery({
+    queryKey: ['susu-group', selectedGroupId],
+    queryFn: () => api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroupId}`),
+    enabled: !!selectedGroupId,
+    refetchInterval: 25_000,
+  });
 
-  useEffect(() => {
-    async function init() {
-      setLoading(true);
-      await Promise.all([fetchGroups(), fetchStandings()]);
-      setLoading(false);
-    }
-    void init();
-  }, [fetchGroups, fetchStandings]);
+  const refreshGroups = () => queryClient.invalidateQueries({ queryKey: ['susu-groups'] });
+  const refreshSelected = () =>
+    queryClient.invalidateQueries({ queryKey: ['susu-group', selectedGroupId] });
 
   async function fetchEarlyPayout(groupId: string) {
     try {
@@ -187,23 +185,15 @@ export function SusuPage() {
   }
 
   async function handleGroupClick(id: string) {
-    setDetailLoading(true);
-    try {
-      const data = await api.get<SusuGroupWithDetails>(`/susu/groups/${id}`);
-      setSelectedGroup(data);
-      await Promise.all([
-        fetchEarlyPayout(id),
-        fetchBadges(id),
-      ]);
-    } catch {
-      // Stay on list view
-    } finally {
-      setDetailLoading(false);
-    }
+    setSelectedGroupId(id);
+    await Promise.all([
+      fetchEarlyPayout(id),
+      fetchBadges(id),
+    ]);
   }
 
   function handleBack() {
-    setSelectedGroup(null);
+    setSelectedGroupId(null);
     setEarlyPayoutRequest(null);
     setAnalytics(null);
     setBadges([]);
@@ -220,11 +210,10 @@ export function SusuPage() {
   }) {
     const newGroup = await api.post<{ id: string }>('/susu/groups', data);
     setCreateOpen(false);
-    await fetchGroups();
-    // Auto-select the newly created group
+    await refreshGroups();
+    // Auto-select the newly created group — the detail query fetches it.
     if (newGroup?.id) {
-      const details = await api.get<SusuGroupWithDetails>(`/susu/groups/${newGroup.id}`);
-      setSelectedGroup(details);
+      setSelectedGroupId(newGroup.id);
     }
   }
 
@@ -235,11 +224,10 @@ export function SusuPage() {
     try {
       const joined = await api.post<{ group_id: string }>('/susu/groups/join', { invite_code: inviteCode });
       setJoinOpen(false);
-      await fetchGroups();
-      // Auto-select the joined group
+      await refreshGroups();
+      // Auto-select the joined group — the detail query fetches it.
       if (joined?.group_id) {
-        const details = await api.get<SusuGroupWithDetails>(`/susu/groups/${joined.group_id}`);
-        setSelectedGroup(details);
+        setSelectedGroupId(joined.group_id);
       }
     } catch (err) {
       // Map API error codes to UI error types
@@ -261,12 +249,10 @@ export function SusuPage() {
     setReorderSaving(true);
     try {
       await api.put(`/susu/groups/${selectedGroup.id}/reorder`, { order: memberIds });
-      const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
-      setSelectedGroup(updated);
+      await refreshSelected();
     } catch {
       // Revert — re-fetch current state
-      const current = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
-      setSelectedGroup(current);
+      await refreshSelected();
     } finally {
       setReorderSaving(false);
     }
@@ -278,8 +264,7 @@ export function SusuPage() {
     if (!selectedGroup) return;
     try {
       await api.patch(`/susu/groups/${selectedGroup.id}/members/${memberId}/pre-paid`, { pre_paid: prePaid });
-      const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
-      setSelectedGroup(updated);
+      await refreshSelected();
     } catch {
       // Non-fatal — silently ignore
     }
@@ -303,10 +288,8 @@ export function SusuPage() {
       amount_pesewas: contribution.amount_pesewas,
       contributed_at: contribution.contributed_at,
     });
-    // Refresh detail view
-    const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
-    setSelectedGroup(updated);
-    await fetchGroups();
+    // Refresh detail + list views
+    await Promise.all([refreshSelected(), refreshGroups()]);
   }
 
   // ── View receipt for an already-contributed member ───────────────────────
@@ -338,9 +321,7 @@ export function SusuPage() {
     if (!selectedGroup) return;
     try {
       await api.post(`/susu/groups/${selectedGroup.id}/payouts`);
-      const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
-      setSelectedGroup(updated);
-      await fetchGroups();
+      await Promise.all([refreshSelected(), refreshGroups()]);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to record payout');
     }
@@ -352,9 +333,7 @@ export function SusuPage() {
     if (!selectedGroup) return;
     try {
       await api.post(`/susu/groups/${selectedGroup.id}/advance-round`);
-      const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
-      setSelectedGroup(updated);
-      await fetchGroups();
+      await Promise.all([refreshSelected(), refreshGroups()]);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to advance round');
     }
@@ -366,9 +345,7 @@ export function SusuPage() {
     if (!selectedGroup) return;
     try {
       await api.put(`/susu/groups/${selectedGroup.id}`, { current_round: round });
-      const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
-      setSelectedGroup(updated);
-      await fetchGroups();
+      await Promise.all([refreshSelected(), refreshGroups()]);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to update round');
     }
@@ -379,8 +356,8 @@ export function SusuPage() {
   async function handleLeave() {
     if (!selectedGroup) return;
     await api.post(`/susu/groups/${selectedGroup.id}/leave`);
-    setSelectedGroup(null);
-    await fetchGroups();
+    setSelectedGroupId(null);
+    await refreshGroups();
   }
 
   // ── Delete (creator only) ───────────────────────────────────────────────────
@@ -403,8 +380,8 @@ export function SusuPage() {
       );
       return;
     }
-    setSelectedGroup(null);
-    await fetchGroups();
+    setSelectedGroupId(null);
+    await refreshGroups();
   }
 
   // ── Early Payout ──────────────────────────────────────────────────────────
@@ -446,10 +423,8 @@ export function SusuPage() {
         `/susu/groups/${selectedGroup.id}/early-payout/${earlyPayoutRequest.id}/pay`
       );
       await fetchEarlyPayout(selectedGroup.id);
-      // Refresh group detail
-      const updated = await api.get<SusuGroupWithDetails>(`/susu/groups/${selectedGroup.id}`);
-      setSelectedGroup(updated);
-      await fetchGroups();
+      // Refresh group detail + list
+      await Promise.all([refreshSelected(), refreshGroups()]);
     } catch {
       // Non-fatal
     } finally {
@@ -457,7 +432,7 @@ export function SusuPage() {
     }
   }
 
-  const isEmpty = !loading && groups.length === 0;
+  const isEmpty = !groupsLoading && groups.length === 0;
 
   // ── Certificate view ──────────────────────────────────────────────────────
 
@@ -592,7 +567,7 @@ export function SusuPage() {
 
       <div className="px-4 pt-4 space-y-4 max-w-screen-lg mx-auto">
         {/* Loading skeleton */}
-        {(loading || detailLoading) && (
+        {(groupsLoading || detailFetching) && (
           <div className="space-y-3">
             <div className="h-28 rounded-xl bg-ghana-surface animate-pulse" />
             <div className="h-28 rounded-xl bg-ghana-surface animate-pulse" />
@@ -600,7 +575,7 @@ export function SusuPage() {
           </div>
         )}
 
-        {!loading && !detailLoading && (
+        {!groupsLoading && !detailFetching && (
           <>
             {isEmpty && (
               <EmptyState onCreate={() => setCreateOpen(true)} onJoin={() => setJoinOpen(true)} />
