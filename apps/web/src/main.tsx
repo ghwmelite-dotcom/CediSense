@@ -1,14 +1,34 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { App } from './App';
 import './styles/globals.css';
 
+// Shared query client. `refetchOnWindowFocus` is the key behaviour: any screen
+// built on `useQuery` auto-refreshes when the user returns to the app — no more
+// "close and reopen to see the change". `staleTime` keeps rapid re-focuses from
+// hammering the API.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: true,
+      staleTime: 30_000,
+      retry: 1,
+    },
+  },
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </ThemeProvider>
+    </QueryClientProvider>
   </StrictMode>
 );
 

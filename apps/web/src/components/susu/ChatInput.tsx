@@ -145,7 +145,7 @@ export function ChatInput({
             rows={1}
             maxLength={500}
             aria-label="Chat message"
-            className="flex-1 resize-none rounded-2xl bg-white/5 border border-white/15 text-white
+            className="flex-1 resize-none rounded-2xl bg-theme-elevated border border-theme-border text-theme-text
               placeholder:text-muted text-sm sm:text-[15px] px-3 sm:px-4 py-2.5 sm:py-3 focus:outline-none focus:border-gold/50
               focus:ring-1 focus:ring-gold/30 transition-all min-h-[44px] sm:min-h-[48px] max-h-[120px] sm:max-h-[160px]"
           />
