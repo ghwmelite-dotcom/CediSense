@@ -5,3 +5,7 @@ dist/
 .dev.vars
 *.local
 .turbo/
+
+# Impeccable design hook — machine-local state (shared config.json is committed)
+.impeccable/config.local.json
+.impeccable/hook.cache.json

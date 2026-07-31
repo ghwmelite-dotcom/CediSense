@@ -26,13 +26,14 @@ function PhoneMockup() {
         }}
       />
 
-      {/* Orbiting ring */}
+      {/* Orbiting ring — decorative loop; hidden under reduced-motion so it
+          never freezes mid-rotation at an arbitrary angle */}
       <div
-        className="absolute inset-0 -m-16 rounded-full border border-flame/[0.06]"
+        className="absolute inset-0 -m-16 rounded-full border border-flame/[0.06] motion-reduce:hidden"
         style={{ animation: 'slowSpin 30s linear infinite' }}
       />
       <div
-        className="absolute inset-0 -m-24 rounded-full border border-teal/[0.03]"
+        className="absolute inset-0 -m-24 rounded-full border border-teal/[0.03] motion-reduce:hidden"
         style={{ animation: 'slowSpin 45s linear infinite reverse' }}
       />
 

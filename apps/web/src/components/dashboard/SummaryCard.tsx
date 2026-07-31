@@ -62,7 +62,7 @@ export function SummaryCard({ income, expenses, fees }: SummaryCardProps) {
           <div className="pointer-events-none absolute -top-6 -left-6 w-20 h-20 bg-income/[0.08] rounded-full blur-2xl" />
           <p className="section-label relative">Income</p>
           <div className="flex items-center gap-1.5 mt-3 relative">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-income/15 text-income text-xs font-bold flex-shrink-0 motion-safe:animate-bounce-once">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-income/15 text-income text-xs font-bold flex-shrink-0 motion-safe:animate-scale-in">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
               </svg>
@@ -83,7 +83,7 @@ export function SummaryCard({ income, expenses, fees }: SummaryCardProps) {
           <div className="pointer-events-none absolute -top-6 -left-6 w-20 h-20 bg-expense/[0.08] rounded-full blur-2xl" />
           <p className="section-label relative">Expenses</p>
           <div className="flex items-center gap-1.5 mt-3 relative">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-expense/15 text-expense text-xs font-bold flex-shrink-0 motion-safe:animate-bounce-once">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-expense/15 text-expense text-xs font-bold flex-shrink-0 motion-safe:animate-scale-in">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@cedisense/shared": "workspace:*",
+    "lucide-react": "^1.28.0",
     "qrcode.react": "^4.2.0",
     "react": "^18",
     "react-dom": "^18",

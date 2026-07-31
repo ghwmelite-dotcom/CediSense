@@ -56,12 +56,16 @@ export function CategoryRankedList({ data, month, onHoverIndex }: CategoryRanked
             <p className="text-white text-sm font-medium truncate leading-none mb-1.5">{cat.name}</p>
             <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-700 ease-out"
+                className="h-full w-full rounded-full origin-left"
                 style={{
-                  width: mounted ? `${maxPercentage > 0 ? (cat.percentage / maxPercentage) * 100 : 0}%` : '0%',
+                  // GPU-composited fill: scaleX instead of animating `width`, so
+                  // the mount-in bar never triggers layout on low-end devices.
+                  transform: mounted
+                    ? `scaleX(${maxPercentage > 0 ? cat.percentage / maxPercentage : 0})`
+                    : 'scaleX(0)',
                   backgroundColor: cat.color,
                   boxShadow: `0 0 6px ${cat.color}60`,
-                  transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+                  transition: 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
                   transitionDelay: `${i * 50 + 200}ms`,
                 }}
               />

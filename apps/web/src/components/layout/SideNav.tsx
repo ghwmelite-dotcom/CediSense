@@ -1,29 +1,35 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import {
+  Home, Receipt, Wallet, Target, Users, Store, TrendingUp,
+  Repeat, Split, Sparkles, Bot, Settings, type LucideIcon,
+} from 'lucide-react';
 
 interface SideNavProps {
   susuUnreadCount?: number;
 }
 
-const mainNav = [
-  { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
-  { to: '/transactions', label: 'Transactions', icon: '📋' },
-  { to: '/budgets', label: 'Budgets', icon: '📊' },
-  { to: '/goals', label: 'Goals', icon: '🎯' },
-  { to: '/susu', label: 'Susu Groups', icon: '🤝', highlight: true, badge: 'susu' as const },
-  { to: '/collector', label: 'Collector', icon: '🏪', highlight: true },
-  { to: '/investments', label: 'Investments', icon: '📈' },
+type NavEntry = { to: string; label: string; icon: LucideIcon; highlight?: boolean; badge?: 'susu' };
+
+const mainNav: NavEntry[] = [
+  { to: '/dashboard', label: 'Dashboard', icon: Home },
+  { to: '/transactions', label: 'Transactions', icon: Receipt },
+  { to: '/budgets', label: 'Budgets', icon: Wallet },
+  { to: '/goals', label: 'Goals', icon: Target },
+  { to: '/susu', label: 'Susu Groups', icon: Users, highlight: true, badge: 'susu' },
+  { to: '/collector', label: 'Collector', icon: Store, highlight: true },
+  { to: '/investments', label: 'Investments', icon: TrendingUp },
 ];
 
-const secondaryNav = [
-  { to: '/recurring', label: 'Bills & Recurring', icon: '🔄' },
-  { to: '/splits', label: 'Shared Expenses', icon: '💸' },
-  { to: '/insights', label: 'Insights', icon: '✨' },
-  { to: '/ai-chat', label: 'AI Chat', icon: '💬' },
+const secondaryNav: NavEntry[] = [
+  { to: '/recurring', label: 'Bills & Recurring', icon: Repeat },
+  { to: '/splits', label: 'Shared Expenses', icon: Split },
+  { to: '/insights', label: 'Insights', icon: Sparkles },
+  { to: '/ai-chat', label: 'AI Chat', icon: Bot },
 ];
 
-const bottomNav = [
-  { to: '/settings', label: 'Settings', icon: '⚙️' },
+const bottomNav: NavEntry[] = [
+  { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
 const COLLAPSE_KEY = 'cedisense-sidenav-collapsed';
@@ -31,7 +37,7 @@ const COLLAPSE_KEY = 'cedisense-sidenav-collapsed';
 interface NavItemProps {
   to: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   collapsed: boolean;
   highlight?: boolean;
   badgeCount?: number;
@@ -40,7 +46,7 @@ interface NavItemProps {
   onHideTip?: () => void;
 }
 
-function SideNavItem({ to, label, icon, collapsed, highlight = false, badgeCount = 0, end = false, onShowTip, onHideTip }: NavItemProps) {
+function SideNavItem({ to, label, icon: Icon, collapsed, highlight = false, badgeCount = 0, end = false, onShowTip, onHideTip }: NavItemProps) {
   return (
     <NavLink
       to={to}
@@ -71,8 +77,8 @@ function SideNavItem({ to, label, icon, collapsed, highlight = false, badgeCount
               }`}
             />
           )}
-          <span className="text-base leading-none relative shrink-0">
-            {icon}
+          <span className="relative shrink-0 inline-flex">
+            <Icon className="w-5 h-5" strokeWidth={2} aria-hidden="true" />
             {badgeCount > 0 && (
               <span className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none px-1">
                 {badgeCount > 99 ? '99+' : badgeCount}

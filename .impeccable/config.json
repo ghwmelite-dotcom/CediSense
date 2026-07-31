@@ -1,0 +1,38 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "apps/web/src/styles/globals.css"
+        ],
+        "createdAt": "2026-07-31T14:33:06.260Z",
+        "reason": "User confirmed transaction-row direction bars are an intentional ledger convention"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-07-31T14:33:06.381Z",
+        "reason": "User confirmed Inter is the intentional body face"
+      },
+      {
+        "rule": "overused-font",
+        "value": "space grotesk",
+        "createdAt": "2026-07-31T14:33:06.496Z",
+        "reason": "User confirmed Space Grotesk is an intentional display-stack fallback"
+      },
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "apps/web/src/styles/globals.css"
+        ],
+        "createdAt": "2026-07-31T15:07:00.197Z",
+        "reason": "User confirmed the gradient hero/brand text treatment is intentional"
+      }
+    ]
+  }
+}

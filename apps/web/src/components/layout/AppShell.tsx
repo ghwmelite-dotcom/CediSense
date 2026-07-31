@@ -26,6 +26,14 @@ export function AppShell() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: 'var(--color-bg)' }}>
+      {/* Skip link — first tab stop for keyboard users, hidden until focused */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-flame focus:text-white focus:font-semibold focus:shadow-card-hover"
+      >
+        Skip to content
+      </a>
+
       {/* Kente stripe — cultural DNA marker at the very top */}
       <KenteStripe className="sticky top-0 z-50" />
 
@@ -50,8 +58,10 @@ export function AppShell() {
           {!isOnline && <OfflineBanner syncCount={syncCount} />}
 
           <main
+            id="main-content"
+            tabIndex={-1}
             key={location.pathname}
-            className="flex-1 pb-20 md:pb-0 overflow-y-auto animate-fade-in"
+            className="flex-1 pb-20 md:pb-0 overflow-y-auto animate-fade-in focus:outline-none"
           >
             <div className="max-w-screen-xl mx-auto">
               <Outlet />

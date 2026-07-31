@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Smartphone, Landmark, Banknote, PiggyBank, Users, Receipt,
+  Wallet, Target, Bot, Store, TrendingUp, type LucideIcon,
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import type { Account } from '@cedisense/shared';
@@ -12,7 +16,7 @@ interface AccountOption {
   name: string;
   type: 'momo' | 'bank' | 'cash' | 'susu';
   color: string;
-  icon: string;
+  icon: LucideIcon;
   subtitle: string;
   badge?: string;
 }
@@ -23,7 +27,7 @@ interface FeatureOption {
   id: FeatureId;
   name: string;
   description: string;
-  icon: string;
+  icon: LucideIcon;
   star?: boolean;
   badge?: string;
 }
@@ -33,22 +37,22 @@ interface FeatureOption {
 const QUICK_AMOUNTS = [1_000, 2_000, 3_000, 5_000, 10_000];
 
 const ACCOUNT_OPTIONS: AccountOption[] = [
-  { id: 'mtn', name: 'MTN MoMo', type: 'momo', color: '#FFCC00', icon: '📱', subtitle: "Ghana's most popular", badge: undefined },
-  { id: 'vodafone', name: 'Vodafone Cash', type: 'momo', color: '#E60000', icon: '📱', subtitle: 'Mobile Money', badge: undefined },
-  { id: 'airteltigo', name: 'AirtelTigo Money', type: 'momo', color: '#0066FF', icon: '📱', subtitle: 'Mobile Money', badge: undefined },
-  { id: 'bank', name: 'Bank Account', type: 'bank', color: '#006B3F', icon: '🏦', subtitle: 'GCB, Ecobank, Fidelity...', badge: undefined },
-  { id: 'cash', name: 'Cash', type: 'cash', color: '#5A5A72', icon: '💵', subtitle: 'Physical cash tracking', badge: undefined },
-  { id: 'susu', name: 'Susu', type: 'susu', color: '#D4A843', icon: '🏆', subtitle: 'Traditional savings', badge: 'POPULAR' },
+  { id: 'mtn', name: 'MTN MoMo', type: 'momo', color: '#FFCC00', icon: Smartphone, subtitle: "Ghana's most popular", badge: undefined },
+  { id: 'vodafone', name: 'Vodafone Cash', type: 'momo', color: '#E60000', icon: Smartphone, subtitle: 'Mobile Money', badge: undefined },
+  { id: 'airteltigo', name: 'AirtelTigo Money', type: 'momo', color: '#0066FF', icon: Smartphone, subtitle: 'Mobile Money', badge: undefined },
+  { id: 'bank', name: 'Bank Account', type: 'bank', color: '#006B3F', icon: Landmark, subtitle: 'GCB, Ecobank, Fidelity...', badge: undefined },
+  { id: 'cash', name: 'Cash', type: 'cash', color: '#5A5A72', icon: Banknote, subtitle: 'Physical cash tracking', badge: undefined },
+  { id: 'susu', name: 'Susu', type: 'susu', color: '#D4A843', icon: PiggyBank, subtitle: 'Traditional savings', badge: 'POPULAR' },
 ];
 
 const FEATURE_OPTIONS: FeatureOption[] = [
-  { id: 'susu', name: 'Susu Groups', description: '10 types including Funeral Fund, School Fees, Diaspora, Wedding, and more', icon: '\uD83C\uDFC6', star: true, badge: 'NEW' },
-  { id: 'spending', name: 'Track Spending', description: 'Import SMS transactions and see where your money goes', icon: '\uD83D\uDCCA' },
-  { id: 'budgets', name: 'Set Budgets', description: 'Control your spending with monthly category limits', icon: '\uD83D\uDCB0' },
-  { id: 'goals', name: 'Save for Goals', description: 'Set targets and track your progress', icon: '\uD83C\uDFAF' },
-  { id: 'ai', name: 'AI Advisor', description: 'Get personalized financial advice', icon: '\uD83D\uDCAC' },
-  { id: 'collector', name: 'Market Collector', description: 'Manage susu collections for traders in your community', icon: '\uD83C\uDFEA', badge: 'NEW' },
-  { id: 'investments', name: 'Track Investments', description: 'T-Bills, mutual funds, and fixed deposits with returns', icon: '\uD83D\uDCC8', badge: 'NEW' },
+  { id: 'susu', name: 'Susu Groups', description: '10 types including Funeral Fund, School Fees, Diaspora, Wedding, and more', icon: Users, star: true, badge: 'NEW' },
+  { id: 'spending', name: 'Track Spending', description: 'Import SMS transactions and see where your money goes', icon: Receipt },
+  { id: 'budgets', name: 'Set Budgets', description: 'Control your spending with monthly category limits', icon: Wallet },
+  { id: 'goals', name: 'Save for Goals', description: 'Set targets and track your progress', icon: Target },
+  { id: 'ai', name: 'AI Advisor', description: 'Get personalized financial advice', icon: Bot },
+  { id: 'collector', name: 'Market Collector', description: 'Manage susu collections for traders in your community', icon: Store, badge: 'NEW' },
+  { id: 'investments', name: 'Track Investments', description: 'T-Bills, mutual funds, and fixed deposits with returns', icon: TrendingUp, badge: 'NEW' },
 ];
 
 const FEATURE_ROUTES: Record<FeatureId, string> = {
@@ -219,10 +223,10 @@ function AccountStep({
                 </span>
               )}
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ backgroundColor: `${option.color}20` }}
               >
-                {option.icon}
+                <option.icon className="w-5 h-5" strokeWidth={2} style={{ color: option.color }} aria-hidden="true" />
               </div>
               <div className="text-center">
                 <div className={`font-semibold text-sm ${isSelected ? 'text-gold' : 'text-text-primary'}`}>
@@ -335,8 +339,8 @@ function FeatureStep({ onComplete }: { onComplete: (features: FeatureId[]) => vo
               )}
 
               {/* Icon */}
-              <div className={`flex-shrink-0 rounded-xl flex items-center justify-center ${isStar ? 'w-12 h-12 text-2xl bg-gold/10' : 'w-10 h-10 text-lg bg-ghana-elevated'}`}>
-                {feature.icon}
+              <div className={`flex-shrink-0 rounded-xl flex items-center justify-center ${isStar ? 'w-12 h-12 bg-gold/10' : 'w-10 h-10 bg-ghana-elevated'}`}>
+                <feature.icon className={isStar ? 'w-6 h-6 text-gold' : 'w-5 h-5 text-text-primary'} strokeWidth={2} aria-hidden="true" />
               </div>
 
               {/* Text */}
