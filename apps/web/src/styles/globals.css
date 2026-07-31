@@ -153,12 +153,12 @@
 [data-theme="light"] [class*="text-white/"] {
   color: var(--color-text-secondary);
 }
+/* Keep white text ONLY on genuinely solid accent surfaces. The element itself
+   carrying a bg-* class (buttons) is always solid. Ancestor rules are limited to
+   solid-hex swatches (e.g. provider brand buttons) — NOT the translucent accent
+   tints (bg-gold/5, bg-flame/[0.08]…), which are pale in light mode and need
+   dark text. Over-matching those tints is what washed out tinted-row names. */
 [data-theme="light"] .text-white[class*="bg-"],
-[data-theme="light"] [class*="bg-flame"] .text-white,
-[data-theme="light"] [class*="bg-gold"] .text-white,
-[data-theme="light"] [class*="bg-red-500"] .text-white,
-[data-theme="light"] [class*="bg-income"] .text-white,
-[data-theme="light"] [class*="bg-expense"] .text-white,
 [data-theme="light"] [class*="bg-[#"] .text-white {
   color: #fff;
 }
@@ -492,11 +492,50 @@ body {
    white. Remap to AA-compliant tones (all >= 4.5:1 on white) so scores,
    labels and status text read crisply. These accents are only used as text on
    light surfaces; solid accent buttons set their own on-colour text. */
-[data-theme="light"] .text-gold { color: #A07407; }
+[data-theme="light"] [class*="text-gold"] { color: #7A5600; }
 [data-theme="light"] .text-income { color: #067A55; }
 [data-theme="light"] .text-warning { color: #9A6A00; }
 [data-theme="light"] .text-info { color: #5A49D0; }
 [data-theme="light"] .text-expense { color: #CE354F; }
+
+/* ── Raw Tailwind palette rescue (light) ────────────────────────────────────
+   The Susu variant cards paint text in fixed light-tint shades
+   (text-cyan-300, text-blue-100, text-emerald-200…) on matching /10 tint
+   surfaces. Those are tuned for dark mode; in light mode the tint goes pale but
+   the text stays pale → washout (e.g. the Guarantee Fund card). Remap each
+   light-tint family to its -800 shade — all verified ≥4.5:1 (AA) on the tint
+   over the warm canvas. NEUTRAL and AMBER are deliberately excluded: they clothe
+   the intentionally-dark funeral/somber cards (bg-neutral-900/60), where the
+   pale text is correct. Solid accent buttons use text-white / text-ghana-dark,
+   so nothing here darkens on-colour button labels. */
+[data-theme="light"] [class*="text-cyan-"]    { color: #155e75; }
+[data-theme="light"] [class*="text-blue-"]    { color: #1e40af; }
+[data-theme="light"] [class*="text-emerald-"] { color: #065f46; }
+[data-theme="light"] [class*="text-green-"]   { color: #166534; }
+[data-theme="light"] [class*="text-pink-"]    { color: #9d174d; }
+[data-theme="light"] [class*="text-orange-"]  { color: #9a3412; }
+[data-theme="light"] [class*="text-violet-"]  { color: #5b21b6; }
+[data-theme="light"] [class*="text-purple-"]  { color: #6b21a8; }
+[data-theme="light"] [class*="text-red-"]     { color: #b91c1c; }
+
+/* Exemption: the somber funeral/bereavement cards stay dark by design
+   (bg-neutral-900/80) even in light mode, with emerald/red status pills. Those
+   surfaces are dark, so their text must stay light — re-assert the original
+   light shades for palette text nested inside a dark neutral card, overriding
+   the rescue above via higher specificity. */
+[data-theme="light"] [class*="bg-neutral-9"] [class*="text-emerald-"],
+[data-theme="light"] [class*="bg-neutral-8"] [class*="text-emerald-"] { color: #6ee7b7; }
+[data-theme="light"] [class*="bg-neutral-9"] [class*="text-red-"],
+[data-theme="light"] [class*="bg-neutral-8"] [class*="text-red-"] { color: #fca5a5; }
+
+/* Bare white fills (bg-white/5|10|20) drive subtle surfaces — leaderboard
+   header, trust-badge tiers, progress tracks. Pale-on-pale in light mode; flip
+   to the theme's low-contrast overlay so they read as gentle fills. */
+[data-theme="light"] .bg-white\/5,
+[data-theme="light"] .bg-white\/10,
+[data-theme="light"] .bg-white\/20 {
+  background-color: var(--color-hover-overlay);
+}
 
 /* Tailwind's fixed `muted` (#8888A8) is faint on the warm canvas — lift it to
    the theme's muted tier so nav labels, meta and timestamps stay legible. */
