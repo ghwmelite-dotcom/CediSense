@@ -39,7 +39,7 @@ function PhoneMockup() {
 
       {/* Phone frame -- entrance animation */}
       <div
-        className="relative w-64 sm:w-72 h-[460px] sm:h-[520px] rounded-[2.5rem] border-4 border-white/[0.08] overflow-hidden transition-all duration-1000 ease-out"
+        className="phone-screen relative w-64 sm:w-72 h-[460px] sm:h-[520px] rounded-[2.5rem] border-4 border-white/[0.08] overflow-hidden transition-all duration-1000 ease-out"
         style={{
           background: '#14142A',
           boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 50px rgba(255,107,53,0.06)',

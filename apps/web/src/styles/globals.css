@@ -541,6 +541,15 @@ body {
 [data-theme="light"] [class*="bg-neutral-9"] [class*="text-red-"],
 [data-theme="light"] [class*="bg-neutral-8"] [class*="text-red-"] { color: #fca5a5; }
 
+/* Exemption: the hero phone mockup (.phone-screen) is a fixed dark device screen.
+   The light-mode text-white rescue would darken its balance/labels into the dark
+   frame → invisible. Re-assert the dark-mode text colours inside it. */
+[data-theme="light"] .phone-screen .text-white { color: #fff; }
+[data-theme="light"] .phone-screen [class*="text-white/"] { color: rgba(255, 255, 255, 0.55); }
+[data-theme="light"] .phone-screen .text-income { color: #00C896; }
+[data-theme="light"] .phone-screen .text-expense { color: #FF6B8A; }
+[data-theme="light"] .phone-screen [class*="text-flame"] { color: #FF6B35; }
+
 /* Bare white fills drive two different things in light mode:
    • /5 is a whisper wash (section backgrounds, hover) → keep it a gentle overlay.
    • /10 and /20 clothe FIELDS and controls (inputs, pickers, chips, tracks).
