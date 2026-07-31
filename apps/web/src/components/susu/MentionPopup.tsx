@@ -60,7 +60,7 @@ export function MentionPopup({ query, members, onSelect, onClose, position }: Me
 
   return (
     <div
-      className="absolute z-50 w-[220px] rounded-xl border border-white/10 bg-[#14142A]/95 backdrop-blur-xl shadow-2xl overflow-hidden"
+      className="absolute z-50 w-[220px] rounded-xl border border-theme-border bg-theme-surface backdrop-blur-xl shadow-2xl overflow-hidden"
       style={{ bottom: `${position.bottom}px`, left: `${position.left}px` }}
       role="listbox"
       aria-label="Mention suggestions"

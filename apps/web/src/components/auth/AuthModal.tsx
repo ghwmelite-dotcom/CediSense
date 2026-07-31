@@ -116,9 +116,9 @@ export function AuthModal({ open, onClose, initialMode = 'signin', onSuccess }: 
         ref={modalRef}
         className="relative w-full max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[95vh] overflow-y-auto"
         style={{
-          background: '#14142A',
-          border: '1px solid rgba(212,168,67,0.08)',
-          boxShadow: '0 0 80px rgba(212,168,67,0.08), 0 25px 60px rgba(0,0,0,0.5)',
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+          boxShadow: '0 0 60px rgba(212,168,67,0.06), var(--shadow-card-hover)',
           transform: isIn ? 'scale(1) translateY(0)' : 'scale(1) translateY(100%)',
           opacity: isIn ? 1 : 0,
           transition: 'transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease-out',

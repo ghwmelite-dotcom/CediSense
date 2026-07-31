@@ -83,8 +83,8 @@ export function InstallBanner() {
       className="fixed bottom-24 left-4 right-4 md:left-auto md:right-6 md:w-80
         rounded-2xl p-4 shadow-xl z-50 motion-safe:animate-slide-up"
       style={{
-        background: '#14142A',
-        boxShadow: '0 -4px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)',
+        background: 'var(--color-surface)',
+        boxShadow: 'var(--shadow-card-hover), 0 0 0 1px var(--color-border)',
       }}
       role="banner"
       aria-label="Install CediSense"
