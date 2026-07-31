@@ -2,18 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ApiRequestError } from '@/lib/api';
 
-const COUNTRY_CODES = [
-  { code: '+233', label: 'Ghana (+233)', flag: 'GH' },
-  { code: '+44', label: 'UK (+44)', flag: 'GB' },
-  { code: '+1', label: 'US/CA (+1)', flag: 'US' },
-  { code: '+49', label: 'Germany (+49)', flag: 'DE' },
-  { code: '+31', label: 'Netherlands (+31)', flag: 'NL' },
-  { code: '+39', label: 'Italy (+39)', flag: 'IT' },
-  { code: '+34', label: 'Spain (+34)', flag: 'ES' },
-  { code: '+61', label: 'Australia (+61)', flag: 'AU' },
-  { code: '+27', label: 'South Africa (+27)', flag: 'ZA' },
-  { code: '+234', label: 'Nigeria (+234)', flag: 'NG' },
-];
+const WEAK_PINS = new Set([
+  '0000', '1111', '2222', '3333', '4444', '5555', '6666', '7777', '8888', '9999',
+  '1234', '4321', '0123', '3210', '1212', '2580',
+]);
+
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -23,16 +16,12 @@ interface RegisterFormProps {
 export function RegisterForm({ onSuccess, onSwitchMode }: RegisterFormProps) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [countryCode, setCountryCode] = useState('+233');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const nameRef = useRef<HTMLInputElement>(null);
-
-  const isInternational = countryCode !== '+233';
 
   useEffect(() => {
     const t = setTimeout(() => nameRef.current?.focus(), 100);
@@ -51,25 +40,32 @@ export function RegisterForm({ onSuccess, onSwitchMode }: RegisterFormProps) {
       return;
     }
 
+    if (WEAK_PINS.has(pin)) {
+      setError('PIN is too common. Choose a stronger PIN.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const rawPhone = phone.replace(/\s|-/g, '');
-      const fullPhone = isInternational
-        ? (rawPhone.startsWith('+') ? rawPhone : countryCode + rawPhone)
-        : rawPhone;
 
       await register({
-        phone: fullPhone,
+        phone: rawPhone,
         name,
         pin,
-        ...(email ? { email } : {}),
-        ...(isInternational ? { country_code: countryCode } : {}),
       });
       onSuccess();
     } catch (err) {
       if (err instanceof ApiRequestError) {
-        setError(err.message);
+        // Surface specific field errors from validation
+        if (err.code === 'VALIDATION_ERROR' && err.details?.fieldErrors) {
+          const fieldErrors = err.details.fieldErrors as Record<string, string[]>;
+          const messages = Object.values(fieldErrors).flat().filter(Boolean);
+          setError(messages.length > 0 ? messages.join('. ') : err.message);
+        } else {
+          setError(err.message);
+        }
       } else {
         setError('Something went wrong. Please try again.');
       }
@@ -94,32 +90,10 @@ export function RegisterForm({ onSuccess, onSwitchMode }: RegisterFormProps) {
         <input ref={nameRef} type="text" placeholder="Kwame Asante" value={name} onChange={(e) => setName(e.target.value)} className="input-premium" required />
       </div>
 
-      <div className="space-y-1.5">
-        <label className="section-label block mb-2">Phone Number</label>
-        <div className="flex flex-col min-[400px]:flex-row gap-2">
-          <select
-            value={countryCode}
-            onChange={(e) => setCountryCode(e.target.value)}
-            className="w-full min-[400px]:w-[120px] bg-white/[0.06] border border-white/10 rounded-xl px-3 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold appearance-none cursor-pointer shrink-0"
-            aria-label="Country code"
-          >
-            {COUNTRY_CODES.map((cc) => (
-              <option key={cc.code} value={cc.code} className="bg-[#14142A]">{cc.label}</option>
-            ))}
-          </select>
-          <input type="tel" placeholder={isInternational ? '7123 456789' : '024 123 4567'} value={phone} onChange={(e) => setPhone(e.target.value)} className="input-premium flex-1" required />
-        </div>
+      <div>
+        <label className="section-label block mb-2">Mobile Number</label>
+        <input type="tel" placeholder="024 123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} className="input-premium" required />
       </div>
-
-      {isInternational && (
-        <div>
-          <label className="section-label block mb-2">
-            Email <span className="text-muted/60">(optional)</span>
-          </label>
-          <input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="input-premium" />
-          <p className="text-muted text-xs mt-1.5 px-1">For account recovery only</p>
-        </div>
-      )}
 
       <div className="grid grid-cols-2 gap-2.5">
         <div>

@@ -15,6 +15,19 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   </head>
   <body>
+    <!-- Prevent theme flash on load -->
+    <script>
+      (function(){
+        var t = localStorage.getItem('cedisense-theme');
+        if (t === 'system' || !t) {
+          t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        if (!t || (t !== 'light' && t !== 'dark')) t = 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute('content', t === 'light' ? '#F7F5F0' : '#0d0d1a');
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

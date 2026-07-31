@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { GhanaFlag } from '@/components/shared/GhanaFlag';
+import { useTheme } from '@/contexts/ThemeContext';
 import { KenteStripe } from '@/components/shared/KenteStripe';
 
 /* ================================================================ */
@@ -237,6 +238,9 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ onOpenAuth, onScrollToFeatures }: HeroSectionProps) {
+  const { resolved: theme } = useTheme();
+  const isLight = theme === 'light';
+
   return (
     <section className="relative min-h-screen flex items-center px-6 pt-14">
       <FloatingParticles />
@@ -251,25 +255,37 @@ export function HeroSection({ onOpenAuth, onScrollToFeatures }: HeroSectionProps
           </div>
 
           <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-[1.08] mb-6">
-            <span className="text-text-primary">Your </span>
-            <span className="bg-gradient-to-br from-white via-white to-[#FF6B35] bg-clip-text text-transparent">
+            <span style={{ color: 'var(--color-text-primary)' }}>Your </span>
+            <span
+              className="bg-clip-text text-transparent"
+              style={{ backgroundImage: isLight
+                ? 'linear-gradient(135deg, #1A1A2E, #FF6B35)'
+                : 'linear-gradient(135deg, #fff, #fff, #FF6B35)'
+              }}
+            >
               Money
             </span>
-            <span className="text-text-primary">.</span>
+            <span style={{ color: 'var(--color-text-primary)' }}>.</span>
             <br />
-            <span className="text-text-primary">Your </span>
-            <span className="bg-gradient-to-br from-white via-white to-[#FF6B35] bg-clip-text text-transparent">
+            <span style={{ color: 'var(--color-text-primary)' }}>Your </span>
+            <span
+              className="bg-clip-text text-transparent"
+              style={{ backgroundImage: isLight
+                ? 'linear-gradient(135deg, #1A1A2E, #FF6B35)'
+                : 'linear-gradient(135deg, #fff, #fff, #FF6B35)'
+              }}
+            >
               Power
             </span>
-            <span className="text-text-primary">.</span>
+            <span style={{ color: 'var(--color-text-primary)' }}>.</span>
           </h1>
 
-          <p className="text-lg md:text-xl text-muted max-w-lg leading-relaxed mb-4">
+          <p className="text-lg md:text-xl max-w-lg leading-relaxed mb-4" style={{ color: 'var(--color-text-secondary)' }}>
             AI-powered personal finance for Ghana. Track Mobile Money, budget smarter, and grow your savings
             &mdash; all in one beautiful app.
           </p>
 
-          <p className="text-sm text-muted-dim mb-10">
+          <p className="text-sm mb-10" style={{ color: 'var(--color-text-muted)' }}>
             No bank login needed &middot; Works with MoMo SMS &middot; Free forever tier
           </p>
 
@@ -294,7 +310,20 @@ export function HeroSection({ onOpenAuth, onScrollToFeatures }: HeroSectionProps
             </button>
             <button
               onClick={onScrollToFeatures}
-              className="px-8 py-3.5 rounded-[14px] text-base font-semibold text-muted hover:text-text-primary bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] transition-all duration-200 active:scale-[0.98] inline-flex items-center justify-center gap-2"
+              className="px-8 py-3.5 rounded-[14px] text-base font-semibold transition-all duration-200 active:scale-[0.98] inline-flex items-center justify-center gap-2"
+              style={{
+                color: 'var(--color-text-secondary)',
+                background: 'var(--color-hover-overlay)',
+                border: '1px solid var(--color-border)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--color-text-primary)';
+                e.currentTarget.style.borderColor = 'var(--color-border-hover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--color-text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--color-border)';
+              }}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />

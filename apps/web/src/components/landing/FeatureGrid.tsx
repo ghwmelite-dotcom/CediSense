@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 /* ================================================================ */
 /*  FEATURE VISUAL COMPONENTS                                        */
@@ -6,7 +7,7 @@ import { useEffect, useRef, type RefObject } from 'react';
 function SmsImportVisual() {
   return (
     <div className="flex items-start gap-2 mb-4">
-      <div className="w-16 h-24 rounded-lg bg-white/[0.04] border border-white/[0.06] p-1.5 shrink-0">
+      <div className="w-16 h-24 rounded-lg bg-[--color-hover-overlay] border border-[--color-border] p-1.5 shrink-0">
         <div className="space-y-1">
           <div className="h-1.5 w-10 rounded bg-[#FFCC00]/30" />
           <div className="h-1 w-8 rounded bg-white/10" />
@@ -44,8 +45,8 @@ function AiAdvisorVisual() {
         </div>
       </div>
       <div className="flex justify-start">
-        <div className="bg-white/[0.05] rounded-xl rounded-bl-sm px-2.5 py-1.5 max-w-[90%]">
-          <p className="text-[10px] text-white/60 leading-relaxed">
+        <div className="bg-[--color-hover-overlay] rounded-xl rounded-bl-sm px-2.5 py-1.5 max-w-[90%]">
+          <p className="text-[10px] text-[--color-text-secondary] leading-relaxed">
             You spent 40% on food this month. Try reducing by &#x20B5;200...
           </p>
         </div>
@@ -71,7 +72,7 @@ function DashboardVisual() {
       </div>
       <div className="flex justify-between mt-1">
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-          <span key={i} className="text-[7px] text-white/20 flex-1 text-center">{d}</span>
+          <span key={i} className="text-[7px] text-[--color-text-whisper] flex-1 text-center">{d}</span>
         ))}
       </div>
     </div>
@@ -89,10 +90,10 @@ function BudgetVisual() {
       {budgets.map((b) => (
         <div key={b.label}>
           <div className="flex justify-between mb-0.5">
-            <span className="text-[9px] text-white/50">{b.label}</span>
-            <span className="text-[9px] text-white/30">{b.pct}%</span>
+            <span className="text-[9px] text-[--color-text-secondary]">{b.label}</span>
+            <span className="text-[9px] text-[--color-text-muted]">{b.pct}%</span>
           </div>
-          <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+          <div className="h-1.5 rounded-full bg-[--color-border] overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{ width: `${b.pct}%`, background: b.color }}
@@ -117,7 +118,7 @@ function SusuVisual() {
         {members.map((m) => (
           <div
             key={m.initials}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[9px] font-bold text-white border-2 border-ghana-surface"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[9px] font-bold text-[--color-text-primary] border-2 border-[--color-surface]"
             style={{ background: m.color + '33', color: m.color }}
           >
             {m.initials}
@@ -125,7 +126,7 @@ function SusuVisual() {
         ))}
       </div>
       <div className="ml-3">
-        <p className="text-[10px] text-white/50 font-medium">Savings Group</p>
+        <p className="text-[10px] text-[--color-text-secondary] font-medium">Savings Group</p>
         <p className="text-[10px] text-gold">&#x20B5;2,400 pooled</p>
       </div>
     </div>
@@ -135,19 +136,19 @@ function SusuVisual() {
 function OfflineVisual() {
   return (
     <div className="flex items-center gap-3 mb-4">
-      <div className="w-10 h-14 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center relative">
+      <div className="w-10 h-14 rounded-lg bg-[--color-hover-overlay] border border-[--color-border] flex items-center justify-center relative">
         <svg className="w-5 h-5 text-income" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
         <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-ghana-surface flex items-center justify-center">
-          <svg className="w-2.5 h-2.5 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-2.5 h-2.5 text-[--color-text-muted]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
         </div>
       </div>
       <div>
         <p className="text-[10px] text-income font-medium">Fully functional</p>
-        <p className="text-[9px] text-white/30">Syncs when online</p>
+        <p className="text-[9px] text-[--color-text-muted]">Syncs when online</p>
       </div>
     </div>
   );
@@ -221,7 +222,7 @@ const steps = [
     title: 'Sign up in 30 seconds',
     description: 'Phone number + 4-digit PIN. No email needed, no hassle.',
     visual: (
-      <div className="w-12 h-18 mx-auto rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+      <div className="w-12 h-18 mx-auto rounded-lg bg-[--color-hover-overlay] border border-[--color-border] flex items-center justify-center">
         <span className="text-gold text-xl font-bold">&#x20B5;</span>
       </div>
     ),
@@ -232,7 +233,7 @@ const steps = [
     description: 'Paste MoMo SMS messages or upload a CSV. We handle the rest.',
     visual: (
       <div className="flex items-center justify-center gap-1.5">
-        <div className="w-6 h-8 rounded bg-white/[0.04] border border-white/[0.06]" />
+        <div className="w-6 h-8 rounded bg-[--color-hover-overlay] border border-[--color-border]" />
         <svg className="w-4 h-4 text-gold/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
         </svg>
@@ -317,10 +318,33 @@ interface FeatureGridProps {
 }
 
 export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps) {
+  const { resolved: theme } = useTheme();
+  const isLight = theme === 'light';
   const featuresRef = useScrollReveal();
   const stepsRef = useScrollReveal();
   const pricingRef = useScrollReveal();
   const providersRef = useScrollReveal();
+
+  // Theme-aware card backgrounds
+  const susuCardBg = isLight
+    ? 'linear-gradient(135deg, rgba(212,168,67,0.06) 0%, #FFFFFF 30%, #FAFAF7 100%)'
+    : 'linear-gradient(135deg, rgba(212,168,67,0.08) 0%, rgba(20,20,42,0.98) 30%, rgba(12,12,20,1) 100%)';
+  const featureCardBg = isLight
+    ? '#FFFFFF'
+    : 'linear-gradient(135deg, rgba(255,107,53,0.03) 0%, rgba(20,20,42,0.95) 40%, rgba(12,12,20,0.98) 100%)';
+  const featureCardBorder = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.05)';
+  const featureCardHoverBorder = isLight ? 'rgba(255,107,53,0.25)' : 'rgba(255,107,53,0.15)';
+  const featureCardHoverShadow = isLight
+    ? '0 8px 30px rgba(0,0,0,0.08), 0 0 40px rgba(255,107,53,0.04)'
+    : '0 8px 30px rgba(0,0,0,0.4), 0 0 40px rgba(255,107,53,0.06)';
+  const pricingCardBg = isLight
+    ? 'linear-gradient(135deg, rgba(212,168,67,0.04) 0%, #FFFFFF 30%, #FAFAF7 100%)'
+    : 'linear-gradient(135deg, rgba(212,168,67,0.06) 0%, rgba(20,20,42,0.98) 30%, rgba(12,12,20,1) 100%)';
+  const susuTypeBg = isLight
+    ? 'linear-gradient(135deg, rgba(212,168,67,0.04) 0%, #FFFFFF 100%)'
+    : 'linear-gradient(135deg, rgba(212,168,67,0.06) 0%, rgba(12,12,20,0.95) 100%)';
+  const providerBg = isLight ? 'var(--color-surface)' : 'rgba(255,255,255,0.02)';
+  const providerBorder = isLight ? 'var(--color-border)' : 'rgba(255,255,255,0.05)';
 
   return (
     <>
@@ -334,9 +358,11 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
             <div
               className="relative rounded-3xl overflow-hidden p-8 sm:p-10 lg:p-12"
               style={{
-                background: 'linear-gradient(135deg, rgba(212,168,67,0.08) 0%, rgba(20,20,42,0.98) 30%, rgba(12,12,20,1) 100%)',
+                background: susuCardBg,
                 border: '2px solid rgba(212,168,67,0.2)',
-                boxShadow: '0 0 60px rgba(212,168,67,0.06), 0 0 120px rgba(212,168,67,0.03)',
+                boxShadow: isLight
+                  ? '0 4px 24px rgba(0,0,0,0.06), 0 0 60px rgba(212,168,67,0.04)'
+                  : '0 0 60px rgba(212,168,67,0.06), 0 0 120px rgba(212,168,67,0.03)',
               }}
             >
               <div
@@ -373,7 +399,7 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
                     key={susu.name}
                     className="group rounded-2xl p-4 border border-gold/[0.1] transition-all duration-200 hover:border-gold/30 hover:shadow-gold-glow cursor-default"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(212,168,67,0.06) 0%, rgba(12,12,20,0.95) 100%)',
+                      background: susuTypeBg,
                       animationDelay: `${i * 60}ms`,
                     }}
                   >
@@ -431,20 +457,22 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
                 style={{ transitionDelay: `${i * 80}ms` }}
               >
                 <div
-                  className="rounded-2xl p-6 h-full border border-white/[0.05] group cursor-default"
+                  className="rounded-2xl p-6 h-full group cursor-default"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(255,107,53,0.03) 0%, rgba(20,20,42,0.95) 40%, rgba(12,12,20,0.98) 100%)',
+                    background: featureCardBg,
+                    border: `1px solid ${featureCardBorder}`,
+                    boxShadow: isLight ? 'var(--shadow-card)' : 'none',
                     transition: 'transform 0.25s ease-out, box-shadow 0.25s ease-out, border-color 0.25s ease-out',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.4), 0 0 40px rgba(255,107,53,0.06)';
-                    e.currentTarget.style.borderColor = 'rgba(255,107,53,0.15)';
+                    e.currentTarget.style.boxShadow = featureCardHoverShadow;
+                    e.currentTarget.style.borderColor = featureCardHoverBorder;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
+                    e.currentTarget.style.boxShadow = isLight ? 'var(--shadow-card)' : 'none';
+                    e.currentTarget.style.borderColor = featureCardBorder;
                   }}
                 >
                   <div className="group-hover:scale-[1.02] transition-transform duration-300">
@@ -479,7 +507,11 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
               {providers.map((p) => (
                 <div
                   key={p.name}
-                  className="flex items-center gap-2.5 bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-2.5 hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-200"
+                  className="flex items-center gap-2.5 rounded-xl px-4 py-2.5 transition-all duration-200"
+                  style={{
+                    background: providerBg,
+                    border: `1px solid var(--color-border)`,
+                  }}
                 >
                   <div
                     className="w-3 h-3 rounded-full shrink-0"
@@ -564,7 +596,8 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
             <div
               className="rounded-2xl p-8 sm:p-10 border border-gold/[0.12] relative overflow-hidden"
               style={{
-                background: 'linear-gradient(135deg, rgba(212,168,67,0.06) 0%, rgba(20,20,42,0.98) 30%, rgba(12,12,20,1) 100%)',
+                background: pricingCardBg,
+                boxShadow: isLight ? '0 4px 20px rgba(0,0,0,0.06)' : 'none',
               }}
             >
               <div
@@ -592,14 +625,14 @@ export function FeatureGrid({ onOpenAuth, onScrollToFeatures }: FeatureGridProps
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <span className="text-text-primary/90 text-sm">{feature}</span>
+                    <span className="text-sm" style={{ color: 'var(--color-text-primary)' }}>{feature}</span>
                   </div>
                 ))}
               </div>
 
               <button
                 onClick={() => onOpenAuth('register')}
-                className="w-full text-center block py-4 text-base font-semibold text-white rounded-[14px] transition-all duration-200 active:scale-[0.98]"
+                className="w-full text-center block py-4 text-base font-semibold text-[--color-text-primary] rounded-[14px] transition-all duration-200 active:scale-[0.98]"
                 style={{
                   background: 'linear-gradient(135deg, #FF6B35, #E85D2C)',
                   boxShadow: '0 4px 15px rgba(255,107,53,0.25)',
