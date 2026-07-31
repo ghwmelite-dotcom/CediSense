@@ -156,14 +156,25 @@
 [data-theme="light"] [class*="text-white/"] {
   color: var(--color-text-secondary);
 }
-/* Keep white text ONLY on genuinely solid accent surfaces. The element itself
-   carrying a bg-* class (buttons) is always solid. Ancestor rules are limited to
-   solid-hex swatches (e.g. provider brand buttons) — NOT the translucent accent
-   tints (bg-gold/5, bg-flame/[0.08]…), which are pale in light mode and need
-   dark text. Over-matching those tints is what washed out tinted-row names. */
-[data-theme="light"] .text-white[class*="bg-"],
+/* Keep white text ONLY on genuinely solid accent surfaces (bg-flame, bg-gold,
+   bg-red-500, provider bg-[#hex]…). Exclude translucent white overlays
+   (bg-white, bg-white/X), bg-transparent, and black overlays: those clothe
+   inputs and cards that sit on LIGHT surfaces, where the text must be dark. The
+   old unqualified `[class*="bg-"]` matched them too and forced white — which is
+   why typed input text (chat, amount) and many labels went invisible in light. */
+[data-theme="light"] .text-white[class*="bg-"]:not([class*="bg-white"]):not([class*="bg-transparent"]):not([class*="bg-black"]),
 [data-theme="light"] [class*="bg-[#"] .text-white {
   color: #fff;
+}
+
+/* Interactive text-white variants are NOT caught by the base .text-white rescue
+   (Tailwind compiles them to .hover\:text-white:hover, .group:hover
+   .group-hover\:text-white, …), so on hover/focus the text reverted to white and
+   vanished on the light background. Rescue them to the primary text colour. */
+[data-theme="light"] .hover\:text-white:hover,
+[data-theme="light"] .focus\:text-white:focus,
+[data-theme="light"] .group:hover .group-hover\:text-white {
+  color: var(--color-text-primary);
 }
 
 /* ---- Text rendering ---- */
