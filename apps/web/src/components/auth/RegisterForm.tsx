@@ -77,7 +77,7 @@ export function RegisterForm({ onSuccess, onSwitchMode }: RegisterFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="bg-expense/[0.08] text-expense text-sm px-4 py-3 rounded-xl motion-safe:animate-fade-in flex items-start gap-2.5">
+        <div role="alert" className="bg-expense/[0.08] text-expense text-sm px-4 py-3 rounded-xl motion-safe:animate-fade-in flex items-start gap-2.5">
           <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
           </svg>
@@ -86,29 +86,33 @@ export function RegisterForm({ onSuccess, onSwitchMode }: RegisterFormProps) {
       )}
 
       <div>
-        <label className="section-label block mb-2">Full Name</label>
-        <input ref={nameRef} type="text" placeholder="Kwame Asante" value={name} onChange={(e) => setName(e.target.value)} className="input-premium" required />
+        <label htmlFor="register-name" className="section-label block mb-2">Full Name</label>
+        <input id="register-name" ref={nameRef} type="text" autoComplete="name" placeholder="Kwame Asante" value={name} onChange={(e) => setName(e.target.value)} className="input-premium" required />
       </div>
 
       <div>
-        <label className="section-label block mb-2">Mobile Number</label>
-        <input type="tel" placeholder="024 123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} className="input-premium" required />
+        <label htmlFor="register-phone" className="section-label block mb-2">Mobile Number</label>
+        <input id="register-phone" type="tel" autoComplete="tel" placeholder="024 123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} className="input-premium" required />
       </div>
 
       <div className="grid grid-cols-2 gap-2.5">
         <div>
-          <label className="section-label block mb-2">Create PIN</label>
-          <input type="password" inputMode="numeric" maxLength={4} placeholder="----" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} className="input-premium text-center text-lg sm:text-xl tracking-[0.3em] sm:tracking-[0.4em] placeholder:tracking-[0.2em]" required />
+          <label htmlFor="register-pin" className="section-label block mb-2">Create PIN</label>
+          <input id="register-pin" type="password" inputMode="numeric" autoComplete="new-password" maxLength={4} placeholder="----" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))} className="input-premium text-center text-lg sm:text-xl tracking-[0.3em] sm:tracking-[0.4em] placeholder:tracking-[0.2em]" required />
         </div>
         <div>
-          <label className="section-label block mb-2">Confirm PIN</label>
+          <label htmlFor="register-confirm-pin" className="section-label block mb-2">Confirm PIN</label>
           <input
+            id="register-confirm-pin"
             type="password"
             inputMode="numeric"
+            autoComplete="new-password"
             maxLength={4}
             placeholder="----"
             value={confirmPin}
             onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            aria-invalid={pinsMismatch}
+            aria-describedby="register-pin-hint"
             className={`input-premium text-center text-lg sm:text-xl tracking-[0.3em] sm:tracking-[0.4em] placeholder:tracking-[0.2em] ${
               pinsMatch ? '!shadow-[0_0_0_2px_rgba(52,211,153,0.2)]' : pinsMismatch ? '!shadow-[0_0_0_2px_rgba(239,68,68,0.2)]' : ''
             }`}
@@ -117,6 +121,7 @@ export function RegisterForm({ onSuccess, onSwitchMode }: RegisterFormProps) {
         </div>
       </div>
 
+      <div id="register-pin-hint" aria-live="polite">
       {pinsMatch && (
         <p className="text-income text-xs flex items-center gap-1.5 motion-safe:animate-fade-in -mt-2">
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -133,6 +138,7 @@ export function RegisterForm({ onSuccess, onSwitchMode }: RegisterFormProps) {
           PINs don&apos;t match
         </p>
       )}
+      </div>
 
       <button type="submit" disabled={loading || pin.length < 4 || confirmPin.length < 4} className="btn-primary w-full mt-1">
         <span className="relative flex items-center justify-center gap-2">

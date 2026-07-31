@@ -82,9 +82,12 @@
   --color-expense: #E5405E;
   --color-warning: #D4900A;
   --color-info: #6B5CE7;
-  --color-bg: #EFEBE4;
+  --color-bg: #EAE4DA;
   --color-surface: #FFFFFF;
-  --color-elevated: #F4F1EA;
+  /* Fields/controls: crisp warm near-white that lifts off the cream canvas.
+     Kept a hair off #FFF so hover surfaces (which also use elevated) stay
+     distinct from solid white cards. */
+  --color-elevated: #FBF9F5;
 
   /* Text — near-black primary, AA-readable warm-neutral secondary/muted */
   --color-text-primary: #171622;
@@ -294,7 +297,6 @@ body {
   background: var(--gradient-glow-orange);
   pointer-events: none;
   z-index: 0;
-  will-change: transform;
 }
 .ambient-glow::after {
   content: '';
@@ -306,7 +308,6 @@ body {
   background: var(--gradient-glow-teal);
   pointer-events: none;
   z-index: 0;
-  will-change: transform;
 }
 
 /* ---- Kente stripe — cultural DNA marker ---- */
@@ -487,6 +488,18 @@ body {
   color: var(--color-text-muted);
 }
 
+/* Inputs in light mode — white fields need a whisper of elevation and a
+   firmer edge to read as premium on the warm canvas, and a softer focus glow
+   than the dark theme's luminous one. */
+[data-theme="light"] .input-premium {
+  border-color: rgba(23, 22, 34, 0.14);
+  box-shadow: 0 1px 2px rgba(23, 22, 34, 0.04);
+}
+[data-theme="light"] .input-premium:focus {
+  border-color: rgba(255, 107, 53, 0.55);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
 /* ── Accent text — the Tailwind fixed accent hues (text-gold #D4A843, income,
    warning, info, expense) are tuned for dark surfaces and fail contrast on
    white. Remap to AA-compliant tones (all >= 4.5:1 on white) so scores,
@@ -528,13 +541,18 @@ body {
 [data-theme="light"] [class*="bg-neutral-9"] [class*="text-red-"],
 [data-theme="light"] [class*="bg-neutral-8"] [class*="text-red-"] { color: #fca5a5; }
 
-/* Bare white fills (bg-white/5|10|20) drive subtle surfaces — leaderboard
-   header, trust-badge tiers, progress tracks. Pale-on-pale in light mode; flip
-   to the theme's low-contrast overlay so they read as gentle fills. */
-[data-theme="light"] .bg-white\/5,
+/* Bare white fills drive two different things in light mode:
+   • /5 is a whisper wash (section backgrounds, hover) → keep it a gentle overlay.
+   • /10 and /20 clothe FIELDS and controls (inputs, pickers, chips, tracks).
+     Collapsing those to a 4%-black film reads muddy on the cream canvas, so
+     lift them to the crisp elevated surface — they now read as premium white
+     fields, paired with the border-white rescue above for a clean edge. */
+[data-theme="light"] .bg-white\/5 {
+  background-color: var(--color-hover-overlay);
+}
 [data-theme="light"] .bg-white\/10,
 [data-theme="light"] .bg-white\/20 {
-  background-color: var(--color-hover-overlay);
+  background-color: var(--color-elevated);
 }
 
 /* Tailwind's fixed `muted` (#8888A8) is faint on the warm canvas — lift it to
