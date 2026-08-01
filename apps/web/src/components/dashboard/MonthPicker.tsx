@@ -43,10 +43,10 @@ export function MonthPicker({ month, onMonthChange }: MonthPickerProps) {
     <div
       className="sticky top-0 z-10 flex items-center justify-between px-4 py-3"
       style={{
-        background: 'rgba(12, 12, 20, 0.75)',
+        background: 'var(--color-overlay)',
         backdropFilter: 'blur(24px) saturate(1.2)',
         WebkitBackdropFilter: 'blur(24px) saturate(1.2)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+        borderBottom: '1px solid var(--color-border)',
       }}
     >
       <button

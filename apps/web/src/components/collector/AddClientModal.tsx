@@ -58,7 +58,7 @@ export function AddClientModal({ open, onClose, onSave }: AddClientModalProps) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md mx-4 bg-[#161625] rounded-2xl border border-white/[0.08] shadow-2xl
+      <div className="relative w-full max-w-md mx-4 bg-theme-surface rounded-2xl border border-theme-border shadow-2xl
                       animate-in slide-in-from-bottom-4 duration-200 mb-4 sm:mb-0">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">

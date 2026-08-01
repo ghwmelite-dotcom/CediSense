@@ -71,76 +71,91 @@
 
   /* Feature hero (dashboard Susu card) */
   --gradient-susu-hero: linear-gradient(135deg, rgba(212,168,67,0.08) 0%, rgba(20,20,42,0.98) 40%, transparent 100%);
+
+  /* Susu chat bubbles (dark) */
+  --bubble-in-bg: #1D1D30;
+  --bubble-in-text: #E8E8F0;
+  --bubble-own-bg: rgba(212,168,67,0.15);
+  --bubble-own-text: #E8E8F0;
 }
 
-/* ──────────── Light Mode ──────────── */
+/* ──────────── Light Mode — Warm Editorial Premium ────────────
+   A cohesive, intentional light system: a warm-paper canvas, a crisp white
+   card tier that lifts off it via soft warm layered shadows, warm hairline
+   borders, and AA-tuned brand accents. Tokens drive it, so it propagates
+   app-wide without per-component overrides. */
 [data-theme="light"] {
-  /* Colors — accents stay the same, surfaces flip to warm cream */
-  --color-primary: #E85D2C;
-  --color-gold: #B8920A;
-  --color-income: #00A87A;
-  --color-expense: #E5405E;
-  --color-warning: #D4900A;
-  --color-info: #6B5CE7;
-  --color-bg: #EAE4DA;
-  --color-surface: #FFFFFF;
-  /* Fields/controls: crisp warm near-white that lifts off the cream canvas.
-     Kept a hair off #FFF so hover surfaces (which also use elevated) stay
-     distinct from solid white cards. */
-  --color-elevated: #FBF9F5;
+  /* Accents — AA-tuned for white surfaces; brand hues stay recognizable */
+  --color-primary: #E8590C;   /* flame, deepened for contrast on white */
+  --color-gold: #9A6B00;      /* antique gold — AA as text/icon on white */
+  --color-income: #067A55;    /* deep AA green */
+  --color-expense: #CE354F;   /* deep AA rose */
+  --color-warning: #9A6A00;   /* AA amber */
+  --color-info: #5A49D0;      /* AA violet */
 
-  /* Text — near-black primary, AA-readable warm-neutral secondary/muted */
-  --color-text-primary: #171622;
-  --color-text-secondary: rgba(0,0,0,0.68);
-  --color-text-muted: rgba(0,0,0,0.56);
-  --color-text-whisper: rgba(0,0,0,0.16);
+  /* Canvas & surfaces — warm paper → crisp white card → warm inset/hover */
+  --color-bg: #F0EBE1;        /* warm paper canvas */
+  --color-surface: #FFFFFF;   /* crisp white card */
+  --color-elevated: #FBF8F2;  /* fields, insets, hover — warm near-white */
 
-  /* Borders — visible edges so white cards read as premium on the warm canvas */
-  --color-border: rgba(0,0,0,0.12);
-  --color-border-hover: rgba(0,0,0,0.18);
+  /* Text — warm near-black; warm-neutral secondary/muted (all ≥ AA on white) */
+  --color-text-primary: #1A1826;
+  --color-text-secondary: rgba(26,24,38,0.66);
+  --color-text-muted: rgba(26,24,38,0.55);
+  --color-text-whisper: rgba(26,24,38,0.14);
 
-  /* Backgrounds (functional) */
-  --color-income-bg: rgba(0,168,122,0.08);
-  --color-expense-bg: rgba(229,64,94,0.08);
-  --color-warning-bg: rgba(212,144,10,0.08);
-  --color-info-bg: rgba(107,92,231,0.08);
+  /* Borders — warm hairlines so white cards read as intentional, not floating */
+  --color-border: rgba(41,37,28,0.11);
+  --color-border-hover: rgba(41,37,28,0.20);
 
-  /* Gradients */
+  /* Functional tint backgrounds (match the AA accents above) */
+  --color-income-bg: rgba(6,122,85,0.08);
+  --color-expense-bg: rgba(206,53,79,0.08);
+  --color-warning-bg: rgba(154,106,0,0.08);
+  --color-info-bg: rgba(90,73,208,0.08);
+
+  /* Gradients — brand accents stay vivid; hero text tuned to warm near-black */
   --gradient-primary: linear-gradient(135deg, #FF6B35, #E85D2C);
-  --gradient-gold: linear-gradient(135deg, #D4A843, #B8920A);
+  --gradient-gold: linear-gradient(135deg, #E9C36A, #CF9F2E);
   --gradient-income: linear-gradient(135deg, #00A87A, #00C896);
   --gradient-kente: linear-gradient(90deg, #FF6B35 20%, #D4A843 20%, #D4A843 40%, #00A87A 40%, #00A87A 60%, #FF6B35 60%, #FF6B35 80%, #D4A843 80%);
-  --gradient-hero-text: linear-gradient(135deg, #1A1A2E 40%, #E85D2C);
-  --gradient-glow-orange: radial-gradient(ellipse, rgba(255,107,53,0.025), transparent 62%);
-  --gradient-glow-teal: radial-gradient(ellipse, rgba(0,168,122,0.018), transparent 62%);
+  --gradient-hero-text: linear-gradient(135deg, #1A1826 40%, #E8590C);
+  --gradient-glow-orange: radial-gradient(ellipse, rgba(255,107,53,0.03), transparent 62%);
+  --gradient-glow-teal: radial-gradient(ellipse, rgba(0,168,122,0.02), transparent 62%);
 
-  /* Shadows — soft, warm elevation that lifts white cards off the canvas */
-  --shadow-card: 0 1px 2px rgba(23,22,34,0.05), 0 4px 14px rgba(23,22,34,0.07);
-  --shadow-card-hover: 0 8px 26px rgba(23,22,34,0.11), 0 2px 6px rgba(23,22,34,0.06);
-  --shadow-glow-orange: 0 0 25px rgba(255,107,53,0.06);
-  --shadow-glow-btn: 0 4px 15px rgba(255,107,53,0.2);
+  /* Shadows — soft, warm, layered (ambient + key light) for gold-warm depth */
+  --shadow-card: 0 1px 2px rgba(41,37,28,0.04), 0 3px 8px rgba(41,37,28,0.06), 0 10px 24px rgba(41,37,28,0.05);
+  --shadow-card-hover: 0 2px 4px rgba(41,37,28,0.05), 0 10px 22px rgba(41,37,28,0.10), 0 22px 48px rgba(41,37,28,0.09);
+  --shadow-glow-orange: 0 0 28px rgba(255,107,53,0.07);
+  --shadow-glow-btn: 0 6px 18px rgba(232,89,12,0.22);
 
   /* Scrollbar */
-  --scrollbar-thumb: rgba(0,0,0,0.08);
-  --scrollbar-thumb-hover: rgba(0,0,0,0.15);
+  --scrollbar-thumb: rgba(41,37,28,0.12);
+  --scrollbar-thumb-hover: rgba(41,37,28,0.22);
 
   /* Selection */
-  --selection-bg: rgba(255, 107, 53, 0.15);
-  --selection-text: #1A1A2E;
+  --selection-bg: rgba(255,107,53,0.16);
+  --selection-text: #1A1826;
 
-  /* Overlay / glass */
-  --color-overlay: rgba(255, 255, 255, 0.92);
-  --color-glass: rgba(255, 255, 255, 0.7);
-  --color-glass-border: rgba(0, 0, 0, 0.06);
+  /* Overlay / glass — warm frosted */
+  --color-overlay: rgba(247,244,238,0.85);
+  --color-glass: rgba(255,255,255,0.72);
+  --color-glass-border: rgba(41,37,28,0.08);
 
   /* Interactive */
-  --color-hover-overlay: rgba(0, 0, 0, 0.04);
-  --color-skeleton-base: rgba(0, 0, 0, 0.03);
-  --color-skeleton-mid: rgba(0, 0, 0, 0.06);
-  --color-skeleton-accent: rgba(255, 107, 53, 0.04);
+  --color-hover-overlay: rgba(41,37,28,0.05);
+  --color-skeleton-base: rgba(41,37,28,0.04);
+  --color-skeleton-mid: rgba(41,37,28,0.07);
+  --color-skeleton-accent: rgba(255,107,53,0.05);
 
-  /* Feature hero (dashboard Susu card) — light: warm gold wash, no dark block */
-  --gradient-susu-hero: linear-gradient(135deg, rgba(212,168,67,0.14) 0%, rgba(255,255,255,0.95) 45%, rgba(255,255,255,0) 100%);
+  /* Feature hero (dashboard Susu card) — warm gold wash */
+  --gradient-susu-hero: linear-gradient(135deg, rgba(212,168,67,0.16) 0%, rgba(255,255,255,0.96) 45%, rgba(255,255,255,0) 100%);
+
+  /* Susu chat bubbles (light) — warm received bubble, soft-flame sent bubble */
+  --bubble-in-bg: #F1EEE8;
+  --bubble-in-text: #1A1826;
+  --bubble-own-bg: rgba(255,107,53,0.12);
+  --bubble-own-text: #1A1826;
 }
 
 /* ── Light-mode text rescue ─────────────────────────────────────────────
@@ -156,14 +171,25 @@
 [data-theme="light"] [class*="text-white/"] {
   color: var(--color-text-secondary);
 }
-/* Keep white text ONLY on genuinely solid accent surfaces. The element itself
-   carrying a bg-* class (buttons) is always solid. Ancestor rules are limited to
-   solid-hex swatches (e.g. provider brand buttons) — NOT the translucent accent
-   tints (bg-gold/5, bg-flame/[0.08]…), which are pale in light mode and need
-   dark text. Over-matching those tints is what washed out tinted-row names. */
-[data-theme="light"] .text-white[class*="bg-"],
+/* Keep white text ONLY on genuinely solid accent surfaces (bg-flame, bg-gold,
+   bg-red-500, provider bg-[#hex]…). Exclude translucent white overlays
+   (bg-white, bg-white/X), bg-transparent, and black overlays: those clothe
+   inputs and cards that sit on LIGHT surfaces, where the text must be dark. The
+   old unqualified `[class*="bg-"]` matched them too and forced white — which is
+   why typed input text (chat, amount) and many labels went invisible in light. */
+[data-theme="light"] .text-white[class*="bg-"]:not([class*="bg-white"]):not([class*="bg-transparent"]):not([class*="bg-black"]),
 [data-theme="light"] [class*="bg-[#"] .text-white {
   color: #fff;
+}
+
+/* Interactive text-white variants are NOT caught by the base .text-white rescue
+   (Tailwind compiles them to .hover\:text-white:hover, .group:hover
+   .group-hover\:text-white, …), so on hover/focus the text reverted to white and
+   vanished on the light background. Rescue them to the primary text colour. */
+[data-theme="light"] .hover\:text-white:hover,
+[data-theme="light"] .focus\:text-white:focus,
+[data-theme="light"] .group:hover .group-hover\:text-white {
+  color: var(--color-text-primary);
 }
 
 /* ---- Text rendering ---- */
@@ -478,9 +504,10 @@ body {
   background: var(--color-hover-overlay);
 }
 
-/* Gold button — dark text on gold stays readable in light mode */
+/* Gold button — a clean, bright gold with dark text reads premium in light
+   (the gold-coin look), and dark-on-gold has far better contrast than white. */
 [data-theme="light"] .btn-gold {
-  color: #fff;
+  color: #1A1826;
 }
 
 /* Section label text */
@@ -540,6 +567,15 @@ body {
 [data-theme="light"] [class*="bg-neutral-8"] [class*="text-emerald-"] { color: #6ee7b7; }
 [data-theme="light"] [class*="bg-neutral-9"] [class*="text-red-"],
 [data-theme="light"] [class*="bg-neutral-8"] [class*="text-red-"] { color: #fca5a5; }
+
+/* Exemption: the hero phone mockup (.phone-screen) is a fixed dark device screen.
+   The light-mode text-white rescue would darken its balance/labels into the dark
+   frame → invisible. Re-assert the dark-mode text colours inside it. */
+[data-theme="light"] .phone-screen .text-white { color: #fff; }
+[data-theme="light"] .phone-screen [class*="text-white/"] { color: rgba(255, 255, 255, 0.55); }
+[data-theme="light"] .phone-screen .text-income { color: #00C896; }
+[data-theme="light"] .phone-screen .text-expense { color: #FF6B8A; }
+[data-theme="light"] .phone-screen [class*="text-flame"] { color: #FF6B35; }
 
 /* Bare white fills drive two different things in light mode:
    • /5 is a whisper wash (section backgrounds, hover) → keep it a gentle overlay.

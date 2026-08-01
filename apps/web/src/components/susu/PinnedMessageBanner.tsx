@@ -29,7 +29,7 @@ export function PinnedMessageBanner({ pins, onUnpin, onScrollTo, isCreator }: Pi
   if (pins.length === 0) return null;
 
   return (
-    <div className="border-b border-white/10 bg-[#14142A]/80 backdrop-blur-sm">
+    <div className="border-b border-theme-border bg-theme-surface backdrop-blur-sm">
       {/* Collapsed header */}
       <button
         type="button"

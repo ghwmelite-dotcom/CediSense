@@ -71,7 +71,7 @@ export function ChatSearchBar({
 
       {/* Search results overlay */}
       {searchQuery.length >= 2 && (
-        <div className="border-b border-white/10 bg-[#1D1D30]/95 backdrop-blur-md max-h-[260px] overflow-y-auto">
+        <div className="border-b border-theme-border bg-theme-surface backdrop-blur-md max-h-[260px] overflow-y-auto">
           {searchResults.length === 0 && !searching && (
             <p className="text-center text-muted text-xs py-4">No messages found</p>
           )}

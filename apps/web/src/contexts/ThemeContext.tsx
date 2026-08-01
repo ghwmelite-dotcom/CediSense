@@ -32,10 +32,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
-    return 'dark';
+    // No saved preference → follow the OS, matching the index.html boot script.
+    // (Defaulting to 'dark' here desynced React from the painted page and left
+    // the landing with dark cards on a light canvas.)
+    return 'system';
   });
 
-  const [resolved, setResolved] = useState<ResolvedTheme>(() => resolve(theme));
+  const [resolved, setResolved] = useState<ResolvedTheme>(() => {
+    // Trust the data-theme the boot script already painted so React never
+    // disagrees with the visible page (no light-page / dark-card first frame).
+    if (typeof document !== 'undefined') {
+      const attr = document.documentElement.getAttribute('data-theme');
+      if (attr === 'light' || attr === 'dark') return attr;
+    }
+    return resolve(theme);
+  });
 
   // Apply to DOM
   useEffect(() => {

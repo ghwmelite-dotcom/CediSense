@@ -117,7 +117,7 @@ export function EmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
   return (
     <div
       ref={containerRef}
-      className="absolute bottom-full mb-2 left-0 z-50 w-[min(320px,calc(100vw-2rem))] max-h-[320px] sm:max-h-[380px] rounded-xl border border-white/10 bg-[#14142A]/95 backdrop-blur-xl shadow-2xl flex flex-col overflow-hidden"
+      className="absolute bottom-full mb-2 left-0 z-50 w-[min(320px,calc(100vw-2rem))] max-h-[320px] sm:max-h-[380px] rounded-xl border border-theme-border bg-theme-surface backdrop-blur-xl shadow-2xl flex flex-col overflow-hidden"
       role="dialog"
       aria-label="Emoji picker"
     >

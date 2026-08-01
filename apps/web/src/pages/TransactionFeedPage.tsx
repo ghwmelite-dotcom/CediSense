@@ -280,8 +280,8 @@ export function TransactionFeedPage() {
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search transactions..."
             className="w-full rounded-xl pl-10 pr-4 py-2.5 text-text-primary text-sm
-              placeholder-muted-dim/60 border border-[#1F1F35]/60
-              bg-[#13132260]
+              placeholder-muted-dim/60 border border-theme-border
+              bg-theme-elevated
               focus:outline-none focus:border-[#FF6B35]/30 focus:bg-ghana-surface
               focus:shadow-[0_0_0_3px_rgba(255,107,53,0.08)]
               transition-all duration-200"

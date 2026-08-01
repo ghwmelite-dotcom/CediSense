@@ -1,2 +1,3 @@
-/api/v1/* https://cedisense-api.ghwmelite.workers.dev/api/v1/:splat 200
+# /api/* is proxied to the backend Worker by _worker.js (Pages advanced mode).
+# Pages _redirects cannot proxy 200 to an external origin, so it is NOT done here.
 /* /index.html 200

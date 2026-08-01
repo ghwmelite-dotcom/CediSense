@@ -29,7 +29,7 @@ export function ChatBubble({ role, content, timestamp, isStreaming }: ChatBubble
           className={`px-4 py-3 text-sm leading-relaxed text-white ${
             isUser
               ? 'bg-gradient-to-br from-[#FF6B35] to-[#E85D2C] shadow-[0_1px_8px_rgba(255,107,53,0.12)]'
-              : 'bg-[#14142a] border border-white/[0.06] shadow-[0_1px_8px_rgba(0,0,0,0.2)]'
+              : 'bg-theme-surface border border-theme-border shadow-card'
           }`}
           style={{
             borderRadius: isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
