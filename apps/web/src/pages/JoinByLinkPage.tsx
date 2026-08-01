@@ -34,7 +34,7 @@ function mapApiError(err: unknown): JoinErrorType {
 export function JoinByLinkPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, refreshUser } = useAuth();
 
   const code = searchParams.get('code');
 
@@ -58,14 +58,24 @@ export function JoinByLinkPage() {
       setStatus('joining');
       try {
         const result = await api.post<{ group_id: string }>('/susu/groups/join', { invite_code: code });
-        if (!cancelled) {
-          const groupId = result?.group_id;
-          setStatus('success');
-          // Navigate to the specific susu group after brief delay
-          setTimeout(() => {
-            if (!cancelled) navigate(groupId ? `/susu?group=${groupId}` : '/susu', { replace: true });
-          }, 1500);
+        if (cancelled) return;
+        const groupId = result?.group_id;
+        // Take invite joiners straight to their group — a brand-new user would
+        // otherwise be bounced into the full onboarding flow before reaching it.
+        // Marking onboarding complete here is an idempotent no-op for members who
+        // already finished it, so this stays safe for everyone.
+        try {
+          await api.put('/users/me/onboarding', { completed: true });
+          await refreshUser();
+        } catch {
+          // Non-blocking — worst case they briefly see onboarding.
         }
+        if (cancelled) return;
+        setStatus('success');
+        // Navigate to the specific susu group after a brief celebratory beat.
+        setTimeout(() => {
+          if (!cancelled) navigate(groupId ? `/susu?group=${groupId}` : '/susu', { replace: true });
+        }, 1500);
       } catch (err) {
         if (!cancelled) {
           setStatus('error');
@@ -75,7 +85,7 @@ export function JoinByLinkPage() {
     }
     attemptJoin();
     return () => { cancelled = true; };
-  }, [code, isAuthenticated, isLoading, navigate]);
+  }, [code, isAuthenticated, isLoading, navigate, refreshUser]);
 
   // Loading auth state
   if (isLoading) {
