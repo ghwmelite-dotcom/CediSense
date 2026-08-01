@@ -35,7 +35,7 @@ export function SusuQuickAccess() {
   const shown = groups.slice(0, 4);
 
   return (
-    <div className="premium-card rounded-2xl p-5 mt-6 motion-safe:animate-slide-up">
+    <div className="premium-card rounded-2xl p-5 my-6 motion-safe:animate-slide-up">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
           <span className="w-9 h-9 rounded-xl flex items-center justify-center bg-gold/10 text-gold">

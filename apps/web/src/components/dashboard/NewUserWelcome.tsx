@@ -3,6 +3,7 @@ import {
   Smartphone, Wallet, Target, Bot, TrendingUp, Store, Lightbulb, Bell,
   Trophy, Star, ArrowRight, type LucideIcon,
 } from 'lucide-react';
+import { SusuQuickAccess } from './SusuQuickAccess';
 
 const WELCOME_DISMISSED_KEY = 'cedisense-welcome-dismissed';
 
@@ -145,6 +146,9 @@ export function NewUserWelcome({ userName, onDismiss }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Your existing Susu groups — one-tap access (hidden if none) */}
+      <SusuQuickAccess />
 
       {/* ─── Other Features — 2-col Grid, one accent per feature ─────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
