@@ -239,6 +239,16 @@ body {
   color: var(--selection-text);
 }
 
+/* ---- Native <select> option list ----
+   The browser renders <option> lists itself; utility classes on options
+   (e.g. bg-ghana-dark text-white) leave the text invisible on the light-mode
+   popup. Force theme-aware colours universally — !important is required to beat
+   those inline utilities on native elements. */
+select option {
+  background-color: var(--color-surface) !important;
+  color: var(--color-text-primary) !important;
+}
+
 /* ---- Motion preferences ---- */
 @media (prefers-reduced-motion: reduce) {
   *,
