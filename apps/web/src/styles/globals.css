@@ -116,7 +116,7 @@
 
   /* Gradients — brand accents stay vivid; hero text tuned to warm near-black */
   --gradient-primary: linear-gradient(135deg, #FF6B35, #E85D2C);
-  --gradient-gold: linear-gradient(135deg, #D4A843, #9A6B00);
+  --gradient-gold: linear-gradient(135deg, #E9C36A, #CF9F2E);
   --gradient-income: linear-gradient(135deg, #00A87A, #00C896);
   --gradient-kente: linear-gradient(90deg, #FF6B35 20%, #D4A843 20%, #D4A843 40%, #00A87A 40%, #00A87A 60%, #FF6B35 60%, #FF6B35 80%, #D4A843 80%);
   --gradient-hero-text: linear-gradient(135deg, #1A1826 40%, #E8590C);
@@ -504,9 +504,10 @@ body {
   background: var(--color-hover-overlay);
 }
 
-/* Gold button — dark text on gold stays readable in light mode */
+/* Gold button — a clean, bright gold with dark text reads premium in light
+   (the gold-coin look), and dark-on-gold has far better contrast than white. */
 [data-theme="light"] .btn-gold {
-  color: #fff;
+  color: #1A1826;
 }
 
 /* Section label text */
