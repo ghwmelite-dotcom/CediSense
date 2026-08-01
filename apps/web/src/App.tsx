@@ -30,6 +30,8 @@ const JoinByLinkPage = lazy(() => import('@/pages/JoinByLinkPage').then(m => ({ 
 const MonthlyReportPrint = lazy(() => import('@/pages/print/MonthlyReportPrint').then(m => ({ default: m.MonthlyReportPrint })));
 const TransactionsPrint = lazy(() => import('@/pages/print/TransactionsPrint').then(m => ({ default: m.TransactionsPrint })));
 const VerifyCertificatePage = lazy(() => import('@/pages/VerifyCertificatePage').then(m => ({ default: m.VerifyCertificatePage })));
+const PrivacyPage = lazy(() => import('@/pages/LegalPages').then(m => ({ default: m.PrivacyPage })));
+const TermsPage = lazy(() => import('@/pages/LegalPages').then(m => ({ default: m.TermsPage })));
 
 function Placeholder({ name }: { name: string }) {
   return (
@@ -58,6 +60,8 @@ export function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/join" element={<JoinByLinkPage />} />
         <Route path="/verify/:certificateId" element={<VerifyCertificatePage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
 
         {/* Onboarding (protected, no shell) */}
         <Route

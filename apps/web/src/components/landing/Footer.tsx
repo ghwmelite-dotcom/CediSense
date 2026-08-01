@@ -54,8 +54,8 @@ export function Footer() {
           <nav aria-label="Legal">
             <h3 className="section-label mb-4">Legal</h3>
             <ul className="space-y-3 text-sm">
-              <li><a href="#" className={linkClass}>Privacy</a></li>
-              <li><a href="#" className={linkClass}>Terms</a></li>
+              <li><Link to="/privacy" className={linkClass}>Privacy</Link></li>
+              <li><Link to="/terms" className={linkClass}>Terms</Link></li>
             </ul>
           </nav>
         </div>

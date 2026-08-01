@@ -106,9 +106,9 @@ export function NotificationPanel({
       aria-label="Notifications"
       className="absolute top-full right-0 mt-2 w-[min(380px,calc(100vw-2rem))] max-h-[480px] rounded-2xl border border-white/5 overflow-hidden motion-safe:animate-fadeIn z-50"
       style={{
-        background: 'rgba(20, 20, 42, 0.98)',
+        background: 'var(--color-surface)',
         backdropFilter: 'blur(20px)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04)',
+        boxShadow: 'var(--shadow-card-hover), 0 0 0 1px var(--color-border)',
       }}
     >
       {/* Header */}
