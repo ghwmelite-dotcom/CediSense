@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 import type { SusuMessage } from '@cedisense/shared';
 import { MarkdownContent } from './MarkdownContent';
 import { LinkPreviewCard } from './LinkPreviewCard';
@@ -76,6 +77,8 @@ export function ChatMessage({
   onPin,
 }: ChatMessageProps) {
   const [showFullEmojiPicker, setShowFullEmojiPicker] = useState(false);
+  const { resolved: theme } = useTheme();
+  const memberColor = getMemberColor(msg.sender_user_id, theme);
 
   return (
     <div
@@ -86,7 +89,7 @@ export function ChatMessage({
       {!isOwn && !isGrouped && (
         <span
           className="text-[11px] font-semibold px-1"
-          style={{ color: getMemberColor(msg.sender_user_id) }}
+          style={{ color: memberColor }}
         >
           {msg.sender_name}
         </span>
@@ -143,14 +146,20 @@ export function ChatMessage({
           </div>
         ) : (
           <div
-            className={`text-[15px] leading-relaxed break-words overflow-hidden
+            className={`text-[15px] leading-relaxed break-words overflow-hidden rounded-2xl
               ${msg.is_deleted
-                ? 'bg-white/5 text-muted italic rounded-2xl border border-white/[0.06] py-2.5 px-4'
+                ? 'italic border py-2.5 px-4'
                 : isOwn
-                  ? `bg-gold/15 text-white rounded-2xl rounded-br-md ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'}`
-                  : `bg-[#1D1D30] text-white rounded-2xl rounded-bl-md border border-white/[0.08] ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'} border-l-[3px]`
+                  ? `rounded-br-md ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'}`
+                  : `rounded-bl-md border border-l-[3px] ${msg.attachment_url ? 'p-1' : 'py-2.5 px-4'}`
               }`}
-            style={!isOwn && !msg.is_deleted ? { borderLeftColor: getMemberColor(msg.sender_user_id) } : undefined}
+            style={
+              msg.is_deleted
+                ? { background: 'var(--color-hover-overlay)', color: 'var(--color-text-muted)', borderColor: 'var(--color-border)' }
+                : isOwn
+                  ? { background: 'var(--bubble-own-bg)', color: 'var(--bubble-own-text)' }
+                  : { background: 'var(--bubble-in-bg)', color: 'var(--bubble-in-text)', borderColor: 'var(--color-border)', borderLeftColor: memberColor }
+            }
           >
             {msg.is_deleted ? (
               'This message was deleted'
@@ -178,7 +187,7 @@ export function ChatMessage({
                     href={`/api/v1${msg.attachment_url}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 bg-[#1D1D30] rounded-xl p-3 border border-white/[0.06] hover:bg-white/5 transition-colors min-w-[200px]"
+                    className="flex items-center gap-3 bg-theme-surface rounded-xl p-3 border border-white/[0.06] hover:bg-white/5 transition-colors min-w-[200px]"
                   >
                     <svg className="w-8 h-8 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -202,7 +211,7 @@ export function ChatMessage({
                     href={`/api/v1${msg.attachment_url}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 bg-[#1D1D30] rounded-xl p-3 border border-white/[0.06] hover:bg-white/5 transition-colors min-w-[200px]"
+                    className="flex items-center gap-3 bg-theme-surface rounded-xl p-3 border border-white/[0.06] hover:bg-white/5 transition-colors min-w-[200px]"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-medium text-white truncate">{msg.attachment_name ?? 'File'}</p>
@@ -269,7 +278,7 @@ export function ChatMessage({
 
               {reactionPickerId === msg.id && !showFullEmojiPicker && (
                 <div
-                  className={`absolute z-20 bottom-full mb-1 flex items-center gap-0.5 bg-[#1D1D30] rounded-full p-1 border border-white/10 shadow-lg
+                  className={`absolute z-20 bottom-full mb-1 flex items-center gap-0.5 bg-theme-surface rounded-full p-1 border border-white/10 shadow-lg
                     ${isOwn ? 'right-0' : 'left-0'}`}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -338,7 +347,7 @@ export function ChatMessage({
 
                 {menuOpenId === msg.id && (
                   <div
-                    className="absolute z-20 bottom-full mb-1 right-0 bg-[#1D1D30] rounded-xl border border-white/10 shadow-lg overflow-hidden min-w-[120px]"
+                    className="absolute z-20 bottom-full mb-1 right-0 bg-theme-surface rounded-xl border border-white/10 shadow-lg overflow-hidden min-w-[120px]"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {isOwn && canEdit && (

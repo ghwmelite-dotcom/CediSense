@@ -71,6 +71,12 @@
 
   /* Feature hero (dashboard Susu card) */
   --gradient-susu-hero: linear-gradient(135deg, rgba(212,168,67,0.08) 0%, rgba(20,20,42,0.98) 40%, transparent 100%);
+
+  /* Susu chat bubbles (dark) */
+  --bubble-in-bg: #1D1D30;
+  --bubble-in-text: #E8E8F0;
+  --bubble-own-bg: rgba(212,168,67,0.15);
+  --bubble-own-text: #E8E8F0;
 }
 
 /* ──────────── Light Mode — Warm Editorial Premium ────────────
@@ -144,6 +150,12 @@
 
   /* Feature hero (dashboard Susu card) — warm gold wash */
   --gradient-susu-hero: linear-gradient(135deg, rgba(212,168,67,0.16) 0%, rgba(255,255,255,0.96) 45%, rgba(255,255,255,0) 100%);
+
+  /* Susu chat bubbles (light) — warm received bubble, soft-flame sent bubble */
+  --bubble-in-bg: #F1EEE8;
+  --bubble-in-text: #1A1826;
+  --bubble-own-bg: rgba(255,107,53,0.12);
+  --bubble-own-text: #1A1826;
 }
 
 /* ── Light-mode text rescue ─────────────────────────────────────────────
