@@ -16,8 +16,8 @@ contributions.post('/groups/:id/contributions', withNotification(async (c) => {
   const groupId = c.req.param('id');
 
   const group = await c.env.DB.prepare(
-    `SELECT id, creator_id, current_round, penalty_percent, guarantee_percent FROM susu_groups WHERE id = ?`
-  ).bind(groupId).first<{ id: string; creator_id: string; current_round: number; penalty_percent: number; guarantee_percent: number }>();
+    `SELECT id, creator_id, current_round, penalty_percent, guarantee_percent, variant, contribution_pesewas FROM susu_groups WHERE id = ?`
+  ).bind(groupId).first<{ id: string; creator_id: string; current_round: number; penalty_percent: number; guarantee_percent: number; variant: SusuVariant; contribution_pesewas: number }>();
 
   if (!group) {
     return c.json({ error: { code: 'NOT_FOUND', message: 'Group not found' } }, 404);
@@ -39,7 +39,16 @@ contributions.post('/groups/:id/contributions', withNotification(async (c) => {
     );
   }
 
-  const { member_id, amount_pesewas, is_late, original_currency, original_amount, exchange_rate } = parsed.data;
+  const { member_id, is_late, original_currency, original_amount, exchange_rate } = parsed.data;
+
+  // Enforce the group's fixed contribution for fixed-pot rotating variants so the
+  // recorded ledger always reconciles with the payout (payout = contribution ×
+  // members). Variable-amount variants (accumulating / goal-based) keep the
+  // submitted amount. Prevents a wrong/crafted amount silently breaking the pot.
+  let amount_pesewas = parsed.data.amount_pesewas;
+  if (group.variant === 'rotating' || group.variant === 'bidding') {
+    amount_pesewas = group.contribution_pesewas;
+  }
 
   // Verify member belongs to this group
   const member = await c.env.DB.prepare(

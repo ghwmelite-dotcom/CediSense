@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { SusuGroup, SusuGroupWithDetails, SusuFrequency, ContributionReceipt, EarlyPayoutRequest, SusuAnalytics, SusuBadge, LeaderboardEntry } from '@cedisense/shared';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -78,6 +79,7 @@ export function SusuPage() {
   const [loading, setLoading] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<SusuGroupWithDetails | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
@@ -201,6 +203,17 @@ export function SusuPage() {
       setDetailLoading(false);
     }
   }
+
+  // Deep-link: open a specific group from ?group=<id> — e.g. right after joining
+  // via an invite link — so the user lands directly in their group, not the list.
+  useEffect(() => {
+    const groupParam = searchParams.get('group');
+    if (groupParam) {
+      void handleGroupClick(groupParam);
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleBack() {
     setSelectedGroup(null);

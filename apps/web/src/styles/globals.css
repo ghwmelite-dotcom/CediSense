@@ -94,19 +94,21 @@
   --color-info: #5A49D0;      /* AA violet */
 
   /* Canvas & surfaces — warm paper → crisp white card → warm inset/hover */
-  --color-bg: #F0EBE1;        /* warm paper canvas */
+  --color-bg: #F4F1E9;        /* airy warm-ivory canvas — lighter, more premium */
   --color-surface: #FFFFFF;   /* crisp white card */
-  --color-elevated: #FBF8F2;  /* fields, insets, hover — warm near-white */
+  --color-elevated: #FBFAF5;  /* fields, insets, hover — warm near-white */
 
-  /* Text — warm near-black; warm-neutral secondary/muted (all ≥ AA on white) */
+  /* Text — warm near-black heading; a warm-SLATE neutral for secondary/muted.
+     The subtle cool counterpoint is what stops the all-warm monochrome and
+     reads as considered/premium (per luxury-fintech palettes). Both ≥ AA. */
   --color-text-primary: #1A1826;
-  --color-text-secondary: rgba(26,24,38,0.66);
-  --color-text-muted: rgba(26,24,38,0.55);
+  --color-text-secondary: #57545F;
+  --color-text-muted: #77747F;
   --color-text-whisper: rgba(26,24,38,0.14);
 
-  /* Borders — warm hairlines so white cards read as intentional, not floating */
-  --color-border: rgba(41,37,28,0.11);
-  --color-border-hover: rgba(41,37,28,0.20);
+  /* Borders — clean neutral hairlines so white cards read crisp, not muddy */
+  --color-border: rgba(26,24,38,0.10);
+  --color-border-hover: rgba(26,24,38,0.19);
 
   /* Functional tint backgrounds (match the AA accents above) */
   --color-income-bg: rgba(6,122,85,0.08);
@@ -235,6 +237,16 @@ body {
 ::selection {
   background: var(--selection-bg);
   color: var(--selection-text);
+}
+
+/* ---- Native <select> option list ----
+   The browser renders <option> lists itself; utility classes on options
+   (e.g. bg-ghana-dark text-white) leave the text invisible on the light-mode
+   popup. Force theme-aware colours universally — !important is required to beat
+   those inline utilities on native elements. */
+select option {
+  background-color: var(--color-surface) !important;
+  color: var(--color-text-primary) !important;
 }
 
 /* ---- Motion preferences ---- */

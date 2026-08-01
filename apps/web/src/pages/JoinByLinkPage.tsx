@@ -34,7 +34,7 @@ function mapApiError(err: unknown): JoinErrorType {
 export function JoinByLinkPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, refreshUser } = useAuth();
 
   const code = searchParams.get('code');
 
@@ -58,14 +58,24 @@ export function JoinByLinkPage() {
       setStatus('joining');
       try {
         const result = await api.post<{ group_id: string }>('/susu/groups/join', { invite_code: code });
-        if (!cancelled) {
-          const groupId = result?.group_id;
-          setStatus('success');
-          // Navigate to the specific susu group after brief delay
-          setTimeout(() => {
-            if (!cancelled) navigate(groupId ? `/susu?group=${groupId}` : '/susu', { replace: true });
-          }, 1500);
+        if (cancelled) return;
+        const groupId = result?.group_id;
+        // Take invite joiners straight to their group — a brand-new user would
+        // otherwise be bounced into the full onboarding flow before reaching it.
+        // Marking onboarding complete here is an idempotent no-op for members who
+        // already finished it, so this stays safe for everyone.
+        try {
+          await api.put('/users/me/onboarding', { completed: true });
+          await refreshUser();
+        } catch {
+          // Non-blocking — worst case they briefly see onboarding.
         }
+        if (cancelled) return;
+        setStatus('success');
+        // Navigate to the specific susu group after a brief celebratory beat.
+        setTimeout(() => {
+          if (!cancelled) navigate(groupId ? `/susu?group=${groupId}` : '/susu', { replace: true });
+        }, 1500);
       } catch (err) {
         if (!cancelled) {
           setStatus('error');
@@ -75,7 +85,7 @@ export function JoinByLinkPage() {
     }
     attemptJoin();
     return () => { cancelled = true; };
-  }, [code, isAuthenticated, isLoading, navigate]);
+  }, [code, isAuthenticated, isLoading, navigate, refreshUser]);
 
   // Loading auth state
   if (isLoading) {
@@ -95,7 +105,7 @@ export function JoinByLinkPage() {
 
     return (
       <div className="min-h-screen bg-ghana-dark flex items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-ghana-surface border border-white/10 rounded-2xl p-6 space-y-5 text-center">
+        <div className="w-full max-w-sm premium-card rounded-2xl p-6 space-y-5 text-center">
           {/* Icon */}
           <div className="w-14 h-14 rounded-2xl bg-gold/15 border border-gold/30 flex items-center justify-center mx-auto">
             <svg className="w-7 h-7 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -128,8 +138,8 @@ export function JoinByLinkPage() {
             <Link
               to={`/login?returnTo=${encodeURIComponent(returnUrl)}`}
               className="w-full flex items-center justify-center px-4 py-3 rounded-xl
-                border border-white/20 text-white font-semibold text-sm
-                hover:bg-white/10 active:scale-95 transition-all min-h-[44px]"
+                border border-theme-border text-text-primary font-semibold text-sm
+                hover:bg-theme-elevated active:scale-95 transition-all min-h-[44px]"
             >
               Sign In
             </Link>
@@ -172,7 +182,7 @@ export function JoinByLinkPage() {
   // Error
   return (
     <div className="min-h-screen bg-ghana-dark flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-ghana-surface border border-white/10 rounded-2xl p-6 space-y-5 text-center">
+      <div className="w-full max-w-sm premium-card rounded-2xl p-6 space-y-5 text-center">
         <div className="w-14 h-14 rounded-full bg-expense/15 border border-expense/30 flex items-center justify-center mx-auto">
           <svg className="w-7 h-7 text-expense" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
