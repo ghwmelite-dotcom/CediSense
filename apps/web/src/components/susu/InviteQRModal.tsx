@@ -87,7 +87,7 @@ export function InviteQRModal({ open, onClose, groupName, inviteCode, amountLabe
       />
 
       {/* Panel */}
-      <div className="relative w-full max-w-sm bg-ghana-dark border border-white/10 rounded-2xl
+      <div className="relative w-full max-w-sm bg-theme-surface border border-theme-border rounded-2xl
         shadow-2xl shadow-black/40 p-6 space-y-5">
 
         {/* Close button */}
@@ -141,7 +141,7 @@ export function InviteQRModal({ open, onClose, groupName, inviteCode, amountLabe
             type="button"
             onClick={handleCopyLink}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl
-              bg-gold text-ghana-dark font-semibold text-sm hover:brightness-110
+              bg-gold text-ghana-black font-semibold text-sm hover:brightness-110
               active:scale-95 transition-all min-h-[44px]"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -171,7 +171,7 @@ export function InviteQRModal({ open, onClose, groupName, inviteCode, amountLabe
           type="button"
           onClick={handleWhatsApp}
           className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
-            bg-[#25D366] text-ghana-dark font-semibold text-sm hover:brightness-110
+            bg-[#25D366] text-ghana-black font-semibold text-sm hover:brightness-110
             active:scale-95 transition-all min-h-[44px]"
         >
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
