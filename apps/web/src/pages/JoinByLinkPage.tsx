@@ -105,7 +105,7 @@ export function JoinByLinkPage() {
 
     return (
       <div className="min-h-screen bg-ghana-dark flex items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-ghana-surface border border-white/10 rounded-2xl p-6 space-y-5 text-center">
+        <div className="w-full max-w-sm premium-card rounded-2xl p-6 space-y-5 text-center">
           {/* Icon */}
           <div className="w-14 h-14 rounded-2xl bg-gold/15 border border-gold/30 flex items-center justify-center mx-auto">
             <svg className="w-7 h-7 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -138,8 +138,8 @@ export function JoinByLinkPage() {
             <Link
               to={`/login?returnTo=${encodeURIComponent(returnUrl)}`}
               className="w-full flex items-center justify-center px-4 py-3 rounded-xl
-                border border-white/20 text-white font-semibold text-sm
-                hover:bg-white/10 active:scale-95 transition-all min-h-[44px]"
+                border border-theme-border text-text-primary font-semibold text-sm
+                hover:bg-theme-elevated active:scale-95 transition-all min-h-[44px]"
             >
               Sign In
             </Link>
@@ -182,7 +182,7 @@ export function JoinByLinkPage() {
   // Error
   return (
     <div className="min-h-screen bg-ghana-dark flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-ghana-surface border border-white/10 rounded-2xl p-6 space-y-5 text-center">
+      <div className="w-full max-w-sm premium-card rounded-2xl p-6 space-y-5 text-center">
         <div className="w-14 h-14 rounded-full bg-expense/15 border border-expense/30 flex items-center justify-center mx-auto">
           <svg className="w-7 h-7 text-expense" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

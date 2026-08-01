@@ -9,6 +9,7 @@ import { SummaryCard } from '@/components/dashboard/SummaryCard';
 import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
 import { UpcomingBillsCard } from '@/components/recurring/UpcomingBillsCard';
 import { NewUserWelcome, isWelcomeDismissed } from '@/components/dashboard/NewUserWelcome';
+import { SusuQuickAccess } from '@/components/dashboard/SusuQuickAccess';
 import { AdinkraWhisper } from '@/components/shared/AdinkraWhisper';
 
 const SpendingTrendChart = lazy(() => import('@/components/dashboard/SpendingTrendChart').then(m => ({ default: m.SpendingTrendChart })));
@@ -192,6 +193,9 @@ export function DashboardPage() {
                 fees={data.summary.total_fees_pesewas}
               />
             </div>
+
+            {/* One-tap access to the user's existing Susu groups */}
+            <SusuQuickAccess />
 
             <Suspense fallback={<div className="mt-6 h-48 rounded-2xl skeleton" />}>
               <div className="mt-6 motion-safe:animate-slide-up" style={stagger(2)}>
